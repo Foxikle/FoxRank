@@ -1,0 +1,14 @@
+name: FoxRank
+version: ${project.version}
+main: me.foxikle.foxrank.FoxRank
+api-version: 1.18
+prefix: FoxRank
+authors: [ Foxikle, Imperical ]
+description: Foxikle's ranks plugin
+commands:
+  setrank:
+    description: Sets your rank!
+
+permissions:
+  rank.use:
+    default: false
