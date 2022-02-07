@@ -85,13 +85,12 @@ public class FoxRank extends JavaPlugin implements Listener {
     @EventHandler
     public void onPlayerChat(AsyncPlayerChatEvent e) {
         if (this.getConfig().getString(e.getPlayer().getName()) != null) {
-          //  e.getPlayer().setDisplayName(getConfig().getString(e.getPlayer().getName()) + ChatColor.RESET);
+            e.getPlayer().setDisplayName(getConfig().getString(e.getPlayer().getName()) + ChatColor.RESET);
 
             String eventMessage = e.getMessage();
             Player player = e.getPlayer();
 
             String format = "<group-prefix><player>:<message> + ChatColor.RESET";
-//replacing your values
             format.replace("<player>", player.getName());
             format.replace("<group-prefix>", getRank(player).getPrefix());
             format.replace("<message>", eventMessage);
