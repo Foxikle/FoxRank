@@ -17,16 +17,23 @@ import java.util.Map;
 public class FoxRank extends JavaPlugin implements Listener {
 
     Map<Player, Rank> ranks = new HashMap<>();
+    public static FoxRank instance;
+    private Nick nick;
 
     @Override
     public void onEnable() {
+        instance = this;
+        nick = new Nick();
         getServer().getPluginManager().registerEvents(this,this);
 
         reloadConfig();
         for(Player p : this.getServer().getOnlinePlayers()) {
             loadRank(p);
         }
-
+        getCommand("nick").setExecutor(nick);
+    }
+    public static FoxRank getInstance(){
+        return instance;
     }
 
     @Override
@@ -51,7 +58,7 @@ public class FoxRank extends JavaPlugin implements Listener {
     public void loadRank(Player player) {
         Object rankObj = getConfig().get(player.getUniqueId() + ".rank");
         System.out.println("rankObj is " + rankObj);
-        Rank rank = rankObj == null ? Rank.NONE : (Rank) rankObj;
+        Rank rank = rankObj == null ? Rank.NONE : Rank.NONE; //(Rank) rankObj;
         player.setDisplayName(rank.getPrefix() + player.getName());
         player.setPlayerListName(rank.getPrefix() + player.getName());
         setRank(player, rank);
@@ -85,7 +92,7 @@ public class FoxRank extends JavaPlugin implements Listener {
     @EventHandler
     public void onPlayerChat(AsyncPlayerChatEvent e) {
         if (this.getConfig().getString(e.getPlayer().getName()) != null) {
-            e.getPlayer().setDisplayName(getConfig().getString(e.getPlayer().getName()) + ChatColor.RESET);
+           e.getPlayer().setDisplayName(getConfig().getString(e.getPlayer().getName()) + ChatColor.RESET);
 
             String eventMessage = e.getMessage();
             Player player = e.getPlayer();
