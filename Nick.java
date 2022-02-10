@@ -100,11 +100,6 @@ public class Nick implements CommandExecutor {
 // ping is the amount of ping the player have currently
 // gameMode is the EnumGameMode object of the player
 // text is the text parsed to IChatBaseComponent
-        /*
-        Im a change!!
-
-
-         */
 
         ServerGamePacketListenerImpl connection = ((CraftPlayer) player).getHandle().connection;
         connection.send(new ClientboundPlayerInfoPacket(ClientboundPlayerInfoPacket.Action.REMOVE_PLAYER, ((CraftPlayer)player).getHandle()));
