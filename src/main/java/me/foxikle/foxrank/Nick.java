@@ -20,10 +20,8 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.BookMeta;
 
 import java.io.InputStreamReader;
+import java.lang.reflect.Field;
 import java.net.URL;
-
-import static org.bukkit.entity.EntityType.ARMOR_STAND;
-import static org.bukkit.entity.EntityType.SILVERFISH;
 
 public class Nick implements CommandExecutor {
     public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
@@ -33,16 +31,17 @@ public class Nick implements CommandExecutor {
                 if (player.hasPermission("nick.use")) {
                     if(args.length == 0) {
                         openBook(player);
+                    } else if (args.length >= 1 ) {
+                        changeName(args[0], player);
+                        changeSkin(player, args[0]);
                     } else {
 
                         if (args[0].equals("098098098882822668842231536845")){
                             changeName("RANDOM", player);
                         } else if(args[0].equals("98164375184972654831645721981")){
                             createAnvil(player);
-                            player.sendMessage(ChatColor.RED + "Opening Anvil!");
                         }
                     }
-                    player.sendMessage(ChatColor.GOLD + "Nicking!!");
                 } else {
                     player.sendMessage(ChatColor.RED + "You do not have the suitable permissions to use this command.");
                 }
@@ -72,7 +71,6 @@ public class Nick implements CommandExecutor {
         BaseComponent[] pages = new BaseComponent[]{setMsg};
 
         nickBookMeta1.spigot().addPage(pages);
-       // pages.add(SetMsg);
 
         nickBookMeta1.setTitle("Nickname Book");
         nickBookMeta1.setAuthor("Imperical");
@@ -83,45 +81,51 @@ public class Nick implements CommandExecutor {
     }
 
     public static void changeName(String name, Player player) {
-        GameProfile profile = ((CraftPlayer)player).getHandle().getGameProfile();
+        if(name.length() < 17) {
+            GameProfile profile = ((CraftPlayer) player).getHandle().getGameProfile();
 
-        /*LivingEntity d = (LivingEntity) player.getWorld().spawnEntity(player.getLocation(), SILVERFISH);
-        d.setInvisible(true);
-        d.setSilent(true);
+            profile.getProperties().removeAll("textures");
+            profile.getProperties().put("textures", getSkin(name));
 
-        ArmorStand e = (ArmorStand) player.getWorld().spawnEntity(player.getLocation(), ARMOR_STAND);
-        e.setMarker(true);
-        e.setVisible(false);
-        e.setCustomName(name);
-        e.setCustomNameVisible(true);
+            try {
+                Field field = profile.getClass().getDeclaredField("name");
+                field.setAccessible(true);
+                field.set(profile, name);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
 
-        player.setPassenger(d);
-        d.setPassenger(e);
-         */
+            player.setDisplayName(name);
+            player.setPlayerListName(name);
+            player.setCustomName(name);
+
+            refreshPlayer(player);
+
+            player.sendMessage(ChatColor.GREEN + "Your nickname has been set to " + ChatColor.BOLD + name);
+        } else{
+            player.sendMessage(ChatColor.RED + "Your nickname cannot be longer than 16 characters");
+        }
+    }
+    public static void changeSkin(Player player, String skin){
+        GameProfile profile = ((CraftPlayer) player).getHandle().getGameProfile();
+
         profile.getProperties().removeAll("textures");
-        profile.getProperties().put("textures", getSkin(name, player));
+        profile.getProperties().put("textures", getSkin(skin));
+        refreshPlayer(player);
+    }
 
-        player.setDisplayName(name);
-        player.setPlayerListName(name);
-        player.setCustomName(name);
-        player.sendMessage(ChatColor.GREEN + "Your nickname has been set to " + ChatColor.BOLD + name);
-
+    public static void refreshPlayer(Player player){
         for (Player p : Bukkit.getOnlinePlayers()) {
             ServerGamePacketListenerImpl connection = ((CraftPlayer) p).getHandle().connection;
-            System.out.println("connection established");
             connection.send(new ClientboundPlayerInfoPacket(ClientboundPlayerInfoPacket.Action.REMOVE_PLAYER, ((CraftPlayer)player).getHandle()));
             p.hidePlayer(FoxRank.getInstance(), player);
             p.showPlayer(FoxRank.getInstance(), player);
-            System.out.println("removed player");
             connection.send(new ClientboundPlayerInfoPacket(ClientboundPlayerInfoPacket.Action.ADD_PLAYER, ((CraftPlayer)player).getHandle()));
-            System.out.println("added player back");
-
         }
-
 
     }
 
-    private static Property getSkin( String name, Player player){
+    private static Property getSkin( String name){
         try {
             URL url = new URL("https://api.mojang.com/users/profiles/minecraft/" + name);
             InputStreamReader reader = new InputStreamReader(url.openStream());
@@ -148,6 +152,7 @@ public class Nick implements CommandExecutor {
                 })
                 .onComplete((player, text) -> {
                     changeName(text, player);
+                    changeSkin(player, text);
                     return AnvilGUI.Response.close();
                 })
                 .preventClose()
