@@ -11,17 +11,17 @@ public class JoinLeaveMsgs implements Listener {
 
     @EventHandler (priority = EventPriority.MONITOR)
     public void onPlayerLogin(PlayerJoinEvent event) {
-        if(FoxRank.getInstance().getConfig().getBoolean("DisableJoinMessages")) {
+        if(!FoxRank.getInstance().getConfig().getBoolean("DisableJoinMessages")) {
             event.setJoinMessage(null);
         }
-        event.setJoinMessage(ChatColor.YELLOW + event.getPlayer().getName() + "join the game.");
+        event.setJoinMessage(ChatColor.YELLOW + event.getPlayer().getName() + " joined the game.");
     }
 
     @EventHandler(priority = EventPriority.MONITOR)
     public void onPlayerQuit(PlayerQuitEvent event) {
-        if (FoxRank.getInstance().getConfig().getBoolean("DisableLeaveMessages")) {
+        if (!FoxRank.getInstance().getConfig().getBoolean("DisableLeaveMessages")) {
             event.setQuitMessage(null);
         }
-        event.setQuitMessage(ChatColor.YELLOW + event.getPlayer().getName() + "left the game.");
+        event.setQuitMessage(ChatColor.YELLOW + event.getPlayer().getName() + " left the game.");
     }
 }
