@@ -19,12 +19,16 @@ public class FoxRank extends JavaPlugin implements Listener {
     Map<Player, Rank> ranks = new HashMap<>();
     public static FoxRank instance;
     private Nick nick;
+    private JoinLeaveMsgs msg;
 
     @Override
     public void onEnable() {
+        this.saveResource("config.yml", false);
         instance = this;
         nick = new Nick();
+        msg = new JoinLeaveMsgs();
         getServer().getPluginManager().registerEvents(this,this);
+        getServer().getPluginManager().registerEvents(msg,this);
 
         reloadConfig();
         for(Player p : this.getServer().getOnlinePlayers()) {
@@ -68,7 +72,7 @@ public class FoxRank extends JavaPlugin implements Listener {
         System.out.println("About to set " + getRank(player));
         getConfig().set(player.getUniqueId() + ".rank", getRank(player));
         System.out.println("Just set " + getConfig().get(player.getUniqueId() + ".rank"));
-        saveConfig();
+        //saveConfig();
 
         ranks.remove(player);
     }
