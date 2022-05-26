@@ -36,7 +36,7 @@ public enum Rank {
     public int getPowerLevel(){
         return powerLevel;
     }
-    public Rank getRankFromString(String s){
+    public static Rank getRankFromString(String s){
         if (s.equalsIgnoreCase("DEFAULT")){
             return Rank.DEFAULT;
         } else if (s.equalsIgnoreCase("OWNER")){
