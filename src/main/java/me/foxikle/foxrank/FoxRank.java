@@ -17,13 +17,16 @@ import org.bukkit.scoreboard.Team;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.logging.Level;
 
 import static me.foxikle.foxrank.Rank.*;
 
 public class FoxRank extends JavaPlugin implements Listener {
 
+    public static FoxRank instance;
+    static Map<Player, Rank> ranks = new HashMap<>();
     private static Team DefualtTeam = null;
     private static Team OwnerTeam = null;
     private static Team AdminTeam = null;
@@ -34,11 +37,11 @@ public class FoxRank extends JavaPlugin implements Listener {
     private static Team MvpTeam = null;
     private static Team VippTeam = null;
     private static Team VipTeam = null;
+    Map<String, Integer> rankList = new HashMap<>();
+    private Nick nick;
+    private JoinLeaveMsgs msg;
 
-
-
-
-    private static void setupTeams(){
+    private static void setupTeams() {
         Scoreboard board = Bukkit.getScoreboardManager().getMainScoreboard();
         try {
             Team dT = board.registerNewTeam("DEFAULTRankTeam");
@@ -78,10 +81,10 @@ public class FoxRank extends JavaPlugin implements Listener {
             YoutubeTeam = yT;
             TwitchTeam = tT;
             MvppTeam = mpT;
-            MvpTeam =  mT;
+            MvpTeam = mT;
             VippTeam = vpT;
             VipTeam = vT;
-        } catch(IllegalArgumentException ignored){
+        } catch (IllegalArgumentException ignored) {
             Team dT = board.getTeam("DEFAULTRankTeam");
             Team oT = board.getTeam("ownerTeam");
             Team aT = board.getTeam("adminTeam");
@@ -99,58 +102,99 @@ public class FoxRank extends JavaPlugin implements Listener {
             YoutubeTeam = yT;
             TwitchTeam = tT;
             MvppTeam = mpT;
-            MvpTeam =  mT;
+            MvpTeam = mT;
             VippTeam = vpT;
             VipTeam = vT;
         }
 
 
-
     }
 
-
-    Map <String, Integer> rankList = new HashMap<>();
-
-    public static void setTeam(Player player, String teamID){
-            System.out.println("setTeam called!");
+    public static void setTeam(Player player, String teamID) {
+        System.out.println("setTeam called!");
 
         Scoreboard board = Bukkit.getScoreboardManager().getMainScoreboard();
         player.setScoreboard(board);
 
 
-
-        if(teamID.equals("OWNER")){
+        if (teamID.equals("OWNER")) {
             OwnerTeam.addEntry(player.getName());
-        } else if(teamID.equals("ADMIN")){
+        } else if (teamID.equals("ADMIN")) {
             AdminTeam.addEntry(player.getName());
-        } else if(teamID.equals("MODERATOR")){
+        } else if (teamID.equals("MODERATOR")) {
             ModeratorTeam.addEntry(player.getName());
-        } else if(teamID.equals("YOUTUBE")){
+        } else if (teamID.equals("YOUTUBE")) {
             YoutubeTeam.addEntry(player.getName());
-        } else if(teamID.equals("TWITCH")){
+        } else if (teamID.equals("TWITCH")) {
             TwitchTeam.addEntry(player.getName());
-        } else if(teamID.equals("MVP_PLUS")){
+        } else if (teamID.equals("MVP_PLUS")) {
             MvppTeam.addEntry(player.getName());
-        } else if(teamID.equals("MVP")){
+        } else if (teamID.equals("MVP")) {
             MvpTeam.addEntry(player.getName());
-        } else if(teamID.equals("VIP_PLUS")){
+        } else if (teamID.equals("VIP_PLUS")) {
             VippTeam.addEntry(player.getName());
-        } else if(teamID.equals("VIP")){
+        } else if (teamID.equals("VIP")) {
             VipTeam.addEntry(player.getName());
-        } else if(teamID.equals("DEFAULT")){
+        } else if (teamID.equals("DEFAULT")) {
             DefualtTeam.addEntry(player.getName());
         }
     }
 
-    static Map<Player, Rank> ranks = new HashMap<>();
-    public static FoxRank instance;
-    private Nick nick;
-    private JoinLeaveMsgs msg;
+    public static FoxRank getInstance() {
+        return instance;
+    }
+
+    public static void setRank(Player player, Rank rank) {
+        ranks.put(player, rank);
+        File file = new File("plugins/FoxRank/PlayerData/" + player.getUniqueId() + ".yml");
+        YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
+        yml.set("Rank", rank.getRankID());
+        try {
+            yml.save(file);
+        } catch (IOException error) {
+            error.printStackTrace();
+        }
+
+    }
+
+    public static Rank getRank(Player player) {
+        return ranks.get(player);
+    }
+
+    public static void loadRank(Player player) {
+        File file = new File("plugins/FoxRank/PlayerData/" + player.getUniqueId() + ".yml");
+        YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
+        String rankID = yml.getString("Rank");
+        if (rankID != null) {
+
+            Rank rank = getRankFromString(rankID);
+            player.setDisplayName(rank.getPrefix() + player.getName());
+            player.setPlayerListName(rank.getPrefix() + player.getName());
+            setTeam(player, rank.getRankID());
+            setRank(player, rank);
+        } else {
+            Bukkit.getLogger().log(Level.SEVERE, "rankID is null");
+        }
+    }
+
+    public static void saveRank(Player player) {
+        File file = new File("plugins/FoxRank/PlayerData/" + player.getUniqueId() + ".yml");
+        YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
+        yml.set("Rank", getRank(player).getRankID());
+        try {
+            yml.save(file);
+        } catch (IOException error) {
+            error.printStackTrace();
+        }
+        //saveConfig();
+
+        ranks.remove(player);
+    }
 
     @Override
     public void onEnable() {
         setupTeams();
-        String[] foo = new String[]{ "OWNER", "ADMIN", "MODERATOR", "YOUTUBE", "TWITCH", "MVP_PLUS", "MVP", "VIP_PLUS", "VIP", "DEFAULT" };
+        String[] foo = new String[]{"OWNER", "ADMIN", "MODERATOR", "YOUTUBE", "TWITCH", "MVP_PLUS", "MVP", "VIP_PLUS", "VIP", "DEFAULT"};
         rankList.put(foo[0], 1);
         rankList.put(foo[1], 2);
         rankList.put(foo[2], 3);
@@ -167,82 +211,31 @@ public class FoxRank extends JavaPlugin implements Listener {
         instance = this;
         nick = new Nick();
         msg = new JoinLeaveMsgs();
-        getServer().getPluginManager().registerEvents(this,this);
-        getServer().getPluginManager().registerEvents(msg,this);
+        getServer().getPluginManager().registerEvents(this, this);
+        getServer().getPluginManager().registerEvents(msg, this);
 
         reloadConfig();
-        for(Player p : this.getServer().getOnlinePlayers()) {
+        for (Player p : this.getServer().getOnlinePlayers()) {
             loadRank(p);
         }
         getCommand("nick").setExecutor(nick);
     }
-    public static FoxRank getInstance(){
-        return instance;
-    }
 
     @Override
     public void onDisable() {
-        for(Player p : this.getServer().getOnlinePlayers()) {
+        for (Player p : this.getServer().getOnlinePlayers()) {
             saveRank(p);
         }
     }
 
-
-    public static void setRank(Player player, Rank rank) {
-        ranks.put(player, rank);
-        File file = new File("plugins/FoxRank/PlayerData/" + player.getUniqueId() + ".yml");
-        YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
-        yml.set("Rank", rank.getRankID());
-        try{
-            yml.save(file);
-        } catch (IOException error){
-            error.printStackTrace();
-        }
-
-    }
-
-    public static Rank getRank(Player player) {
-        return ranks.get(player);
-    }
-
-    public static void loadRank(Player player) {
-        File file = new File("plugins/FoxRank/PlayerData/" + player.getUniqueId() + ".yml");
-        YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
-        String rankID = yml.getString("Rank");
-        if (rankID != null) {
-
-        Rank rank = DUMMY.getRankFromString(rankID);
-        player.setDisplayName(rank.getPrefix() + player.getName());
-        player.setPlayerListName(rank.getPrefix() + player.getName());
-        setTeam(player, rank.getRankID());
-        setRank(player, rank);
-        } else {
-            Bukkit.getLogger().log(Level.SEVERE, "rankID is null");
-        }
-    }
-
-    public static void saveRank(Player player) {
-        File file = new File("plugins/FoxRank/PlayerData/" + player.getUniqueId() + ".yml");
-        YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
-        yml.set("Rank", getRank(player).getRankID());
-        try{
-            yml.save(file);
-        } catch (IOException error){
-            error.printStackTrace();
-        }
-        //saveConfig();
-
-        ranks.remove(player);
-    }
-
     @EventHandler
-    public void onJoin (PlayerJoinEvent event) {
+    public void onJoin(PlayerJoinEvent event) {
         Player p = event.getPlayer();
         loadRank(p);
     }
 
     @EventHandler
-    public void onLeave (PlayerQuitEvent event) {
+    public void onLeave(PlayerQuitEvent event) {
         Player p = event.getPlayer();
         saveRank(p);
     }
@@ -277,54 +270,69 @@ public class FoxRank extends JavaPlugin implements Listener {
             }
         }
     }
+
     public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
         Player player = (Player) sender;
         if (label.equalsIgnoreCase("setrank")) {
             if (sender instanceof Player) {
-                if (args.length > 1) {
-                    player.sendMessage(ChatColor.RED + "Usage /setrank <rankID>");
-                } else if(rankList.containsKey(args[0])) {
+                if (args.length < 1) {
+                    player.sendMessage(ChatColor.RED + "Usage /setrank <(player)> <rankID>");
+                } else if (args.length == 1) {
                     if (player.hasPermission("setrank.use")) {
-                        setRank(player, Rank.valueOf(args[0]));
-                        player.sendMessage("Your rank is now set to: " + ChatColor.BOLD + args[0]);
-                        loadRank(player);
+                        if (rankList.containsKey(args[0])) {
+                            setRank(player, Rank.valueOf(args[0]));
+                            player.sendMessage("Your rank is now set to: " + ChatColor.BOLD + args[0]);
+                            loadRank(player);
+                        } else {
+                            player.sendMessage(ChatColor.RED + "Invalid Rank: <OWNER/ADMIN/MODERATOR/YOUTUBE/TWITCH/MVP_PLUS/MVP/VIP_PLUS/VIP/DEFAULT>");
+                        }
                     } else {
                         player.sendMessage(ChatColor.RED + "You do not have the suitable permissions to use this command.");
                         player.sendMessage(ChatColor.RED + "Please contact a server administrator is you think this is a mistake.");
                     }
-                } else {
-                    player.sendMessage(ChatColor.RED + "Invalid Rank : <OWNER/ADMIN/MODERATOR/YOUTUBE/TWITCH/MVP_PLUS/MVP/VIP_PLUS/VIP/DEFAULT>");
+                } else if (args.length >= 2) {
+                    if (player.hasPermission("setrank.use")) {
+                        if (Bukkit.getServer().getPlayer(args[0]) != null) {
+                            if (rankList.containsKey(args[1])) {
+                                setRank(player, Rank.valueOf(args[0]));
+                                player.sendMessage(args[0] + "'s rank is now set to: " + ChatColor.BOLD + args[0]);
+                                loadRank(player);
+                         }
+                        } else {
+                            player.sendMessage(ChatColor.RED + "Invalid Rank: <OWNER/ADMIN/MODERATOR/YOUTUBE/TWITCH/MVP_PLUS/MVP/VIP_PLUS/VIP/DEFAULT>");
+                        }
+                    }
                 }
             }
-            return true;
         }
         return false;
     }
-    @EventHandler
-    public static void OnPlayerLogin(PlayerJoinEvent e){
-        Player p = e.getPlayer();
-        File file =  new File("plugins/FoxRank/PlayerData/" + p.getUniqueId() + ".yml");
-        if(!file.exists()){
+
+        @EventHandler
+        public static void OnPlayerLogin (PlayerJoinEvent e){
+            Player p = e.getPlayer();
+            File file = new File("plugins/FoxRank/PlayerData/" + p.getUniqueId() + ".yml");
+            if (!file.exists()) {
+                try {
+                    file.createNewFile();
+                } catch (IOException error) {
+                    error.printStackTrace();
+                }
+            }
+            YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
+            yml.addDefault("Name", p.getName());
+            yml.addDefault("UUID", p.getUniqueId().toString());
+            yml.addDefault("Rank", "DEFAULT");
+            yml.addDefault("Punishments", "None!");
+            yml.addDefault("isNicked", "false");
+            yml.addDefault("Nickname", p.getName());
+            yml.addDefault("Nickname-Rank", "DEFAULT");
+            yml.options().copyDefaults(true);
             try {
-                file.createNewFile();
-            } catch(IOException error){
+                yml.save(file);
+            } catch (IOException error) {
                 error.printStackTrace();
             }
-        }
-        YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
-        yml.addDefault("Name", p.getName());
-        yml.addDefault("UUID", p.getUniqueId().toString());
-        yml.addDefault("Rank", "DEFAULT");
-        yml.addDefault("Punishments", "None!");
-        yml.addDefault("isNicked", "false");
-        yml.addDefault("Nickname", p.getName());
-        yml.addDefault("Nickname-Rank", "DEFAULT");
-        yml.options().copyDefaults(true);
-        try{
-            yml.save(file);
-        } catch (IOException error){
-            error.printStackTrace();
-        }
 
+        }
     }
-}
