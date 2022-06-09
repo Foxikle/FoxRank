@@ -1,7 +1,7 @@
 name: FoxRank
 version: ${project.version}
 main: me.foxikle.foxrank.FoxRank
-api-version: 1.18
+api-version: 1.19
 prefix: FoxRank
 authors: [ Foxikle, Imperical ]
 description: Foxikle's ranks plugin
@@ -10,4 +10,5 @@ commands:
     description: Sets your rank!
   nick:
     description: Nicknames you!
-
+  vanish:
+    description: makes you vanish
