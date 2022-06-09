@@ -40,6 +40,7 @@ public class FoxRank extends JavaPlugin implements Listener {
     Map<String, Integer> rankList = new HashMap<>();
     private Nick nick;
     private JoinLeaveMsgs msg;
+    private Vanish vanish;
 
     private static void setupTeams() {
         Scoreboard board = Bukkit.getScoreboardManager().getMainScoreboard();
@@ -211,14 +212,18 @@ public class FoxRank extends JavaPlugin implements Listener {
         instance = this;
         nick = new Nick();
         msg = new JoinLeaveMsgs();
+        vanish = new Vanish();
         getServer().getPluginManager().registerEvents(this, this);
+        getServer().getPluginManager().registerEvents(vanish, this);
         getServer().getPluginManager().registerEvents(msg, this);
+
 
         reloadConfig();
         for (Player p : this.getServer().getOnlinePlayers()) {
             loadRank(p);
         }
         getCommand("nick").setExecutor(nick);
+        getCommand("vanish").setExecutor(vanish);
     }
 
     @Override
@@ -321,6 +326,7 @@ public class FoxRank extends JavaPlugin implements Listener {
             }
             YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
             yml.addDefault("Name", p.getName());
+            yml.addDefault("isVanished", false);
             yml.addDefault("UUID", p.getUniqueId().toString());
             yml.addDefault("Rank", "DEFAULT");
             yml.addDefault("Punishments", "None!");
