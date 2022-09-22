@@ -4,17 +4,35 @@
 # |  __/ _ \ \/ /    |  _  // _` | '_ \| |/ /
 # | | | (_) >  <     | | \ \ (_| | | | |   <
 # |_|  \___/_/\_\    |_|  \_\__,_|_| |_|_|\_\
-# ############################################
+#
 #
 # Welcome to the FoxRank Config file. There are a few rules when editing YML files.
 # 1. NEVER, EVER use tabs. Always use 2 spaces.
 # 2. A '#' means the line is commented out. The server will ignore the line.
-# 3. If you delete a portion of the config, you can delete the 'Config.yml' and a new one
+# 3. If you delete a portion of the config, you can delete the 'config.yml' and a new one
 #  will be automatically generated on the next server restart.
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-# Disable Join Messages disable the default yellow join messages. (Defaults to true)
+# Disable Join Messages: <true/false>. disable the default yellow join messages. (Defaults to true)
 DisableJoinMessages: true
 
-# Disable Leave Messages disable tge default yellow leave messages. (Defaults to true)
+# Disable Leave Messages: <true/false>. disable the default yellow leave messages. (Defaults to true)
 DisbaleLeaveMessages: true
+
+# DisableNicknames: <true/false>. Disables users ability to use the /nick command. (Defaults to false)
+DisableNicknames: false
+
+# NicknamePermissions: <integer>. Sets required power level to use the /nick command. (Defaults to 70)
+NicknamePermissions: 70
+
+# DisableVanish: <true/false>. Disables users ability to use the /vanish command. (Defaults to false)
+DisableVanish: false
+
+# VanishPermissions: <integer>. Sets required power level to use the /vanish command. (Defaults to 80)
+VanishPermissions: 80
+
+# DisableSetRank: <true/false>. Disables users ability to use the /setrank command. (Defaults to false)
+DisableSetRank: false
+
+# SetRankPermissions: <integer>. Sets the power level required to use the /setrank command. (Defaults to 90)
+SetRankPermissions: 90
