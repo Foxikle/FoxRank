@@ -190,6 +190,7 @@ public class FoxRank extends JavaPlugin implements Listener {
 
 
         this.saveResource("config.yml", false);
+        this.saveResource("NicknameLog.yml", false);
         instance = this;
         nick = new Nick();
         msg = new JoinLeaveMsgs();
@@ -274,6 +275,7 @@ public class FoxRank extends JavaPlugin implements Listener {
         yml.addDefault("isNicked", "false");
         yml.addDefault("Nickname", p.getName());
         yml.addDefault("Nickname-Rank", "DEFAULT");
+        yml.addDefault("Nickname-Skin", null);
         yml.options().copyDefaults(true);
         try {
             yml.save(file);
