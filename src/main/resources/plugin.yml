@@ -3,8 +3,7 @@ version: ${project.version}
 main: me.foxikle.foxrank.FoxRank
 api-version: 1.19
 prefix: FoxRank
-authors: [ Foxikle, Imperical ]
-description: Foxikle's ranks plugin
+authors: [ Foxikle ]
 commands:
   setrank:
     description: Sets your rank!
