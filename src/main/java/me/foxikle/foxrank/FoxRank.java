@@ -15,11 +15,14 @@ import org.bukkit.scoreboard.Team;
 
 import java.io.File;
 import java.io.IOException;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
 
 import static me.foxikle.foxrank.Rank.*;
+import static org.bukkit.ChatColor.*;
 
 public class FoxRank extends JavaPlugin implements Listener {
 
@@ -35,9 +38,6 @@ public class FoxRank extends JavaPlugin implements Listener {
     private static Team MvpTeam = null;
     private static Team VippTeam = null;
     private static Team VipTeam = null;
-    private Nick nick;
-    private JoinLeaveMsgs msg;
-    private Vanish vanish;
 
     private static void setupTeams() {
         Scoreboard board = Bukkit.getScoreboardManager().getMainScoreboard();
@@ -46,16 +46,16 @@ public class FoxRank extends JavaPlugin implements Listener {
             dT.setColor(ChatColor.GRAY);
             dT.setPrefix(DEFAULT.getPrefix());
             Team oT = board.registerNewTeam("ownerTeam");
-            oT.setColor(ChatColor.RED);
+            oT.setColor(RED);
             oT.setPrefix(OWNER.getPrefix());
             Team aT = board.registerNewTeam("adminTeam");
-            aT.setColor(ChatColor.RED);
+            aT.setColor(RED);
             aT.setPrefix(ADMIN.getPrefix());
             Team moT = board.registerNewTeam("moderatorTeam");
             moT.setColor(ChatColor.DARK_GREEN);
             moT.setPrefix(MODERATOR.getPrefix());
             Team yT = board.registerNewTeam("youtubeTeam");
-            yT.setColor(ChatColor.RED);
+            yT.setColor(RED);
             yT.setPrefix(YOUTUBE.getPrefix());
             Team tT = board.registerNewTeam("twitchTeam");
             tT.setColor(ChatColor.DARK_PURPLE);
@@ -191,21 +191,24 @@ public class FoxRank extends JavaPlugin implements Listener {
 
         this.saveResource("config.yml", false);
         this.saveResource("NicknameLog.yml", false);
+        this.saveResource("muteLog.yml", false);
         instance = this;
-        nick = new Nick();
-        msg = new JoinLeaveMsgs();
-        vanish = new Vanish();
         getServer().getPluginManager().registerEvents(this, this);
-        getServer().getPluginManager().registerEvents(vanish, this);
-        getServer().getPluginManager().registerEvents(msg, this);
+        getServer().getPluginManager().registerEvents(new Vanish(), this);
+        getServer().getPluginManager().registerEvents(new JoinLeaveMsgs(), this);
         reloadConfig();
         for (Player p : this.getServer().getOnlinePlayers()) {
             loadRank(p);
             actionBar.setupActionBar(p);
         }
-        getCommand("nick").setExecutor(nick);
-        getCommand("vanish").setExecutor(vanish);
+        getCommand("nick").setExecutor(new Nick());
+        getCommand("vanish").setExecutor(new Vanish());
         getCommand("setrank").setExecutor(new setRank());
+        getCommand("mute").setExecutor(new Mute());
+        getCommand("me").setExecutor(new Mute());
+        getCommand("say").setExecutor(new Mute());
+        getCommand("immuted").setExecutor(new Mute());
+        getCommand("unmute").setExecutor(new Mute());
     }
 
     @Override
@@ -236,6 +239,35 @@ public class FoxRank extends JavaPlugin implements Listener {
         File file = new File("plugins/FoxRank/PlayerData/" + player.getUniqueId() + ".yml");
         YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
 
+        if(isMuted(player)){
+            Instant date = Instant.parse(yml.getString("MuteDuration"));
+            Instant now = Instant.now();
+            if(date.isBefore(now)){
+                yml.set("isMuted", false);
+                player.sendMessage(GREEN + "You are no longer muted!");
+                try {
+                    yml.save(file);
+                } catch (IOException ex) {
+                    Bukkit.getLogger().log(Level.SEVERE, "Could not save " + player.getUniqueId() + "'s Mute status at line 248 in FoxRank.java");
+                }
+            } else {
+                Instant temp = date;
+                long days = ChronoUnit.DAYS.between(now, temp);
+                temp = temp.minusSeconds(days * 24 * 60 * 60);
+                long hours = ChronoUnit.HOURS.between(now, temp);
+                temp = temp.minusSeconds(hours * 60 * 60);
+                long minutes = ChronoUnit.MINUTES.between(now, temp);
+                temp = temp.minusSeconds(minutes* 60);
+                long seconds = ChronoUnit.SECONDS.between(now, temp);
+
+                String border = RED + "" + UNDERLINE + "_____________________________________________________________________";
+                player.sendMessage(border);
+                player.sendMessage(RED + "\nYou are currently muted for " + yml.get("MuteReason"));
+                player.sendMessage(GRAY + "Your mute will expire in " + RED + buildExpireString(days, hours, minutes, seconds));
+                player.sendMessage(border);
+                return;
+            }
+        }
 
         if (yml.getString("isNicked").equals("true")) {
             if (getRankFromString(yml.getString("Nickname-Rank")) == DEFAULT) {
@@ -255,6 +287,22 @@ public class FoxRank extends JavaPlugin implements Listener {
             }
         }
     }
+    private String buildExpireString(long d, long h, long m, long s) {
+    String str = "";
+    if(d != 0){
+        str = str + d + "d ";
+    }
+    if (h != 0) {
+        str = str + h + "h ";
+    }
+    if (m != 0) {
+        str = str + m + "m ";
+    }
+    if(s != 0){
+        str = str + s + "s";
+    }
+        return str;
+    }
 
     @EventHandler
     public static void OnPlayerLogin(PlayerJoinEvent e) {
@@ -273,9 +321,12 @@ public class FoxRank extends JavaPlugin implements Listener {
         yml.addDefault("Rank", "DEFAULT");
         yml.addDefault("isVanished", false);
         yml.addDefault("isNicked", "false");
+        yml.addDefault("isMuted", "false");
+        yml.addDefault("MuteDuration", "");
+        yml.addDefault("MuteReason", "");
         yml.addDefault("Nickname", p.getName());
         yml.addDefault("Nickname-Rank", "DEFAULT");
-        yml.addDefault("Nickname-Skin", null);
+        yml.addDefault("Nickname-Skin", "");
         yml.options().copyDefaults(true);
         try {
             yml.save(file);
@@ -303,5 +354,62 @@ public class FoxRank extends JavaPlugin implements Listener {
         if (yml.getString("isNicked").equals("true")) return true;
 
         return false;
+    }
+    public boolean isMuted(Player player){
+        File file = new File("plugins/FoxRank/PlayerData/" + player.getUniqueId() + ".yml");
+        YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
+
+        if (yml.getString("isMuted").equals("true")) return true;
+
+        return false;
+    }
+
+    public String getMuteReason(Player player){
+        File file = new File("plugins/FoxRank/PlayerData/" + player.getUniqueId() + ".yml");
+        YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
+        return yml.getString("MuteReason");
+    }
+    public Instant getMuteDuration(Player player){
+        File file = new File("plugins/FoxRank/PlayerData/" + player.getUniqueId() + ".yml");
+        YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
+        return Instant.parse(yml.getString("MuteDuration"));
+    }
+    public void mutePlayer(RankedPlayer rp, Instant duration, String reason){
+        File file = new File("plugins/FoxRank/PlayerData/" + rp.getUniqueId() + ".yml");
+        YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
+        yml.set("isMuted", true);
+        yml.set("muteDuration", duration);
+        yml.set("muteReason", reason);
+        addMuteLogEntry(rp.getUniqueId() + " Was muted at " + Instant.now() + "for " + reason + ", they will be muted until " + duration);
+        try {
+            yml.save(file);
+        } catch (IOException e) {
+            Bukkit.getLogger().log(Level.SEVERE, "Could not save " + rp.getUniqueId() + "'s Mute status at line 384 in FoxRank.java");
+            e.printStackTrace();
+
+        }
+    }
+    public void unmutePlayer(RankedPlayer rp){
+        File file = new File("plugins/FoxRank/PlayerData/" + rp.getUniqueId() + ".yml");
+        YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
+        yml.set("isMuted", false);
+        addMuteLogEntry(rp.getUniqueId() + " Was unmuted at " + Instant.now());
+        try {
+            yml.save(file);
+        } catch (IOException e) {
+            Bukkit.getLogger().log(Level.SEVERE, "Could not save " + rp.getUniqueId() + "'s Mute status at line 384 in FoxRank.java");
+            e.printStackTrace();
+
+        }
+    }
+    void addMuteLogEntry(String entry){
+        File file = new File("plugins/FoxRank/muteLog.yml");
+        YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
+        yml.createSection(entry);
+        try {
+            yml.save(file);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 }
