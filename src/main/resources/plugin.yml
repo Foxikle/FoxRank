@@ -11,3 +11,11 @@ commands:
     description: Nicknames you!
   vanish:
     description: makes you vanish
+  mute:
+    description: Mutes a player from talking in chat.
+  me:
+  say:
+  immuted:
+    description: A command to notify a player if you are muted.
+  unmute:
+    description: A command to unmute a player.

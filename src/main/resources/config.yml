@@ -17,34 +17,43 @@
 DisableJoinMessages: true
 
 # Disable Leave Messages: <true/false>. disable the default yellow leave messages. (Defaults to true)
-DisbaleLeaveMessages: true
+DisableLeaveMessages: true
 
 # DisableNicknames: <true/false>. Disables users ability to use the /nick command. (Defaults to true)
 DisableNicknames: false
 
-# NicknamePermissions: <integer>. Sets required power level to use the /nick command. (Defaults to 70)
-NicknamePermissions: 70
-
 # DisableVanish: <true/false>. Disables users ability to use the /vanish command. (Defaults to false)
 DisableVanish: false
-
-# VanishPermissions: <integer>. Sets required power level to use the /vanish command. (Defaults to 80)
-VanishPermissions: 80
 
 # DisableSetRank: <true/false>. Disables users ability to use the /setrank command. (Defaults to false)
 DisableSetRank: false
 
+# DisableMute: <true/false>. Disables users ability to use the /mute command. (Defaults to false)
+DisableMute: false
+
+# MutePermissions <integer> Sets the power level required to use the /mute command. (Defaults to 80)
+MutePermissions: 80
+
+# UnmutePermissions <integer> Sets the power level required to use the /unmute command. (Defaults to 80)
+UnmutePermissions: 80
+
 # SetRankPermissions: <integer>. Sets the power level required to use the /setrank command. (Defaults to 90)
 SetRankPermissions: 90
 
+# VanishPermissions: <integer>. Sets required power level to use the /vanish command. (Defaults to 80)
+VanishPermissions: 80
+
+# NicknamePermissions: <integer>. Sets required power level to use the /nick command. (Defaults to 70)
+NicknamePermissions: 70
+
 # BlacklistedNicknames: []. A list of dissallowed nicknames. MUST BE IN LOWERCASE (Defaults to ["md_5"])
-BlacklistedNicknames: ["md_5"]
+BlacklistedNicknames: ["md_5", "foxikle"]
 
 # DisableNicknameLogging: <true/false>. Disables logging nicknames. (Defaults to false)
 DisableNicknameLogging: false
 
 # RandomNicknameList: [] A list of nicknames that are used if a player chooses a random nickname
-RandomNicknameList: ["FelidCynical", "YumClambake", "GuyFailSafe", "PrecisePlane", "StewardSpotlight", "ProfuseEnchant", "FlatterChannel", "TheRealRisk", "ThePlotSuck", "HDXetol", "CupsStated", "GuidedNibble", "BefriendLust", "Raticicle", "Foxkall", "ShrewLoaf", "GallantBooed", "JangleStore", "FeedBackFrail", "FoxCounsel", "SoulMateDark", "HaggardOpen", "BabyishStallion", "TrickleThis", "RugOinks", "IamFin", "DelSay", "BroadCastSister", "TradeTeeth", "SequoiaSettler"]
+RandomNicknameList: ["KoolKid", "FelidCynical", "YumClambake", "GuyFailSafe", "PrecisePlane", "StewardSpotlight", "ProfuseEnchant", "FlatterChannel", "TheRealRisk", "ThePlotSuck", "HDXetol", "CupsStated", "GuidedNibble", "BefriendLust", "Raticicle", "Foxkall", "ShrewLoaf", "GallantBooed", "JangleStore", "FeedBackFrail", "FoxCounsel", "SoulMateDark", "HaggardOpen", "BabyishStallion", "TrickleThis", "RugOinks", "IamFin", "DelSay", "BroadCastSister", "TradeTeeth", "SequoiaSettler"]
 
 # RandomSkinValueList: [] A list of skins for players to use while using a random skin.
 RandomSkinValueList: ["ewogICJ0aW1lc3RhbXAiIDogMTY2NjIyMDAzNDU0OSwKICAicHJvZmlsZUlkIiA6ICJlZjVjZjkzYWFhMTY0ZTMyODQ4NDYxYjIzNGQ1YWJhNiIsCiAgInByb2ZpbGVOYW1lIiA6ICJfXzciLAogICJzaWduYXR1cmVSZXF1aXJlZCIgOiB0cnVlLAogICJ0ZXh0dXJlcyIgOiB7CiAgICAiU0tJTiIgOiB7CiAgICAgICJ1cmwiIDogImh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvMTNhMDBhMWYxYTIzMmUzODExZGU2ZjhmYWI4YzY1M2Q1NzI4MjllMzA0ODM0OTQyNjk2N2M3ZjNmNWVmZDVkNiIKICAgIH0KICB9Cn0==", "ewogICJ0aW1lc3RhbXAiIDogMTY2NjIxODA2Njg0NCwKICAicHJvZmlsZUlkIiA6ICI4ZjZmYTgxOGU5NmM0OWVlOTRhMTgyNTY0MjE4ODJmZiIsCiAgInByb2ZpbGVOYW1lIiA6ICJSaXZrYXQiLAogICJzaWduYXR1cmVSZXF1aXJlZCIgOiB0cnVlLAogICJ0ZXh0dXJlcyIgOiB7CiAgICAiU0tJTiIgOiB7CiAgICAgICJ1cmwiIDogImh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvM2Y4MmJlMmJmNjU3ZGQ5ODg0NzRhOTBkNzFjMTNiZWM5N2IzYmE4NGNjYzE3MGJhZjVlYTMyOTlkYmIyMGVmMiIKICAgIH0KICB9Cn0=", "ewogICJ0aW1lc3RhbXAiIDogMTY2NjIxNzk0OTY3MiwKICAicHJvZmlsZUlkIiA6ICJmNThkZWJkNTlmNTA0MjIyOGY2MDIyMjExZDRjMTQwYyIsCiAgInByb2ZpbGVOYW1lIiA6ICJ1bnZlbnRpdmV0YWxlbnQiLAogICJzaWduYXR1cmVSZXF1aXJlZCIgOiB0cnVlLAogICJ0ZXh0dXJlcyIgOiB7CiAgICAiU0tJTiIgOiB7CiAgICAgICJ1cmwiIDogImh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvZTMzNWQzMjI0NDI2MzI3YmRiMGY0OTRkZDNmMzUxMmIyOGMwNDg4MWFmOTA3OTJiODg3ODdmZjQ5ZWYyZTBmMSIsCiAgICAgICJtZXRhZGF0YSIgOiB7CiAgICAgICAgIm1vZGVsIiA6ICJzbGltIgogICAgICB9CiAgICB9CiAgfQp9", "ewogICJ0aW1lc3RhbXAiIDogMTY2NjIxNjMyNjQzOCwKICAicHJvZmlsZUlkIiA6ICIxOTQzY2VmYzM4NWM0YTJjYWJiZGViODBjZTIwM2RjZSIsCiAgInByb2ZpbGVOYW1lIiA6ICJzb29vb29vb29vb29vb29wIiwKICAic2lnbmF0dXJlUmVxdWlyZWQiIDogdHJ1ZSwKICAidGV4dHVyZXMiIDogewogICAgIlNLSU4iIDogewogICAgICAidXJsIiA6ICJodHRwOi8vdGV4dHVyZXMubWluZWNyYWZ0Lm5ldC90ZXh0dXJlLzg3NGY2OGU3NmVjYzAyNzM2YjY5MjY2N2M1MzQzYTNmNTAyNjZmNjIwM2VmY2NkYjU1MWE1M2RiZGY0ZTYzNzIiCiAgICB9CiAgfQp9", "ewogICJ0aW1lc3RhbXAiIDogMTY2NjIxMzYxODEwNiwKICAicHJvZmlsZUlkIiA6ICIxNjczZWExMjczZjk0ZDVhOGMzYTY2YWM0OWI3Y2QwNyIsCiAgInByb2ZpbGVOYW1lIiA6ICJFdWdlbmVfUmljaHRlciIsCiAgInNpZ25hdHVyZVJlcXVpcmVkIiA6IHRydWUsCiAgInRleHR1cmVzIiA6IHsKICAgICJTS0lOIiA6IHsKICAgICAgInVybCIgOiAiaHR0cDovL3RleHR1cmVzLm1pbmVjcmFmdC5uZXQvdGV4dHVyZS80NmJhZTA1Yjk1YmRlY2EyOTQ3OTkwNTM1OTQ3MTg5YjlhMGM5MTVjZDU4M2I0YjEyZmVjMDg1NmI4Y2JlOGJhIgogICAgfQogIH0KfQ==", "ewogICJ0aW1lc3RhbXAiIDogMTY2NjIxMjI4ODQ2MywKICAicHJvZmlsZUlkIiA6ICJmMjc0YzRkNjI1MDQ0ZTQxOGVmYmYwNmM3NWIyMDIxMyIsCiAgInByb2ZpbGVOYW1lIiA6ICJIeXBpZ3NlbCIsCiAgInNpZ25hdHVyZVJlcXVpcmVkIiA6IHRydWUsCiAgInRleHR1cmVzIiA6IHsKICAgICJTS0lOIiA6IHsKICAgICAgInVybCIgOiAiaHR0cDovL3RleHR1cmVzLm1pbmVjcmFmdC5uZXQvdGV4dHVyZS8yMzg5YmNhOWI3MTlkZjA2ZjBlYzY5YWM0NmNjNmNlYTc5ODVkZjQ4YzlkOTM4NzQ5YzJjMmNjOTc3ZmNhZjk0IgogICAgfQogIH0KfQ=="]
