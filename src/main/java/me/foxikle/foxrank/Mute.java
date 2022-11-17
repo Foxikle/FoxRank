@@ -92,6 +92,7 @@ public class Mute implements CommandExecutor {
                                             } catch (IOException error) {
                                                 Bukkit.getLogger().log(Level.SEVERE, "ERROR could not save " + player.getName() + "'s Muted state.");
                                             }
+                                            FoxRank.getInstance().addMuteLogEntry(rp.getUniqueId() + " Was muted at " + Instant.now() + "for " + reason + ", they will be muted until " + yml.get("MuteDuration"));
                                         }
                                     } else {
                                         rp.sendMessage(RED + "This player is already muted!");
