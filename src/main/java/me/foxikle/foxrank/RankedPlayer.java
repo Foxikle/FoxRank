@@ -4,6 +4,9 @@ import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
 
+import java.time.Instant;
+import java.util.UUID;
+
 public class RankedPlayer implements CustomPlayer{
     private Player player;
     private Rank rank;
@@ -42,7 +45,7 @@ public class RankedPlayer implements CustomPlayer{
      @return boolean true if online otherwise false
      **/
     public boolean isOnline() {
-        return Bukkit.getOfflinePlayer(this.getName()).isOnline();
+        return Bukkit.getOfflinePlayer(this.player.getUniqueId()).isOnline();
     }
 
     /**
@@ -64,6 +67,7 @@ public class RankedPlayer implements CustomPlayer{
     }
     /**
      Sets the player's rank
+     @param rank Rank to set the player's rank
      **/
     @Override
     public void setRank(Rank rank) {
@@ -109,6 +113,31 @@ public class RankedPlayer implements CustomPlayer{
         return FoxRank.instance.isVanished(this.getPlayer());
     }
 
+    /**
+     Get if the player is muted
+
+     @return boolean if the player is muted
+     **/
+    @Override
+    public boolean isMuted() {
+        return FoxRank.instance.isMuted(this.getPlayer());
+    }
+
+    @Override
+    public UUID getUniqueId() {
+        return this.player.getUniqueId();
+    }
+
+    @Override
+    public void mutePlayer(Instant duration, String reason) {
+        FoxRank.getInstance().mutePlayer(this, duration, reason);
+    }
+
+    @Override
+    public void unmutePlayer() {
+        FoxRank.getInstance().unmutePlayer(this);
+    }
+
     @Override
     public String getRankId() {
         return FoxRank.getRank(this.player).getRankID();
@@ -116,11 +145,35 @@ public class RankedPlayer implements CustomPlayer{
 
 
     /**
-     Get the current player's location
+     Get the player's current location
 
      @return Location the current player's location
      **/
     public Location getLocation() {
         return this.getPlayer().getLocation();
+    }
+
+    /**
+     Gets the player's last mute reason.
+     NOTE: This is LAST mute reason, even if the player is NOT muted.
+     @return String last mute reason
+     **/
+    @Override
+    public String getMuteReason() {
+        return FoxRank.getInstance().getMuteReason(this.player);
+    }
+
+    /**
+     Gets the player's last mute duration.
+     NOTE: This is LAST mute duration, even if the player is NOT muted.
+     @return Instant last mute duration
+     **/
+    @Override
+    public Instant getMuteDuration() {
+        return FoxRank.instance.getMuteDuration(this.player);
+    }
+
+    public void sendMessage(String message){
+        this.player.sendMessage(message);
     }
 }
