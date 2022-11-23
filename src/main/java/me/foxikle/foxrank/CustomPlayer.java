@@ -28,4 +28,5 @@ public interface CustomPlayer{
     public String getMuteReason();
 
     public Instant getMuteDuration();
+    public String getFormattedMuteDuration();
 }

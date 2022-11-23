@@ -145,9 +145,9 @@ public class RankedPlayer implements CustomPlayer{
 
 
     /**
-     Get the player's current location
-
-     @return Location the current player's location
+     * Get the player's current location
+     *
+     * @return Location the current player's location
      **/
     public Location getLocation() {
         return this.getPlayer().getLocation();
@@ -171,6 +171,15 @@ public class RankedPlayer implements CustomPlayer{
     @Override
     public Instant getMuteDuration() {
         return FoxRank.instance.getMuteDuration(this.player);
+    }
+
+    /**Gets a formatted string of when the player's mute will expire.
+     * If the player is not muted will return `0s`.
+     * @return String Formatted until mute expires.
+     */
+    @Override
+    public String getFormattedMuteDuration() {
+        return FoxRank.getInstance().getFormattedExpiredString(this.getMuteDuration());
     }
 
     public void sendMessage(String message){
