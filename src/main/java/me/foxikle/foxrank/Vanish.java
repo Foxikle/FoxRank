@@ -27,7 +27,7 @@ public class Vanish implements CommandExecutor, Listener {
                         File file = new File("plugins/FoxRank/PlayerData/" + player.getUniqueId() + ".yml");
                         YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
                         if (yml.getString("isVanished").equals("true")) {
-                            player.sendMessage(ChatColor.YELLOW + "You materialized out of the ether!");
+                            player.sendMessage(ChatColor.translateAlternateColorCodes('§', FoxRank.getInstance().getConfig().getString("UnvanishMessage")));
                             yml.set("isVanished", false);
                             try {
                                 yml.save(file);
@@ -42,7 +42,8 @@ public class Vanish implements CommandExecutor, Listener {
 
                         } else if (yml.getString("isVanished").equals("false")) {
                             yml.set("isVanished", true);
-                            player.sendMessage(ChatColor.YELLOW + "You vanished into the shadows.");
+                            player.sendMessage(ChatColor.translateAlternateColorCodes('§', FoxRank.getInstance().getConfig().getString("VanishMessage")));
+
                             for (Player p : Bukkit.getOnlinePlayers()) {
                                 p.hidePlayer(FoxRank.getInstance(), player);
                             }
@@ -53,14 +54,11 @@ public class Vanish implements CommandExecutor, Listener {
                             }
                         }
                     } else {
-                        player.sendMessage(ChatColor.RED + "You must have a power level of " + FoxRank.getInstance().getConfig().getInt("VanishPermissions") + " or higher to use this command.");
-                        player.sendMessage(ChatColor.RED + "Please contact a server administrator is you think this is a mistake.");
+                        FoxRank.getInstance().sendNoPermissionMessage(FoxRank.getInstance().getConfig().getInt("VanishPermissions"), rp);
                     }
-                } else {
-                    sender.sendMessage(ChatColor.RED + "You cannot do this!");
                 }
             } else {
-                sender.sendMessage(ChatColor.RED + "This command is currently disabled.");
+                sender.sendMessage(ChatColor.translateAlternateColorCodes('§', FoxRank.getInstance().getConfig().getString("CommandDisabledMessage")));
             }
         }
         return false;
@@ -71,9 +69,9 @@ public class Vanish implements CommandExecutor, Listener {
         for (Player p1 : Bukkit.getOnlinePlayers()) {
             File file1 = new File("plugins/FoxRank/PlayerData/" + p1.getUniqueId() + ".yml");
             YamlConfiguration yml1 = YamlConfiguration.loadConfiguration(file1);
-            if (yml1.getString("isVanished").equals("true")) {
+            if (yml1.getBoolean("isVanished")) {
                 for (Player p : Bukkit.getOnlinePlayers()) {
-                    p1.showPlayer(FoxRank.getInstance(), p);
+                    p.hidePlayer(FoxRank.getInstance(), p1);
                 }
             }
         }
