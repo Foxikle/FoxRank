@@ -30,8 +30,6 @@ import java.util.List;
 import java.util.Random;
 import java.util.logging.Level;
 
-import static org.bukkit.ChatColor.*;
-
 public class Nick implements CommandExecutor {
     public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
         if (label.equalsIgnoreCase("nick")) {
@@ -194,18 +192,18 @@ public class Nick implements CommandExecutor {
                             }
                         }
                     } else {
-                        player.sendMessage(ChatColor.RED + "You do not have the suitable permissions to use this command.");
+                        FoxRank.getInstance().sendNoPermissionMessage(FoxRank.getInstance().getConfig().getInt("NicknamePermissions"), rp);
                     }
                 }
                 return true;
             } else {
-                sender.sendMessage(RED + "This command is currently disabled.");
+                sender.sendMessage(ChatColor.translateAlternateColorCodes('§', FoxRank.getInstance().getConfig().getString("CommandDisabledMessage")));
             }
         }
         return false;
     }
 
-    public static void openRankBook(Player player) {
+    protected static void openRankBook(Player player) {
 
         ItemStack book = new ItemStack(Material.WRITTEN_BOOK);
         BookMeta meta = (BookMeta) book.getItemMeta();
@@ -253,7 +251,7 @@ public class Nick implements CommandExecutor {
         meta.spigot().addPage(pages);
 
         meta.setTitle("Nickname Book");
-        meta.setAuthor("Emperical");
+        meta.setAuthor("FoxRank");
         book.setItemMeta(meta);
         book.setItemMeta(meta);
 
@@ -261,7 +259,7 @@ public class Nick implements CommandExecutor {
 
     }
 
-    public static void openWarningBook(Player player) {
+    protected static void openWarningBook(Player player) {
 
         ItemStack book = new ItemStack(Material.WRITTEN_BOOK);
         BookMeta meta = (BookMeta) book.getItemMeta();
@@ -287,7 +285,7 @@ public class Nick implements CommandExecutor {
         player.openBook(book);
     }
 
-    public static void openNameBook(Player player) {
+    protected static void openNameBook(Player player) {
 
         ItemStack nickbook1 = new ItemStack(Material.WRITTEN_BOOK);
         BookMeta meta = (BookMeta) nickbook1.getItemMeta();
@@ -314,7 +312,7 @@ public class Nick implements CommandExecutor {
         player.openBook(nickbook1);
     }
 
-    public static void openSkinBook(Player player) {
+    protected static void openSkinBook(Player player) {
 
         ItemStack book = new ItemStack(Material.WRITTEN_BOOK);
         BookMeta meta = (BookMeta) book.getItemMeta();
@@ -355,7 +353,7 @@ public class Nick implements CommandExecutor {
         player.openBook(book);
     }
 
-    public static void changeName(String name, Player player) {
+    protected static void changeName(String name, Player player) {
         if (name.length() <= 16) {
             CraftPlayer craftPlayer = (CraftPlayer) player;
             ServerPlayer sp = craftPlayer.getHandle();
@@ -373,14 +371,19 @@ public class Nick implements CommandExecutor {
             player.setPlayerListName(name);
             player.setCustomName(player.getName());
 
+            String message = FoxRank.getInstance().getConfig().getString("NickNameChangedMessage");
+            message = message.replace("NEWNICK", name);
+            player.sendMessage(ChatColor.translateAlternateColorCodes('§', message));
             refreshPlayer(player);
 
         } else {
-            player.sendMessage(ChatColor.RED + "Your nickname cannot be longer than 16 characters");
+            String message = FoxRank.getInstance().getConfig().getString("NicknameTooLongMessage");
+            message = message.replace("NICKNAME", name);
+            player.sendMessage(ChatColor.translateAlternateColorCodes('§', message));
         }
     }
 
-    public static void changeSkin(Player player, String skin) {
+    protected static void changeSkin(Player player, String skin) {
         GameProfile profile = ((CraftPlayer) player).getHandle().getGameProfile();
 
         profile.getProperties().removeAll("textures");
@@ -388,7 +391,7 @@ public class Nick implements CommandExecutor {
         refreshPlayer(player);
     }
 
-    public static void refreshPlayer(Player player) {
+    protected static void refreshPlayer(Player player) {
         for (Player p : Bukkit.getOnlinePlayers()) {
             ServerPlayer sp = ((CraftPlayer) p).getHandle();
             ServerGamePacketListenerImpl connection = sp.connection;
@@ -411,16 +414,13 @@ public class Nick implements CommandExecutor {
             JsonObject property = new JsonParser().parse(reader2).getAsJsonObject().get("properties").getAsJsonArray().get(0).getAsJsonObject();
             String value = property.get("value").getAsString();
             String signature = property.get("signature").getAsString();
-            System.out.println("Name was valid");
             return new Property("textures", value, signature);
         } catch (Exception e) {
-            System.out.println("Name was invalid");
-
             return new Property("textures", "ewogICJ0aW1lc3RhbXAiIDogMTYyMjAwNzA2NTgyNiwKICAicHJvZmlsZUlkIiA6ICJjOTAzOGQzZjRiMTg0M2JiYjUwNTU5ZGE3MWFjMTk2MiIsCiAgInByb2ZpbGVOYW1lIiA6ICJUQk5SY29vbGNhdCIsCiAgInNpZ25hdHVyZVJlcXVpcmVkIiA6IHRydWUsCiAgInRleHR1cmVzIiA6IHsKICAgICJTS0lOIiA6IHsKICAgICAgInVybCIgOiAiaHR0cDovL3RleHR1cmVzLm1pbmVjcmFmdC5uZXQvdGV4dHVyZS8zYjA1ZjJlYjM1MmY2YzJlNWM5MThjNzQ4MjU2ZDIzMWFjNzEyODE5NDhlNWFmNzRkMTQ2YTg4ZDc3NTBmNDkwIgogICAgfQogIH0KfQ==", "YpxtT6K8I3+nVvc2fr0m3CLyi2FcuMCIFNK7Z233P0LUWdTlmvQazHSXbpGe2LWBwGAF3snKry9UAuPSYHWWfJ1ygOWrqeyDeM3JT6Cv+QAmqFj3NJZbXF2NP9a1csH2v8hgQvvhJV1hLukGTu301zQnKBiZoYk8tKuFbfqwIXdKevyDoc0dTo9P91O7ZychEFOjKiEWbetQWhOpzwzGOnaynToeC8WkSvoQ3vzuhtEx3emjVzcGGGozkeGTygbeny9kDtBGXzBQJ7uEui8XtaXRwSoQj2cUMQ0KNsQNRNdo9I1BymYvxxqxJtc8AnW2ubccXMxWlABNIGgX5mrbKMOlRa/y1y/zDK1hbA9beQUm7ljP38O4eMUrFkAYkNNoOnFQrmAddofhpqDtJPwSk/rYlALl61qPqk3t9xKcR2b3Vi/gnV/r8pG0B3oo3KFZVJ6qzXVE/rmh/bfRL5HMJX5lZ+NCCvi3eo9ckJjQDdHOo8fgvAxvwBqNvdHCceioR7XgWOpAFr0Ns6MNsJIYFoiMscQQj0OI694MdtOnmQSTuozlm/oBxObiFfR4fsOW3oH2xS/HzrF3S6U3ydY0AmpBvEv7IJOJEwOoHFd2kNKnD7vOT0+jllk9D06dnB0euDiuIhRZgY6d2UXoeR/bFxD3XLndjuG7oBZcFxq0+18=");
         }
     }
 
-    public static void createAnvil(Player p) {
+    protected static void createAnvil(Player p) {
         new AnvilGUI.Builder()
                 .onClose(player -> {
                 })
@@ -440,8 +440,6 @@ public class Nick implements CommandExecutor {
                 })
                 .text(p.getName())
                 .itemLeft(new ItemStack(Material.NAME_TAG))
-                .onLeftInputClick(player -> player.sendMessage(" "))
-                .onRightInputClick(player -> player.sendMessage(" "))
                 .title("Enter your nickname.")
                 .plugin(FoxRank.getInstance())
                 .open(p);
@@ -461,15 +459,16 @@ public class Nick implements CommandExecutor {
             changeName(name, player);
             FoxRank.setTeam(player, yml.getString("Nickname-Rank"));
             addLogEntry(player);
-            player.sendMessage(ChatColor.GREEN + "Your nickname has been set to " + ChatColor.BOLD + name);
         } else {
-         player.sendMessage(RED + "The nickname " + name + " is blacklisted.");
+            String message = FoxRank.getInstance().getConfig().getString("BlacklistedNicknameMessage");
+            message = message.replace("BLACKLISTEDNAME", name);
+            player.sendMessage(ChatColor.translateAlternateColorCodes('§', message));
         }
     }
     private static void addLogEntry(Player player){
         File file = new File("plugins/FoxRank/NicknameLog.yml");
         YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
-        yml.options().configuration().createSection(player.getUniqueId().toString() + "'s Nickname is: " + player.getName());
+        yml.options().configuration().createSection(player.getUniqueId() + "'s Nickname is: " + player.getName());
         try{
             yml.save(file);
         } catch (IOException error){
