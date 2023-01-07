@@ -1,6 +1,7 @@
 package me.foxikle.foxrank;
 
 import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -8,14 +9,10 @@ import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 
 import java.io.File;
-import java.io.IOException;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
-import java.util.logging.Level;
-
-import static org.bukkit.ChatColor.*;
 
 public class Mute implements CommandExecutor {
     public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
@@ -31,7 +28,8 @@ public class Mute implements CommandExecutor {
                             RankedPlayer rp = new RankedPlayer(player);
                             RankedPlayer mrp = new RankedPlayer(mutee);
                             if (mrp.getPowerLevel() >= rp.getPowerLevel()) {
-                                rp.sendMessage(RED + "You cannot mute a player with a higher or equal power level.");
+                                rp.sendMessage(ChatColor.translateAlternateColorCodes('§', FoxRank.getInstance().getConfig().getString("MutePlayerWithHigherPowerLevelMessage")));
+
                             } else {
                                 if (rp.getPowerLevel() >= FoxRank.getInstance().getConfig().getInt("MutePermissions")) {
                                     File file = new File("plugins/FoxRank/PlayerData/" + mutee.getUniqueId() + ".yml");
@@ -54,35 +52,33 @@ public class Mute implements CommandExecutor {
                                                 expires = new Date().toInstant().plusSeconds((long) durInt * 60);
                                             }
                                         } else {
-                                            rp.sendMessage(RED + args[1] + " is not a valid duration. Ex. `1d`, `6h`, `30m`");
+                                            FoxRank.getInstance().sendInvalidArgsMessage(args[1] + "Ex. `1d`, `6h`, `30m`", rp);
                                             return false;
                                         }
                                         if (args.length >= 3) {
                                             ArrayList<String> list = new ArrayList<>(Arrays.asList(args));
-                                            list.remove(1); //removes the player's name from the reason
-                                            list.remove(0); // removes the duration from the reason string
+                                            list.remove(1);
+                                            list.remove(0);
                                             reason = String.join(" ", list);
                                             mrp.mutePlayer(expires, reason);
                                         }
                                     } else {
-                                        rp.sendMessage(RED + "This player is already muted!");
+                                        player.sendMessage(ChatColor.translateAlternateColorCodes('§', FoxRank.getInstance().getConfig().getString("MuteCommandPlayerAlreadyMuted").replace("PLAYER", mrp.getName())));
                                     }
                                 } else {
-                                    player.sendMessage(RED + "You must have a power level of " + FoxRank.getInstance().getConfig().getInt("MutePermissions") + " or higher to use this command.");
-                                    player.sendMessage(RED + "Please contact a server administrator is you think this is a mistake.");
+                                    FoxRank.getInstance().sendNoPermissionMessage(FoxRank.getInstance().getConfig().getInt("MutePermissions"), rp);
                                 }
                             }
                         } else {
-                            sender.sendMessage(RED + "You need to specify a valid player!");
+                            FoxRank.getInstance().sendInvalidArgsMessage("You must specify a valid player.", new RankedPlayer(((Player) sender).getPlayer()));
+
                         }
                     } else {
-                        sender.sendMessage(RED + "Missing arguments! /mute <player> <duration> [reason]");
+                        FoxRank.getInstance().sendMissingArgsMessage("/mute", "<player> <duration> [reason]", new RankedPlayer((Player) sender));
                     }
-                } else {
-                    sender.sendMessage(RED + "You cannot do this!");
                 }
             } else {
-                sender.sendMessage(RED + "This command is currently disabled.");
+                sender.sendMessage(ChatColor.translateAlternateColorCodes('§', FoxRank.getInstance().getConfig().getString("CommandDisabledMessage")));
             }
         } else if (label.equalsIgnoreCase("me")) {
             if (sender instanceof Player player) {
@@ -96,46 +92,72 @@ public class Mute implements CommandExecutor {
             return false;
         }
         if (label.equalsIgnoreCase("immuted")) {
-            if (sender instanceof Player player) {
-                if (!FoxRank.getInstance().isMuted(player)) {
-                    player.sendMessage(RED + "You are not currently muted.");
-                } else if (args.length >= 1) {
-                    if (Bukkit.getPlayerExact(args[0]) != null) {
-                        Player receiver = Bukkit.getPlayerExact(args[0]);
-                        receiver.sendMessage(LIGHT_PURPLE + "from " + FoxRank.getRank(player).getPrefix() + player.getName() + RESET + ": " + YELLOW + "Hey! I'm unable to chat right now because I'm currently muted.");
-                        player.sendMessage(LIGHT_PURPLE + "to " + FoxRank.getRank(receiver).getPrefix() + receiver.getName() + RESET + ": " + YELLOW + "Hey! I'm unable to chat right now because I'm currently muted.");
-                    }
-                } else {
-                    player.sendMessage(RED + "Missing arguments! /immuted <player>");
-                }
-                return true;
-            } else {
-                sender.sendMessage(RED + "You cannot do this!");
-            }
-        } else if (label.equalsIgnoreCase("unmute")) {
-            if (sender instanceof Player player) {
-                RankedPlayer rp = new RankedPlayer(player);
-                if (rp.getPowerLevel() >= FoxRank.getInstance().getConfig().getInt("UnmutePermissions")) {
-                    if (args.length >= 1) {
+            if (!FoxRank.getInstance().getConfig().getBoolean("DisableImMuted")) {
+                if (sender instanceof Player player) {
+                    if (!FoxRank.getInstance().isMuted(player)) {
+                        player.sendMessage(ChatColor.translateAlternateColorCodes('§', FoxRank.getInstance().getConfig().getString("ImmutedCommandNotMutedMessage")));
+
+                    } else if (args.length >= 1) {
                         if (Bukkit.getPlayerExact(args[0]) != null) {
                             Player receiver = Bukkit.getPlayerExact(args[0]);
-                            if (!FoxRank.getInstance().isMuted(receiver)) {
-                                player.sendMessage(RED + receiver.getName() + " is not currently muted.");
-                            } else {
-                                FoxRank.getInstance().unmutePlayer(new RankedPlayer(receiver));
-                                rp.sendMessage(GREEN + receiver.getName() + " was unmuted.");
+                            RankedPlayer rrp = new RankedPlayer(receiver);
+                            RankedPlayer mrp = new RankedPlayer(player);
+                            String to = FoxRank.getInstance().getConfig().getString("IAmMutedCommandMessageToMuted");
+                            String from = FoxRank.getInstance().getConfig().getString("IAmMutedCommandMessageFromMuted");
 
+                            if(FoxRank.getInstance().getConfig().getBoolean("DisableRankVisibility")) {
+                                to = to.replace("RECEIVERRANKPREFIX", "");
+                                from = from.replace("MUTEDUSERRANKPREFIX", "");
+                            } else {
+                                from = from.replace("MUTEDUSERRANKPREFIX", mrp.getRank().getPrefix());
+                                to = to.replace("RECEIVERRANKPREFIX", rrp.getRank().getPrefix());
                             }
+
+                            to = to.replace("RECIEVER", rrp.getName());
+                            to = to.replace("MUTEDUSER", mrp.getName());
+                            to = ChatColor.translateAlternateColorCodes('§', to);
+
+
+                            from = from.replace("RECIEVER", rrp.getName());
+                            from = from.replace("MUTEDUSER", mrp.getName());
+                            from = ChatColor.translateAlternateColorCodes('§', from);
+
+                            rrp.sendMessage(from);
+                            mrp.sendMessage(to);
                         }
                     } else {
-                        player.sendMessage(RED + "Missing arguments! /unmute <player>");
+                        FoxRank.getInstance().sendMissingArgsMessage("/immuted", "<player>", new RankedPlayer(player));
                     }
                     return true;
-                } else {
-                    player.sendMessage(RED + "You do not have the suitable permissions to run this command.");
                 }
             } else {
-                sender.sendMessage(RED + "You cannot do this!");
+                sender.sendMessage(ChatColor.translateAlternateColorCodes('§', FoxRank.getInstance().getConfig().getString("CommandDisabledMessage")));
+            }
+        } else if (label.equalsIgnoreCase("unmute")) {
+            if (!FoxRank.getInstance().getConfig().getBoolean("DisableUnmute")) {
+                if (sender instanceof Player player) {
+                    RankedPlayer rp = new RankedPlayer(player);
+                    if (rp.getPowerLevel() >= FoxRank.getInstance().getConfig().getInt("UnmutePermissions")) {
+                        if (args.length >= 1) {
+                            if (Bukkit.getPlayerExact(args[0]) != null) {
+                                Player receiver = Bukkit.getPlayerExact(args[0]);
+                                if (!FoxRank.getInstance().isMuted(receiver)) {
+                                    player.sendMessage(ChatColor.translateAlternateColorCodes('§', FoxRank.getInstance().getConfig().getString("UnmuteCommandPlayerNotMuted").replace("PLAYER", receiver.getName())));
+                                } else {
+                                    FoxRank.getInstance().unmutePlayer(new RankedPlayer(receiver));
+                                    player.sendMessage(ChatColor.translateAlternateColorCodes('§', FoxRank.getInstance().getConfig().getString("UnmuteSenderMessage").replace("PLAYER", receiver.getName())));
+                                }
+                            }
+                        } else {
+                            FoxRank.getInstance().sendMissingArgsMessage("/unmute", "<player>", rp);
+                        }
+                        return true;
+                    } else {
+                        FoxRank.getInstance().sendNoPermissionMessage(FoxRank.getInstance().getConfig().getInt("UnmutePermissions"), rp);
+                    }
+                }
+            } else {
+                sender.sendMessage(ChatColor.translateAlternateColorCodes('§', FoxRank.getInstance().getConfig().getString("CommandDisabledMessage")));
             }
         }
         return false;
