@@ -14,12 +14,11 @@ import java.util.List;
 import java.util.Map;
 
 import static me.foxikle.foxrank.FoxRank.getRank;
-import static me.foxikle.foxrank.FoxRank.loadRank;
-import static me.foxikle.foxrank.Rank.ADMIN;
 
-public class setRank implements CommandExecutor, TabExecutor {
+public class SetRank implements CommandExecutor, TabExecutor {
 
     Map<String, Integer> rankList = new HashMap<>();
+    private final FoxRank foxRank = FoxRank.getInstance();
 
     public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
 
@@ -43,38 +42,41 @@ public class setRank implements CommandExecutor, TabExecutor {
                 if (sender instanceof Player) {
                     if (rankedPlayer.getPowerLevel() >= FoxRank.getInstance().getConfig().getInt("SetRankPermissions")) {
                         if (args.length < 1) {
-                            player.sendMessage(ChatColor.RED + "Usage /setrank <rankID> <(player)>");
+                            FoxRank.getInstance().sendMissingArgsMessage("/setrank", "<rankID> [player]", new RankedPlayer(player));
                         } else if (args.length == 1) {
                             if (rankList.containsKey(args[0])) {
-                                FoxRank.setRank(player, Rank.valueOf(args[0]));
-                                player.sendMessage("Your rank is now " + Rank.valueOf(args[0]).getPrefix());
-                                loadRank(player);
+                                foxRank.setRank(player, Rank.valueOf(args[0]));
+                                rankedPlayer.sendMessage(ChatColor.translateAlternateColorCodes('§', FoxRank.getInstance().getConfig().getString("RankIsNowMessage").replace("RANK", Rank.valueOf(args[0]).getPrefix() )));
+                                foxRank.loadRank(player);
                             } else {
-                                player.sendMessage(ChatColor.RED + "Invalid Rank: Please use the tab completions.");
+                                FoxRank.getInstance().sendInvalidArgsMessage("Rank", new RankedPlayer(player));
                             }
                         } else if (args.length >= 2) {
-                            if (getRank(player) == ADMIN) {
+
                                 if (Bukkit.getServer().getPlayer(args[1]) != null) {
                                     Player p = Bukkit.getServer().getPlayer(args[1]);
+                                    if (getRank(player).getPowerLevel() > getRank(p).getPowerLevel()){
                                     if (rankList.containsKey(args[0])) {
-                                        FoxRank.setRank(p, Rank.valueOf(args[0]));
-                                        p.sendMessage("Your rank is now " + Rank.valueOf(args[0]).getPrefix());
-                                        loadRank(player);
+                                        foxRank.setRank(p, Rank.valueOf(args[0]));
+                                        new RankedPlayer(p).sendMessage(ChatColor.translateAlternateColorCodes('§', FoxRank.getInstance().getConfig().getString("RankIsNowMessage").replace("RANK", Rank.valueOf(args[0]).getPrefix() )));
+                                        foxRank.loadRank(player);
+                                        foxRank.loadRank(p);
                                     } else {
-                                        player.sendMessage(ChatColor.RED + "Invalid Rank: Please use the tab completions.");
+                                        FoxRank.getInstance().sendInvalidArgsMessage("Rank", new RankedPlayer(player));
                                     }
                                 } else {
-                                    player.sendMessage(ChatColor.RED + "Could not find that player.");
+                                    FoxRank.getInstance().sendInvalidArgsMessage("Player", new RankedPlayer(player));
                                 }
                             }
+                        } else {
+                            FoxRank.getInstance().sendMissingArgsMessage("/setrank", "<rankID> [player]", new RankedPlayer(player));
                         }
                     } else {
-                        player.sendMessage(ChatColor.RED + "You must have a power level of " + FoxRank.getInstance().getConfig().getInt("SetRankPermissions") + " or higher to use this command.");
-                        player.sendMessage(ChatColor.RED + "Please contact a server administrator is you think this is a mistake.");
+                        FoxRank.getInstance().sendNoPermissionMessage(FoxRank.getInstance().getConfig().getInt("SetRankPermissions"), rankedPlayer);
                     }
                 }
             } else {
-                sender.sendMessage(ChatColor.RED + "This command is currently disabled.");
+                sender.sendMessage(ChatColor.translateAlternateColorCodes('§', FoxRank.getInstance().getConfig().getString("CommandDisabledMessage")));
             }
         }
         return false;
