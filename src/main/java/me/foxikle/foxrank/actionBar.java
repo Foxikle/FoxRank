@@ -8,8 +8,7 @@ import org.bukkit.scheduler.BukkitRunnable;
 import static net.md_5.bungee.api.ChatMessageType.ACTION_BAR;
 
 public class actionBar {
-
-    public static void setupActionBar(Player player) {
+    protected static void setupActionBar(Player player) {
         new BukkitRunnable() {
             public void run() {
                 if (FoxRank.getInstance().isNicked(player) && FoxRank.getInstance().isVanished(player)) {
@@ -24,5 +23,4 @@ public class actionBar {
             }
         }.runTaskTimer(FoxRank.getInstance(), 0, 20);
     }
-
 }
