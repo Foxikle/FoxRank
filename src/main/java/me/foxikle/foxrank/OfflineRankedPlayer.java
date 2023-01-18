@@ -8,17 +8,16 @@ import java.time.Instant;
 import java.util.UUID;
 
 public class OfflineRankedPlayer implements OfflineCustomPlayer{
-    private OfflinePlayer offlinePlayer;
-    private File file;
-    private Rank rank;
-    private YamlConfiguration yml;
+    private final OfflinePlayer offlinePlayer;
+    private final Rank rank;
+    private final YamlConfiguration yml;
     public OfflineRankedPlayer(OfflinePlayer player) throws NullPointerException {
         if (player == null || !player.hasPlayedBefore()) {
             throw new NullPointerException();
         }
         this.offlinePlayer = player;
         this.rank = FoxRank.getOfflineRank(player);
-        this.file = new File("plugins/FoxRank/PlayerData/" + offlinePlayer.getUniqueId() + ".yml");
+        File file = new File("plugins/FoxRank/PlayerData/" + offlinePlayer.getUniqueId() + ".yml");
         yml = YamlConfiguration.loadConfiguration(file);
     }
 
@@ -41,7 +40,7 @@ public class OfflineRankedPlayer implements OfflineCustomPlayer{
     }
 
     /**
-     * @return
+     * @return OfflinePlayer the player the rankedplayer is referring to.
      */
     @Override
     public OfflinePlayer getOfflinePlayer() {
