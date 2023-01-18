@@ -14,8 +14,16 @@ commands:
   mute:
     description: Mutes a player from talking in chat.
   me:
+    description: Doesn't do anything if a player isn't muted.
   say:
+    description: Doesn't do anything if a player isn't muted.
   immuted:
     description: A command to notify a player if you are muted.
   unmute:
     description: A command to unmute a player.
+  logs:
+    description: A command to view the moderation actions of a player.
+  ban:
+    description: A command to ban a player from the server.
+  unban:
+    description: A command to unban a player from the server.
