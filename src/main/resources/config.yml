@@ -246,6 +246,7 @@ BanReasons:
   INAPPROPRIATE_COSMETICS: Using a skin or cape that violates our terms of service.
   INAPPROPRIATE_BUILD: Building a structure that violates our terms of service.
   BOOSTING: Attempting to boost another player's stats
+  CUSTOM:
 
 # BanAppealLink -> Link to appeal bans
 BanAppealLink: https://GitHub.com/Foxikle/FoxRank (Not real, I just made the plugin!)
