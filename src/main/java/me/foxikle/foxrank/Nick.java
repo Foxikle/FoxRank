@@ -31,176 +31,37 @@ import java.util.Random;
 import java.util.logging.Level;
 
 public class Nick implements CommandExecutor {
-    public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
-        if (label.equalsIgnoreCase("nick")) {
-            if (!FoxRank.getInstance().getConfig().getBoolean("DisableNicknames")) {
-                if (sender instanceof Player) {
-                    Player player = (Player) sender;
-                    RankedPlayer rp = new RankedPlayer(player);
-                    if (rp.getPowerLevel() >= FoxRank.getInstance().getConfig().getInt("NicknamePermissions")) {
-                        if (args.length == 0) {
-                            openWarningBook(player);
+    private static String skinOption;
+    private static String rankID;
 
-                        } else if (args.length == 1) {
-                            if (args[0].equalsIgnoreCase("random")) {
-                                List<String> names = FoxRank.getInstance().getConfig().getStringList("RandomNicknameList");
+    protected static void changeName(String name, Player player) {
+        if (name.length() <= 16) {
+            CraftPlayer craftPlayer = (CraftPlayer) player;
+            ServerPlayer sp = craftPlayer.getHandle();
+            GameProfile profile = sp.getGameProfile();
 
-                                String name = names.get(new Random().nextInt(names.size()-1) +1 );
-
-                                finalizeNick(player, name);
-                                File file = new File("plugins/FoxRank/PlayerData/" + player.getUniqueId() + ".yml");
-                                YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
-                                yml.set("isNicked", true);
-                                yml.set("Nickname", name);
-                                try {
-                                    yml.save(file);
-                                } catch (IOException error) {
-                                    error.printStackTrace();
-                                }
-                            } else if (args[0].equalsIgnoreCase("set")) {
-                                createAnvil(player);
-                            } else if (args[0].equalsIgnoreCase("reset")) {
-                                URL url;
-                                try {
-                                    url = new URL("https://sessionserver.mojang.com/session/minecraft/profile/" + player.getUniqueId() + "?unsigned=false");
-                                    InputStreamReader reader = new InputStreamReader(url.openStream());
-                                    String realName = new JsonParser().parse(reader).getAsJsonObject().get("name").getAsString();
-                                    changeSkin(player, realName);
-                                    changeName(realName, player);
-                                    refreshPlayer(player);
-                                } catch (IOException e) {
-                                    Bukkit.getLogger().log(Level.SEVERE, "Cannot get a player's name form Mojang");
-                                }
-                                File file = new File("plugins/FoxRank/PlayerData/" + player.getUniqueId() + ".yml");
-                                YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
-                                yml.set("isNicked", false);
-                                try {
-                                    yml.save(file);
-                                } catch (IOException error) {
-                                    error.printStackTrace();
-                                }
-                            } else if (args[0].equals("agree")) {
-                                openRankBook(player);
-                            }
-                        } else if (args.length >= 2) {
-                            if (args[0].equalsIgnoreCase("rank")) {
-                                if (args[1].equals("DEFAULT")) {
-                                    File file = new File("plugins/FoxRank/PlayerData/" + player.getUniqueId() + ".yml");
-                                    YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
-                                    yml.set("Nickname-Rank", Rank.DEFAULT.getRankID());
-                                    try {
-                                        yml.save(file);
-                                    } catch (IOException error) {
-                                        error.printStackTrace();
-                                    }
-                                } else if (args[1].equals("VIP")) {
-                                    File file = new File("plugins/FoxRank/PlayerData/" + player.getUniqueId() + ".yml");
-                                    YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
-                                    yml.set("Nickname-Rank", Rank.VIP.getRankID());
-                                    try {
-                                        yml.save(file);
-                                    } catch (IOException error) {
-                                        error.printStackTrace();
-                                    }
-                                } else if (args[1].equals("VIP_PLUS")) {
-                                    File file = new File("plugins/FoxRank/PlayerData/" + player.getUniqueId() + ".yml");
-                                    YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
-                                    yml.set("Nickname-Rank", Rank.VIP_PLUS.getRankID());
-                                    try {
-                                        yml.save(file);
-                                    } catch (IOException error) {
-                                        error.printStackTrace();
-                                    }
-                                } else if (args[1].equals("MVP")) {
-                                    File file = new File("plugins/FoxRank/PlayerData/" + player.getUniqueId() + ".yml");
-                                    YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
-                                    yml.set("Nickname-Rank", Rank.MVP.getRankID());
-                                    try {
-                                        yml.save(file);
-                                    } catch (IOException error) {
-                                        error.printStackTrace();
-                                    }
-                                } else if (args[1].equals("MVP_PLUS")) {
-                                    File file = new File("plugins/FoxRank/PlayerData/" + player.getUniqueId() + ".yml");
-                                    YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
-                                    yml.set("Nickname-Rank", Rank.MVP_PLUS.getRankID());
-                                    try {
-                                        yml.save(file);
-                                    } catch (IOException error) {
-                                        error.printStackTrace();
-                                    }
-                                }
-                                openSkinBook(player);
-                            } else if (args[0].equalsIgnoreCase("skin")) {
-                                if(args[1].equalsIgnoreCase("real")){
-                                    File file = new File("plugins/FoxRank/PlayerData/" + player.getUniqueId() + ".yml");
-                                    YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
-                                    changeSkin(player, player.getName());
-                                    yml.set("Nickname-Skin", getSkin(player.getName()));
-                                    try {
-                                        yml.save(file);
-                                    } catch (IOException error) {
-                                        error.printStackTrace();
-                                    }
-                                } else if (args[1].equalsIgnoreCase("default")) {
-                                    File file = new File("plugins/FoxRank/PlayerData/" + player.getUniqueId() + ".yml");
-                                    YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
-                                    changeSkin(player, null);
-                                    yml.set("Nickname-Skin", getSkin(null));
-                                    try {
-                                        yml.save(file);
-                                    } catch (IOException error) {
-                                        error.printStackTrace();
-                                    }
-                                } else if(args[1].equalsIgnoreCase("random")){
-                                    GameProfile profile = ((CraftPlayer) player).getHandle().getGameProfile();
-
-                                    List<String> values = FoxRank.getInstance().getConfig().getStringList("RandomSkinValueList");
-                                    List<String> signatures = FoxRank.getInstance().getConfig().getStringList("RandomSkinSignatureList");
-                                    if(signatures.size() == values.size()) {
-                                        int rnd = new Random().nextInt(values.size()-1) +1;
-                                        String value = values.get(rnd);
-                                        String signature = signatures.get(rnd);
-                                        profile.getProperties().removeAll("textures");
-                                        profile.getProperties().put("textures", new Property("textures", value, signature));
-                                        refreshPlayer(player);
-
-                                        File file = new File("plugins/FoxRank/PlayerData/" + player.getUniqueId() + ".yml");
-                                        YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
-                                        yml.set("Nickname-Skin", new Property("textures", value, signature));
-                                        try {
-                                            yml.save(file);
-                                        } catch (IOException error) {
-                                            error.printStackTrace();
-                                        }
-                                    } else {
-                                        Bukkit.getLogger().log(Level.SEVERE, "Values of RandomSkinSignatureList and RandomSkinValueList are not identical in size");
-
-                                        File file = new File("plugins/FoxRank/PlayerData/" + player.getUniqueId() + ".yml");
-                                        YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
-                                        changeSkin(player, null);
-                                        yml.set("Nickname-Skin", getSkin(null));
-                                        try {
-                                            yml.save(file);
-                                        } catch (IOException error) {
-                                            error.printStackTrace();
-                                        }
-
-                                    }
-                                }
-                                openNameBook(player);
-                            }
-                        }
-                    } else {
-                        FoxRank.getInstance().sendNoPermissionMessage(FoxRank.getInstance().getConfig().getInt("NicknamePermissions"), rp);
-                    }
-                }
-                return true;
-            } else {
-                sender.sendMessage(ChatColor.translateAlternateColorCodes('§', FoxRank.getInstance().getConfig().getString("CommandDisabledMessage")));
+            try {
+                Field field = profile.getClass().getDeclaredField("name");
+                field.setAccessible(true);
+                field.set(profile, name);
+            } catch (Exception e) {
+                e.printStackTrace();
             }
+
+            player.setDisplayName(player.getName());
+            player.setPlayerListName(name);
+            player.setCustomName(player.getName());
+
+            String message = FoxRank.getInstance().getConfig().getString("NickNameChangedMessage");
+            message = message.replace("$NEWNICK", name);
+            player.sendMessage(ChatColor.translateAlternateColorCodes('§', message));
+            refreshPlayer(player);
+
+        } else {
+            String message = FoxRank.getInstance().getConfig().getString("NicknameTooLongMessage");
+            message = message.replace("$NICKNAME", name);
+            player.sendMessage(ChatColor.translateAlternateColorCodes('§', message));
         }
-        return false;
     }
 
     protected static void openRankBook(Player player) {
@@ -353,32 +214,23 @@ public class Nick implements CommandExecutor {
         player.openBook(book);
     }
 
-    protected static void changeName(String name, Player player) {
-        if (name.length() <= 16) {
-            CraftPlayer craftPlayer = (CraftPlayer) player;
-            ServerPlayer sp = craftPlayer.getHandle();
-            GameProfile profile = sp.getGameProfile();
+    private static void finalizeNick(Player player, String name){
+        if(!FoxRank.getInstance().getConfig().getStringList("BlacklistedNicknames").contains(name.toLowerCase())) {
 
+            File file = new File("plugins/FoxRank/PlayerData/" + player.getUniqueId() + ".yml");
+            YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
+            yml.set("isNicked", true);
             try {
-                Field field = profile.getClass().getDeclaredField("name");
-                field.setAccessible(true);
-                field.set(profile, name);
-            } catch (Exception e) {
-                e.printStackTrace();
+                yml.save(file);
+            } catch (IOException error) {
+                error.printStackTrace();
             }
-
-            player.setDisplayName(player.getName());
-            player.setPlayerListName(name);
-            player.setCustomName(player.getName());
-
-            String message = FoxRank.getInstance().getConfig().getString("NickNameChangedMessage");
-            message = message.replace("NEWNICK", name);
-            player.sendMessage(ChatColor.translateAlternateColorCodes('§', message));
-            refreshPlayer(player);
-
+            changeName(name, player);
+            FoxRank.setTeam(player, yml.getString("Nickname-Rank"));
+            FoxRank.getInstance().addNicknameLogEntry(new RankedPlayer(player), name, rankID, skinOption);
         } else {
-            String message = FoxRank.getInstance().getConfig().getString("NicknameTooLongMessage");
-            message = message.replace("NICKNAME", name);
+            String message = FoxRank.getInstance().getConfig().getString("BlacklistedNicknameMessage");
+            message = message.replace("$BLACKLISTEDNAME", name);
             player.sendMessage(ChatColor.translateAlternateColorCodes('§', message));
         }
     }
@@ -445,34 +297,175 @@ public class Nick implements CommandExecutor {
                 .open(p);
     }
 
-    private static void finalizeNick(Player player, String name){
-        if(!FoxRank.getInstance().getConfig().getStringList("BlacklistedNicknames").contains(name.toLowerCase())) {
+    public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
+        if (label.equalsIgnoreCase("nick")) {
+            if (!FoxRank.getInstance().getConfig().getBoolean("DisableNicknames")) {
+                if (sender instanceof Player player) {
+                    RankedPlayer rp = new RankedPlayer(player);
+                    if (rp.getPowerLevel() >= FoxRank.getInstance().getConfig().getInt("NicknamePermissions")) {
+                        if (args.length == 0) {
+                            openWarningBook(player);
 
-            File file = new File("plugins/FoxRank/PlayerData/" + player.getUniqueId() + ".yml");
-            YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
-            yml.set("isNicked", true);
-            try {
-                yml.save(file);
-            } catch (IOException error) {
-                error.printStackTrace();
+                        } else if (args.length == 1) {
+                            if (args[0].equalsIgnoreCase("random")) {
+                                List<String> names = FoxRank.getInstance().getConfig().getStringList("RandomNicknameList");
+
+                                String name = names.get(new Random().nextInt(names.size()-1) +1 );
+
+                                finalizeNick(player, name);
+                                File file = new File("plugins/FoxRank/PlayerData/" + player.getUniqueId() + ".yml");
+                                YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
+                                yml.set("isNicked", true);
+                                yml.set("Nickname", name);
+                                try {
+                                    yml.save(file);
+                                } catch (IOException error) {
+                                    error.printStackTrace();
+                                }
+                            } else if (args[0].equalsIgnoreCase("set")) {
+                                createAnvil(player);
+                            } else if (args[0].equalsIgnoreCase("reset")) {
+                                String realName = FoxRank.getInstance().getTrueName(player.getUniqueId());
+                                    changeSkin(player, realName);
+                                    changeName(realName, player);
+                                    refreshPlayer(player);
+                                File file = new File("plugins/FoxRank/PlayerData/" + player.getUniqueId() + ".yml");
+                                YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
+                                yml.set("isNicked", false);
+                                try {
+                                    yml.save(file);
+                                } catch (IOException error) {
+                                    error.printStackTrace();
+                                }
+                            } else if (args[0].equals("agree")) {
+                                openRankBook(player);
+                            }
+                        } else if (args.length >= 2) {
+                            if (args[0].equalsIgnoreCase("rank")) {
+                                if (args[1].equals("DEFAULT")) {
+                                    File file = new File("plugins/FoxRank/PlayerData/" + player.getUniqueId() + ".yml");
+                                    YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
+                                    yml.set("Nickname-Rank", Rank.DEFAULT.getRankID());
+                                    rankID = Rank.DEFAULT.getRankID();
+                                    try {
+                                        yml.save(file);
+                                    } catch (IOException error) {
+                                        error.printStackTrace();
+                                    }
+                                } else if (args[1].equals("VIP")) {
+                                    File file = new File("plugins/FoxRank/PlayerData/" + player.getUniqueId() + ".yml");
+                                    YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
+                                    yml.set("Nickname-Rank", Rank.VIP.getRankID());
+                                    rankID = Rank.VIP.getRankID();
+                                    try {
+                                        yml.save(file);
+                                    } catch (IOException error) {
+                                        error.printStackTrace();
+                                    }
+                                } else if (args[1].equals("VIP_PLUS")) {
+                                    File file = new File("plugins/FoxRank/PlayerData/" + player.getUniqueId() + ".yml");
+                                    YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
+                                    yml.set("Nickname-Rank", Rank.VIP_PLUS.getRankID());
+                                    rankID = Rank.VIP_PLUS.getRankID();
+                                    try {
+                                        yml.save(file);
+                                    } catch (IOException error) {
+                                        error.printStackTrace();
+                                    }
+                                } else if (args[1].equals("MVP")) {
+                                    File file = new File("plugins/FoxRank/PlayerData/" + player.getUniqueId() + ".yml");
+                                    YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
+                                    yml.set("Nickname-Rank", Rank.MVP.getRankID());
+                                    rankID = Rank.MVP.getRankID();
+                                    try {
+                                        yml.save(file);
+                                    } catch (IOException error) {
+                                        error.printStackTrace();
+                                    }
+                                } else if (args[1].equals("MVP_PLUS")) {
+                                    File file = new File("plugins/FoxRank/PlayerData/" + player.getUniqueId() + ".yml");
+                                    YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
+                                    yml.set("Nickname-Rank", Rank.MVP_PLUS.getRankID());
+                                    rankID = Rank.MVP_PLUS.getRankID();
+                                    try {
+                                        yml.save(file);
+                                    } catch (IOException error) {
+                                        error.printStackTrace();
+                                    }
+                                }
+                                openSkinBook(player);
+                            } else if (args[0].equalsIgnoreCase("skin")) {
+                                if(args[1].equalsIgnoreCase("real")){
+                                    File file = new File("plugins/FoxRank/PlayerData/" + player.getUniqueId() + ".yml");
+                                    YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
+                                    changeSkin(player, player.getName());
+                                    yml.set("Nickname-Skin", getSkin(player.getName()));
+                                    skinOption = "real";
+                                    try {
+                                        yml.save(file);
+                                    } catch (IOException error) {
+                                        error.printStackTrace();
+                                    }
+                                } else if (args[1].equalsIgnoreCase("default")) {
+                                    File file = new File("plugins/FoxRank/PlayerData/" + player.getUniqueId() + ".yml");
+                                    YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
+                                    changeSkin(player, null);
+                                    yml.set("Nickname-Skin", getSkin(null));
+                                    skinOption = "default";
+                                    try {
+                                        yml.save(file);
+                                    } catch (IOException error) {
+                                        error.printStackTrace();
+                                    }
+                                } else if(args[1].equalsIgnoreCase("random")){
+                                    GameProfile profile = ((CraftPlayer) player).getHandle().getGameProfile();
+
+                                    List<String> values = FoxRank.getInstance().getConfig().getStringList("RandomSkinValueList");
+                                    List<String> signatures = FoxRank.getInstance().getConfig().getStringList("RandomSkinSignatureList");
+                                    if(signatures.size() == values.size()) {
+                                        int rnd = new Random().nextInt(values.size()-1) +1;
+                                        String value = values.get(rnd);
+                                        String signature = signatures.get(rnd);
+                                        profile.getProperties().removeAll("textures");
+                                        profile.getProperties().put("textures", new Property("textures", value, signature));
+                                        refreshPlayer(player);
+
+                                        File file = new File("plugins/FoxRank/PlayerData/" + player.getUniqueId() + ".yml");
+                                        YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
+                                        yml.set("Nickname-Skin", new Property("textures", value, signature));
+                                        skinOption = "random";
+                                        try {
+                                            yml.save(file);
+                                        } catch (IOException error) {
+                                            error.printStackTrace();
+                                        }
+                                    } else {
+                                        Bukkit.getLogger().log(Level.SEVERE, "Values of RandomSkinSignatureList and RandomSkinValueList are not identical in size");
+
+                                        File file = new File("plugins/FoxRank/PlayerData/" + player.getUniqueId() + ".yml");
+                                        YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
+                                        changeSkin(player, null);
+                                        yml.set("Nickname-Skin", getSkin(null));
+                                        try {
+                                            yml.save(file);
+                                        } catch (IOException error) {
+                                            error.printStackTrace();
+                                        }
+
+                                    }
+                                }
+                                openNameBook(player);
+                            }
+                        }
+                    } else {
+                        FoxRank.getInstance().sendNoPermissionMessage(FoxRank.getInstance().getConfig().getInt("NicknamePermissions"), rp);
+                    }
+                }
+                return true;
+            } else {
+                sender.sendMessage(ChatColor.translateAlternateColorCodes('§', FoxRank.getInstance().getConfig().getString("CommandDisabledMessage")));
             }
-            changeName(name, player);
-            FoxRank.setTeam(player, yml.getString("Nickname-Rank"));
-            addLogEntry(player);
-        } else {
-            String message = FoxRank.getInstance().getConfig().getString("BlacklistedNicknameMessage");
-            message = message.replace("BLACKLISTEDNAME", name);
-            player.sendMessage(ChatColor.translateAlternateColorCodes('§', message));
         }
-    }
-    private static void addLogEntry(Player player){
-        File file = new File("plugins/FoxRank/NicknameLog.yml");
-        YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
-        yml.options().configuration().createSection(player.getUniqueId() + "'s Nickname is: " + player.getName());
-        try{
-            yml.save(file);
-        } catch (IOException error){
-            Bukkit.getLogger().log(Level.SEVERE, "Failed to save " + player.getUniqueId() + "'s nickname to the log. Their name was changed to " + player.getName());
-        }
+        return false;
     }
 }
