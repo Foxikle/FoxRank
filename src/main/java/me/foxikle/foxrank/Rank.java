@@ -33,19 +33,43 @@ public enum Rank {
         return rankID;
     }
 
-    public int getPowerLevel(){
-        return powerLevel;
-    }
-    public static Rank getRankFromString(String s){
-        if (s.equalsIgnoreCase("DEFAULT")){
+    public static Rank ofString(String s) {
+        if (s.equalsIgnoreCase("DEFAULT")) {
             return Rank.DEFAULT;
-        } else if (s.equalsIgnoreCase("OWNER")){
+        } else if (s.equalsIgnoreCase("OWNER")) {
             return Rank.OWNER;
-        } else if (s.equalsIgnoreCase("ADMIN")){
+        } else if (s.equalsIgnoreCase("ADMIN")) {
             return Rank.ADMIN;
-        } else if (s.equalsIgnoreCase("MODERATOR")){
+        } else if (s.equalsIgnoreCase("MODERATOR")) {
             return Rank.MODERATOR;
-        } else if (s.equalsIgnoreCase("YOUTUBE")){
+        } else if (s.equalsIgnoreCase("YOUTUBE")) {
+            return Rank.YOUTUBE;
+        } else if (s.equalsIgnoreCase("TWITCH")) {
+            return Rank.TWITCH;
+        } else if (s.equalsIgnoreCase("MVP_PLUS")) {
+            return Rank.MVP_PLUS;
+        } else if (s.equalsIgnoreCase("MVP")) {
+            return Rank.MVP;
+        } else if (s.equalsIgnoreCase("VIP_PLUS")) {
+            return Rank.VIP_PLUS;
+        } else if (s.equalsIgnoreCase("VIP")) {
+            return Rank.VIP;
+        } else {
+            return Rank.DEFAULT;
+        }
+    }
+
+    @Deprecated
+    public static Rank getRankFromString(String s) {
+        if (s.equalsIgnoreCase("DEFAULT")) {
+            return Rank.DEFAULT;
+        } else if (s.equalsIgnoreCase("OWNER")) {
+            return Rank.OWNER;
+        } else if (s.equalsIgnoreCase("ADMIN")) {
+            return Rank.ADMIN;
+        } else if (s.equalsIgnoreCase("MODERATOR")) {
+            return Rank.MODERATOR;
+        } else if (s.equalsIgnoreCase("YOUTUBE")) {
             return Rank.YOUTUBE;
         } else if (s.equalsIgnoreCase("TWITCH")){
             return Rank.TWITCH;
@@ -60,5 +84,9 @@ public enum Rank {
         } else {
             return Rank.DEFAULT;
         }
+    }
+
+    public int getPowerLevel() {
+        return powerLevel;
     }
 }
