@@ -46,7 +46,7 @@ public class SetRank implements CommandExecutor, TabExecutor {
                         } else if (args.length == 1) {
                             if (rankList.containsKey(args[0])) {
                                 foxRank.setRank(player, Rank.valueOf(args[0]));
-                                rankedPlayer.sendMessage(ChatColor.translateAlternateColorCodes('§', FoxRank.getInstance().getConfig().getString("RankIsNowMessage").replace("RANK", Rank.valueOf(args[0]).getPrefix() )));
+                                rankedPlayer.sendMessage(ChatColor.translateAlternateColorCodes('§', FoxRank.getInstance().getConfig().getString("RankIsNowMessage").replace("$RANK", Rank.valueOf(args[0]).getPrefix())));
                                 foxRank.loadRank(player);
                             } else {
                                 FoxRank.getInstance().sendInvalidArgsMessage("Rank", new RankedPlayer(player));
@@ -58,7 +58,7 @@ public class SetRank implements CommandExecutor, TabExecutor {
                                     if (getRank(player).getPowerLevel() > getRank(p).getPowerLevel()){
                                     if (rankList.containsKey(args[0])) {
                                         foxRank.setRank(p, Rank.valueOf(args[0]));
-                                        new RankedPlayer(p).sendMessage(ChatColor.translateAlternateColorCodes('§', FoxRank.getInstance().getConfig().getString("RankIsNowMessage").replace("RANK", Rank.valueOf(args[0]).getPrefix() )));
+                                        new RankedPlayer(p).sendMessage(ChatColor.translateAlternateColorCodes('§', FoxRank.getInstance().getConfig().getString("RankIsNowMessage").replace("$RANK", Rank.valueOf(args[0]).getPrefix())));
                                         foxRank.loadRank(player);
                                         foxRank.loadRank(p);
                                     } else {
