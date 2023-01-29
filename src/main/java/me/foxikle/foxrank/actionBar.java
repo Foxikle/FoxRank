@@ -11,11 +11,11 @@ public class actionBar {
     protected static void setupActionBar(Player player) {
         new BukkitRunnable() {
             public void run() {
-                if (FoxRank.getInstance().isNicked(player) && FoxRank.getInstance().isVanished(player)) {
+                if (FoxRank.getInstance().isNicked(player.getUniqueId()) && FoxRank.getInstance().isVanished(player.getUniqueId())) {
                     player.spigot().sendMessage(ACTION_BAR, TextComponent.fromLegacyText(ChatColor.WHITE + "You are currently " + ChatColor.RED + "NICKED" + ChatColor.WHITE + " & " + ChatColor.RED + "VANISHED" + ChatColor.WHITE + "."));
-                } else if (FoxRank.getInstance().isVanished(player)) {
+                } else if (FoxRank.getInstance().isVanished(player.getUniqueId())) {
                     player.spigot().sendMessage(ACTION_BAR, TextComponent.fromLegacyText(ChatColor.WHITE + "You are currently " + ChatColor.RED + "VANISHED" + ChatColor.WHITE + "."));
-                } else if (FoxRank.getInstance().isNicked(player)) {
+                } else if (FoxRank.getInstance().isNicked(player.getUniqueId())) {
                     player.spigot().sendMessage(ACTION_BAR, TextComponent.fromLegacyText(ChatColor.WHITE + "You are currently " + ChatColor.RED + "NICKED" + ChatColor.WHITE + "."));
                 } else {
                     this.cancel();

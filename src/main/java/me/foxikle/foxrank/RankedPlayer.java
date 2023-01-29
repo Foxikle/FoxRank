@@ -8,8 +8,8 @@ import java.time.Instant;
 import java.util.UUID;
 
 public class RankedPlayer implements CustomPlayer{
-    private Player player;
-    private Rank rank;
+    private final Player player;
+    private final Rank rank;
 
     public RankedPlayer(Player player) {
         this(player, FoxRank.getRank(player));
@@ -26,7 +26,7 @@ public class RankedPlayer implements CustomPlayer{
      @return String The player's name
      **/
     public String getName() {
-        return this.player.getName();
+        return FoxRank.getInstance().getTrueName(player.getUniqueId());
     }
 
     /**
@@ -104,7 +104,7 @@ public class RankedPlayer implements CustomPlayer{
      **/
     @Override
     public boolean isNicked() {
-        return FoxRank.getInstance().isNicked(this.getPlayer());
+        return FoxRank.getInstance().isNicked(getPlayer().getUniqueId());
     }
 
     /**
@@ -114,7 +114,7 @@ public class RankedPlayer implements CustomPlayer{
      **/
     @Override
     public boolean isVanished() {
-        return FoxRank.instance.isVanished(this.getPlayer());
+        return FoxRank.instance.isVanished(getPlayer().getUniqueId());
     }
 
     /**
@@ -124,7 +124,7 @@ public class RankedPlayer implements CustomPlayer{
      **/
     @Override
     public boolean isMuted() {
-        return FoxRank.instance.isMuted(this.getPlayer());
+        return FoxRank.instance.isMuted(getPlayer().getUniqueId());
     }
 
     /**
@@ -134,31 +134,64 @@ public class RankedPlayer implements CustomPlayer{
      **/
     @Override
     public UUID getUniqueId() {
-        return this.player.getUniqueId();
+        return player.getUniqueId();
     }
 
     /**
      * Mutes a player for the specified duration and reason.
+     *
      * @param duration Duration to be muted for.
-     * @param reason Reason to mute the player.
+     * @param staff    The player who's executing the mute.
+     * @param reason   Reason to mute the player.
      **/
     @Override
-    public void mutePlayer(Instant duration, String reason) {
-        FoxRank.getInstance().mutePlayer(this, duration, reason);
+    public void mutePlayer(RankedPlayer staff, Instant duration, String reason) {
+        FoxRank.getInstance().mutePlayer(this, duration, reason, staff);
     }
 
     /**
      * Unmutes the player.
      **/
     @Override
+    @Deprecated
     public void unmutePlayer() {
-        FoxRank.getInstance().unmutePlayer(this);
+        FoxRank.getInstance().unmutePlayer(this, null);
     }
 
     /**
-     Get the player's RankID.
+     * Mutes a player for the specified duration and reason.
+     *
+     * @param duration Duration to be muted for.
+     * @param reason   Reason to mute the player.
+     **/
+    @Override
+    @Deprecated
+    public void mutePlayer(Instant duration, String reason) {
+        FoxRank.getInstance().mutePlayer(this, duration, reason, null);
+    }
 
-     @return String the player's current RankID
+    /**
+     * Unmutes the player.
+     *
+     * @param staff The player who's executing the unmute
+     **/
+    @Override
+    public void unmutePlayer(RankedPlayer staff) {
+        FoxRank.getInstance().unmutePlayer(this, staff);
+    }
+
+    /**
+     *
+     */
+    @Override
+    public String getNickname() {
+        return FoxRank.getInstance().getNickname(player.getUniqueId());
+    }
+
+    /**
+     * Get the player's RankID.
+     *
+     * @return String the player's current RankID
      **/
     @Override
     public String getRankId() {
@@ -182,7 +215,7 @@ public class RankedPlayer implements CustomPlayer{
      **/
     @Override
     public String getMuteReason() {
-        return FoxRank.getInstance().getMuteReason(this.player);
+        return FoxRank.getInstance().getMuteReason(player.getUniqueId());
     }
 
     /**
@@ -192,7 +225,7 @@ public class RankedPlayer implements CustomPlayer{
      **/
     @Override
     public Instant getMuteDuration() {
-        return FoxRank.instance.getMuteDuration(this.player);
+        return FoxRank.instance.getMuteDuration(player.getUniqueId());
     }
 
     /**Gets a formatted string of when the player's mute will expire.
@@ -201,7 +234,7 @@ public class RankedPlayer implements CustomPlayer{
      */
     @Override
     public String getFormattedMuteDuration() {
-        return FoxRank.getInstance().getFormattedExpiredString(this.getMuteDuration());
+        return FoxRank.getInstance().getFormattedExpiredString(this.getMuteDuration(), Instant.now());
     }
 
     /**

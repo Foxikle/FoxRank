@@ -6,27 +6,49 @@ import org.bukkit.entity.Player;
 import java.time.Instant;
 import java.util.UUID;
 
-public interface CustomPlayer{
+interface CustomPlayer {
 
-    public Player getPlayer();
-    public Rank getRank();
-    public void setRank(Rank rank);
-    public String getPrefix();
-    public int getPowerLevel();
-    public boolean isNicked();
-    public boolean isVanished();
-    public boolean isMuted();
+    Player getPlayer();
 
-    public UUID getUniqueId();
-    public void mutePlayer(Instant duration, String reason);
-    public void unmutePlayer();
+    Rank getRank();
 
-    public String getRankId();
-    public String getName();
-    public String getDisplayName();
-    public Location getLocation();
-    public String getMuteReason();
+    void setRank(Rank rank);
 
-    public Instant getMuteDuration();
-    public String getFormattedMuteDuration();
+    String getPrefix();
+
+    int getPowerLevel();
+
+    boolean isNicked();
+
+    boolean isVanished();
+
+    boolean isMuted();
+
+    UUID getUniqueId();
+
+    void mutePlayer(RankedPlayer staff, Instant duration, String reason);
+
+    void unmutePlayer(RankedPlayer staff);
+
+    @Deprecated
+    void mutePlayer(Instant duration, String reason);
+
+    @Deprecated
+    void unmutePlayer();
+
+    String getNickname();
+
+    String getRankId();
+
+    String getName();
+
+    String getDisplayName();
+
+    Location getLocation();
+
+    String getMuteReason();
+
+    Instant getMuteDuration();
+
+    String getFormattedMuteDuration();
 }
