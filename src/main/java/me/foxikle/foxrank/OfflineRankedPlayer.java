@@ -184,7 +184,7 @@ public class OfflineRankedPlayer implements OfflineCustomPlayer{
      */
     @Override
     public String getFormattedMuteDuration() {
-        return FoxRank.getInstance().getFormattedExpiredString(getMuteDuration());
+        return FoxRank.getInstance().getFormattedExpiredString(getMuteDuration(), Instant.now());
     }
 
     /**
