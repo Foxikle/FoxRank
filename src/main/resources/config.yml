@@ -246,10 +246,18 @@ BanReasons:
   INAPPROPRIATE_COSMETICS: Using a skin or cape that violates our terms of service.
   INAPPROPRIATE_BUILD: Building a structure that violates our terms of service.
   BOOSTING: Attempting to boost another player's stats
-  CUSTOM:
+  CUSTOM: This is overwritten, so any value you put here does not matter.
+
+# BanDurations: ->  These allow you to add values to tab completion for durations
+BanDurations:
+  7d: 7
+  30d: 30
+  90d: 90
+  180d: 180
+  365d: 365
 
 # BanAppealLink -> Link to appeal bans
-BanAppealLink: https://GitHub.com/Foxikle/FoxRank (Not real, I just made the plugin!)
+BanAppealLink: https://github.com/Foxikle/FoxRank (Not real, I just made the plugin!)
 
 # UnbanCommandNotBanned: -> The message displayed to a user whilst attempting to unban a player that is not banned. (($USER user), Supports § colors)
 UnbanCommandNotBanned: §c$USER is not banned!
@@ -280,14 +288,14 @@ VanishMessage: §eYou vanished into the shadows.
 # General configurations for the FoxRank plugin.
 
 
-# LogsMenuName: -> The name of the menu of /logs ($NAME (Player's logs your're viewing), $LOGTYPE (Type of logs you're viewing), Supports § Colors)
+# LogsMenuName: -> The name of the menu of /logs ($NAME (Player's logs you're viewing), $LOGTYPE (Type of logs you're viewing), Supports § Colors)
 LogsMenuName: $NAME's §r§0$LOGTYPE history
 
-# LogsNoData: -> The messages displayed when a player has no logs. (LOGTYPE, PLAYER Supports § Colors)
-LogsNoData: PLAYER §cdoes not have $LOGTYPE logs.
+# LogsNoData: -> The messages displayed when a player has no logs. ($LOGTYPE, $PLAYER Supports § Colors)
+LogsNoData: $PLAYER §cdoes not have $LOGTYPE logs.
 
 # NoPermissionMessage -> The message displayed when a user doesn't have the permissions. ($POWERLEVEL (The power level required) \n for a new line, Supports § color codes.)
-NoPermissionMessage: §cYou must have $POWERLEVEL to execute this command.\n§cPlease contact a server administrator if you believe this is a mistake.
+NoPermissionMessage: §cYou must have a powerlevel of $POWERLEVEL to execute this command.\n§cPlease contact a server administrator if you believe this is a mistake.
 
 # CommandDisabledMessage: -> The message displayed when a command is disabled. (Supports § color codes.)
 CommandDisabledMessage: §cThis command is currently disabled.
