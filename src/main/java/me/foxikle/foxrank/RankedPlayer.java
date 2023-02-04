@@ -151,27 +151,6 @@ public class RankedPlayer implements CustomPlayer{
 
     /**
      * Unmutes the player.
-     **/
-    @Override
-    @Deprecated
-    public void unmutePlayer() {
-        FoxRank.getInstance().unmutePlayer(this, null);
-    }
-
-    /**
-     * Mutes a player for the specified duration and reason.
-     *
-     * @param duration Duration to be muted for.
-     * @param reason   Reason to mute the player.
-     **/
-    @Override
-    @Deprecated
-    public void mutePlayer(Instant duration, String reason) {
-        FoxRank.getInstance().mutePlayer(this, duration, reason, null);
-    }
-
-    /**
-     * Unmutes the player.
      *
      * @param staff The player who's executing the unmute
      **/
