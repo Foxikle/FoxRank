@@ -1,5 +1,6 @@
 package me.foxikle.foxrank;
 
+import me.foxikle.foxrank.events.PlayerVanishEvent;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
@@ -20,8 +21,7 @@ public class Vanish implements CommandExecutor, Listener {
     public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
         if (label.equalsIgnoreCase("vanish")) {
             if (!FoxRank.getInstance().getConfig().getBoolean("DisableVanish")) {
-                if (sender instanceof Player) {
-                    Player player = (Player) sender;
+                if (sender instanceof Player player) {
                     RankedPlayer rp = new RankedPlayer(player);
                     if (rp.getPowerLevel() >= FoxRank.getInstance().getConfig().getInt("VanishPermissions")) {
                         File file = new File("plugins/FoxRank/PlayerData/" + player.getUniqueId() + ".yml");
@@ -42,6 +42,7 @@ public class Vanish implements CommandExecutor, Listener {
 
                         } else if (yml.getString("isVanished").equals("false")) {
                             yml.set("isVanished", true);
+                            FoxRank.getInstance().getServer().getPluginManager().callEvent(new PlayerVanishEvent(player, rp.getRank()));
                             player.sendMessage(ChatColor.translateAlternateColorCodes('§', FoxRank.getInstance().getConfig().getString("VanishMessage")));
 
                             for (Player p : Bukkit.getOnlinePlayers()) {

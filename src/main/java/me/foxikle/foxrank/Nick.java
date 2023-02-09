@@ -4,6 +4,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.mojang.authlib.GameProfile;
 import com.mojang.authlib.properties.Property;
+import me.foxikle.foxrank.events.PlayerNicknameEvent;
 import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.api.chat.*;
 import net.minecraft.network.protocol.game.ClientboundPlayerInfoPacket;
@@ -228,6 +229,7 @@ public class Nick implements CommandExecutor {
             changeName(name, player);
             FoxRank.setTeam(player, yml.getString("Nickname-Rank"));
             FoxRank.getInstance().addNicknameLogEntry(new RankedPlayer(player), name, rankID, skinOption);
+            FoxRank.getInstance().getServer().getPluginManager().callEvent(new PlayerNicknameEvent(player, name, Rank.ofString(rankID)));
         } else {
             String message = FoxRank.getInstance().getConfig().getString("BlacklistedNicknameMessage");
             message = message.replace("$BLACKLISTEDNAME", name);
