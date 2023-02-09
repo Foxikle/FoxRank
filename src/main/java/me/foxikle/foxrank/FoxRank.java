@@ -117,6 +117,16 @@ public class FoxRank extends JavaPlugin implements Listener {
         for (Player p : this.getServer().getOnlinePlayers()) {
             saveRank(p);
         }
+        DefualtTeam.unregister();
+        OwnerTeam.unregister();
+        AdminTeam.unregister();
+        ModeratorTeam.unregister();
+        YoutubeTeam.unregister();
+        TwitchTeam.unregister();
+        MvppTeam.unregister();
+        MvpTeam.unregister();
+        VippTeam.unregister();
+        VipTeam.unregister();
     }
 
     private void setupTeams() {
