@@ -1,6 +1,7 @@
 package me.foxikle.foxrank;
 
 import com.google.gson.JsonParser;
+import me.foxikle.foxrank.events.RankChangeEvent;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.OfflinePlayer;
@@ -292,6 +293,7 @@ public class FoxRank extends JavaPlugin implements Listener {
     }
 
     protected void setRank(Player player, Rank rank) {
+        this.getServer().getPluginManager().callEvent(new RankChangeEvent(player, rank));
         ranks.put(player, rank);
         File file = new File("plugins/FoxRank/PlayerData/" + player.getUniqueId() + ".yml");
         YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
@@ -770,16 +772,16 @@ public class FoxRank extends JavaPlugin implements Listener {
         }
     }
 
-    protected void sendNoPermissionMessage(int powerLevel, RankedPlayer rp) {
-        rp.sendMessage(ChatColor.translateAlternateColorCodes('§', this.getConfig().getString("NoPermissionMessage").replace("$POWERLEVEL", powerLevel + "").replace("\\n", "\n")));
+    public void sendNoPermissionMessage(int powerLevel, RankedPlayer rp) {
+        rp.sendMessage(ChatColor.translateAlternateColorCodes('§', FoxRank.getInstance().getConfig().getString("NoPermissionMessage").replace("$POWERLEVEL", powerLevel + "").replace("\\n", "\n")));
     }
 
-    protected void sendMissingArgsMessage(String command, String args, RankedPlayer rp) {
-        rp.sendMessage(ChatColor.translateAlternateColorCodes('§', this.getConfig().getString("MissingArgsMessage").replace("$COMMAND", command + "").replace("$ARGS", args)));
+    public void sendMissingArgsMessage(String command, String args, RankedPlayer rp) {
+        rp.sendMessage(ChatColor.translateAlternateColorCodes('§', FoxRank.getInstance().getConfig().getString("MissingArgsMessage").replace("$COMMAND", command + "").replace("$ARGS", args)));
     }
 
-    protected void sendInvalidArgsMessage(String args, RankedPlayer rp) {
-        rp.sendMessage(ChatColor.translateAlternateColorCodes('§', this.getConfig().getString("InvalidArgumentMessage").replace("$ARGTYPE", args)));
+    public void sendInvalidArgsMessage(String args, RankedPlayer rp) {
+        rp.sendMessage(ChatColor.translateAlternateColorCodes('§', FoxRank.getInstance().getConfig().getString("InvalidArgumentMessage").replace("$ARGTYPE", args)));
     }
 
     protected String getTrueName(UUID uuid) {
