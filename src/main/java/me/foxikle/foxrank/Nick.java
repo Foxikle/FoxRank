@@ -230,6 +230,7 @@ public class Nick implements CommandExecutor {
             FoxRank.setTeam(player, yml.getString("Nickname-Rank"));
             FoxRank.getInstance().addNicknameLogEntry(new RankedPlayer(player), name, rankID, skinOption);
             FoxRank.getInstance().getServer().getPluginManager().callEvent(new PlayerNicknameEvent(player, name, Rank.ofString(rankID)));
+            ActionBar.setupActionBar(player);
         } else {
             String message = FoxRank.getInstance().getConfig().getString("BlacklistedNicknameMessage");
             message = message.replace("$BLACKLISTEDNAME", name);
