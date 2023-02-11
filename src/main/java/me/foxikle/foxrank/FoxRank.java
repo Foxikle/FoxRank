@@ -97,7 +97,7 @@ public class FoxRank extends JavaPlugin implements Listener {
         reloadConfig();
         for (Player p : this.getServer().getOnlinePlayers()) {
             loadRank(p);
-            actionBar.setupActionBar(p);
+            ActionBar.setupActionBar(p);
         }
         getCommand("nick").setExecutor(new Nick());
         getCommand("vanish").setExecutor(new Vanish());
@@ -482,7 +482,7 @@ public class FoxRank extends JavaPlugin implements Listener {
         } catch (IOException error) {
             error.printStackTrace();
         }
-        actionBar.setupActionBar(p);
+        ActionBar.setupActionBar(p);
         loadRank(p);
         if (this.isMuted(p.getUniqueId())) {
             if (this.getMuteDuration(p.getUniqueId()).isBefore(Instant.now())) {
