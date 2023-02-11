@@ -7,7 +7,7 @@ import org.bukkit.scheduler.BukkitRunnable;
 
 import static net.md_5.bungee.api.ChatMessageType.ACTION_BAR;
 
-public class actionBar {
+public class ActionBar {
     protected static void setupActionBar(Player player) {
         new BukkitRunnable() {
             public void run() {
