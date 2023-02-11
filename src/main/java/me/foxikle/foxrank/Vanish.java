@@ -28,13 +28,14 @@ public class Vanish implements CommandExecutor, Listener {
                         YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
                         if (yml.getString("isVanished").equals("true")) {
                             player.sendMessage(ChatColor.translateAlternateColorCodes('§', FoxRank.getInstance().getConfig().getString("UnvanishMessage")));
+                            ActionBar.setupActionBar(player);
                             yml.set("isVanished", false);
                             try {
                                 yml.save(file);
                             } catch (IOException error) {
                                 Bukkit.getLogger().log(Level.SEVERE, "ERROR could not save " + player.getName() + "'s Vanished state.");
                             }
-                            actionBar.setupActionBar(player);
+                            ActionBar.setupActionBar(player);
 
                             for (Player p : Bukkit.getOnlinePlayers()) {
                                 p.showPlayer(FoxRank.getInstance(), player);
@@ -44,7 +45,7 @@ public class Vanish implements CommandExecutor, Listener {
                             yml.set("isVanished", true);
                             FoxRank.getInstance().getServer().getPluginManager().callEvent(new PlayerVanishEvent(player, rp.getRank()));
                             player.sendMessage(ChatColor.translateAlternateColorCodes('§', FoxRank.getInstance().getConfig().getString("VanishMessage")));
-
+                            ActionBar.setupActionBar(player);
                             for (Player p : Bukkit.getOnlinePlayers()) {
                                 p.hidePlayer(FoxRank.getInstance(), player);
                             }
