@@ -1,5 +1,6 @@
 package me.foxikle.foxrank;
 
+import org.bukkit.Bukkit;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
 
@@ -7,6 +8,7 @@ import java.io.File;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.Locale;
+import java.util.UUID;
 
 import static java.util.Objects.hash;
 
@@ -172,7 +174,7 @@ public class Logging {
         }
     }
 
-    protected static void addUnbanLogEntry(OfflineRankedPlayer player, RankedPlayer staff, String ID) {
+    protected static void addUnbanLogEntry(OfflineRankedPlayer player, UUID staff, String ID) {
         File file = new File("plugins/FoxRank/auditlog.yml");
         YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
         ConfigurationSection section = yml.createSection("UNBAN." + player.getUniqueId() + "." + ID);
@@ -184,7 +186,7 @@ public class Logging {
         section.addDefault("Player", player.getRank().getPrefix() + player.getName());
         section.addDefault("Date", Instant.now().toString());
         section.addDefault("ID", ID);
-        section.addDefault("Staff", staff.getRank().getPrefix() + staff.getName());
+        section.addDefault("Staff", FoxRank.getOfflineRank(Bukkit.getPlayer(staff)).getRankID() + Bukkit.getPlayer(staff).getName());
         yml.options().copyDefaults(true);
         try {
             yml.save(file);
