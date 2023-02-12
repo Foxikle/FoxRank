@@ -5,11 +5,11 @@ import java.time.Instant;
 import java.util.UUID;
 
 public class Database {
-    private final String host = "";
-    private final String port = "";
-    private final String database = "";
-    private final String username = "";
-    private final String password = "";
+    private final String host = FoxRank.getInstance().getConfig().getString("sqlHost");
+    private final String port = FoxRank.getInstance().getConfig().getString("sqlPort");
+    private final String database = FoxRank.getInstance().getConfig().getString("sqlName");
+    private final String username = FoxRank.getInstance().getConfig().getString("sqlUsername");
+    private final String password = FoxRank.getInstance().getConfig().getString("sqlPassword");
     private Connection connection;
 
     protected boolean isConnected() {
