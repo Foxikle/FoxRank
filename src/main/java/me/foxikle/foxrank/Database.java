@@ -1,7 +1,12 @@
 package me.foxikle.foxrank;
 
+import org.bukkit.Bukkit;
+import org.bukkit.OfflinePlayer;
+
 import java.sql.*;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 public class Database {
@@ -38,7 +43,53 @@ public class Database {
     protected void createPlayerDataTable() {
         PreparedStatement ps;
         try {
-            ps = getConnection().prepareStatement("CREATE TABLE IF NOT EXISTS foxrankplayerdata (NAME TINYTEXT, UUID TINYTEXT, RANK TINYTEXT, ISVANISHED BOOL, ISNICKED BOOL, ISMUTED BOOL, ISBANNED BOOL, MUTEDURATION TINYTEXT, MUTEREASON TINYTEXT, NICKNAME TINYTEXT, NICKNAME-RANK TINYTEXT, NICKNAME-SKIN TINYTEXT, BANDURATION TINYTEXT, BANREASON TINYTEXT, BANID TINYTEXT, PRIMARY KEY (UUID)");
+            ps = getConnection().prepareStatement("CREATE TABLE IF NOT EXISTS foxrankplayerdata (NAME TINYTEXT, UUID TINYTEXT, RANK TINYTEXT, ISVANISHED BOOL, ISNICKED BOOL, ISMUTED BOOL, ISBANNED BOOL, MUTEDURATION TINYTEXT, MUTEREASON TINYTEXT, NICKNAME TINYTEXT, NICKNAME-RANK TINYTEXT, NICKNAME-SKIN TINYTEXT, BANDURATION TINYTEXT, BANREASON TINYTEXT, BANID TINYTEXT, PRIMARY KEY (UUID))");
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    protected void createBannedPlayersTable() {
+        PreparedStatement ps;
+        try {
+            ps = getConnection().prepareStatement("CREATE TABLE IF NOT EXISTS foxrankbannedplayers (UUIDS TEXT, KEY TINYTEXT, PRIMARY KEY (KEY))");
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    protected List<OfflinePlayer> getStoredBannedPlayers() {
+        List<OfflinePlayer> returnme = new ArrayList<>();
+        try {
+            PreparedStatement ps = getConnection().prepareStatement("SELECT UUIDS FROM foxrankplayerdata WHERE KEY=?");
+            ps.setString(1, "bannedPlayers");
+            ResultSet rs = ps.executeQuery();
+
+            if (rs.next()) {
+                String str = rs.getString("bannedPlayers");
+                List<String> list1 = List.of(str.split(":"));
+
+                for (String s : list1) {
+                    returnme.add(Bukkit.getOfflinePlayer(UUID.fromString(s)));
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return returnme;
+    }
+
+    protected void setStoredBannedPlayers(List<OfflinePlayer> players) {
+        List<UUID> uuids = new ArrayList<>();
+        try {
+            for (OfflinePlayer p : players) {
+                uuids.add(p.getUniqueId());
+            }
+            PreparedStatement ps = getConnection().prepareStatement("UPDATE foxrankplayerdata SET UUIDS = ? WHERE KEY=?");
+            ps.setString(1, uuids.toString());
+            ps.setString(2, "bannedPlayers");
             ps.executeUpdate();
         } catch (SQLException e) {
             e.printStackTrace();
@@ -84,8 +135,41 @@ public class Database {
 
     protected void setStoredVanishedState(UUID uuid, boolean isVanished) {
         try {
-            PreparedStatement ps = getConnection().prepareStatement("UPDATE foxrankplayerdata SET ISVANISHED = ? WHERE UUID=?");
+            PreparedStatement ps = getConnection().prepareStatement("UPDATE foxrankplayerdata SET ISVANISHED = ? WHERE UUID=  ?");
             ps.setBoolean(1, isVanished);
+            ps.setString(2, uuid.toString());
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    protected void setStoredNicknameState(UUID uuid, boolean isNicked) {
+        try {
+            PreparedStatement ps = getConnection().prepareStatement("UPDATE foxrankplayerdata SET ISNICKED = ? WHERE UUID = ?");
+            ps.setBoolean(1, isNicked);
+            ps.setString(2, uuid.toString());
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    protected void setStoredMuteState(UUID uuid, boolean isMuted) {
+        try {
+            PreparedStatement ps = getConnection().prepareStatement("UPDATE foxrankplayerdata SET ISMUTED = ? WHERE UUID = ?");
+            ps.setBoolean(1, isMuted);
+            ps.setString(2, uuid.toString());
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    protected void setStoredBanState(UUID uuid, boolean isBanned) {
+        try {
+            PreparedStatement ps = getConnection().prepareStatement("UPDATE foxrankplayerdata SET ISBANNED = ? WHERE UUID = ?");
+            ps.setBoolean(1, isBanned);
             ps.setString(2, uuid.toString());
             ps.executeUpdate();
         } catch (SQLException e) {
