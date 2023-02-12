@@ -74,32 +74,22 @@ public class Nick implements CommandExecutor {
         textCompnent.setColor(ChatColor.BLACK);
 
         TextComponent defaultComponent = new TextComponent("\n\n »" + ChatColor.GRAY + " DEFAULT");
-        defaultComponent.setColor(ChatColor.BLACK);
-        defaultComponent.setColor(ChatColor.UNDERLINE);
         defaultComponent.setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/nick rank DEFAULT"));
         defaultComponent.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new ComponentBuilder("Click to chose DEFAULT").color(ChatColor.GREEN).create()));
 
-        TextComponent VIPComment = new TextComponent("\n » " + ChatColor.GREEN + "VIP");
-        VIPComment.setColor(ChatColor.BLACK);
-        VIPComment.setColor(ChatColor.UNDERLINE);
+        TextComponent VIPComment = new TextComponent(ChatColor.BLACK + "\n » " + ChatColor.GREEN + "VIP");
         VIPComment.setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/nick rank VIP"));
         VIPComment.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new ComponentBuilder("Click to chose VIP").color(ChatColor.GREEN).create()));
 
-        TextComponent VIPPlusComponent = new TextComponent("\n »" + ChatColor.GREEN + " VIP" + ChatColor.GOLD + "+");
-        VIPPlusComponent.setColor(ChatColor.BLACK);
-        VIPPlusComponent.setColor(ChatColor.UNDERLINE);
+        TextComponent VIPPlusComponent = new TextComponent(ChatColor.BLACK + "\n »" + ChatColor.GREEN + " VIP" + ChatColor.GOLD + "+");
         VIPPlusComponent.setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/nick rank VIP_PLUS"));
         VIPPlusComponent.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new ComponentBuilder("Click to chose VIP+").color(ChatColor.GREEN).create()));
 
-        TextComponent MVPComponent = new TextComponent("\n »" + ChatColor.AQUA + " MVP");
-        MVPComponent.setColor(ChatColor.BLACK);
-        MVPComponent.setColor(ChatColor.UNDERLINE);
+        TextComponent MVPComponent = new TextComponent(ChatColor.BLACK + "\n »" + ChatColor.AQUA + " MVP");
         MVPComponent.setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/nick rank MVP"));
         MVPComponent.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new ComponentBuilder("Click to chose MVP").color(ChatColor.GREEN).create()));
 
-        TextComponent MVPPlusComponent = new TextComponent("\n »" + ChatColor.AQUA + " MVP" + ChatColor.RED + "+");
-        MVPPlusComponent.setColor(ChatColor.BLACK);
-        MVPPlusComponent.setColor(ChatColor.UNDERLINE);
+        TextComponent MVPPlusComponent = new TextComponent(ChatColor.BLACK + "\n »" + ChatColor.AQUA + " MVP" + ChatColor.RED + "+");
         MVPPlusComponent.setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/nick rank MVP_PLUS"));
         MVPPlusComponent.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new ComponentBuilder("Click to chose MVP+").color(ChatColor.GREEN).create()));
 
@@ -209,7 +199,7 @@ public class Nick implements CommandExecutor {
         meta.spigot().addPage(pages);
 
         meta.setTitle("Nickname Book");
-        meta.setAuthor("Emperical");
+        meta.setAuthor("Foxikle");
         book.setItemMeta(meta);
         book.setItemMeta(meta);
         player.openBook(book);
@@ -217,17 +207,20 @@ public class Nick implements CommandExecutor {
 
     private static void finalizeNick(Player player, String name){
         if(!FoxRank.getInstance().getConfig().getStringList("BlacklistedNicknames").contains(name.toLowerCase())) {
-
-            File file = new File("plugins/FoxRank/PlayerData/" + player.getUniqueId() + ".yml");
-            YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
-            yml.set("isNicked", true);
-            try {
-                yml.save(file);
-            } catch (IOException error) {
-                error.printStackTrace();
+            if (FoxRank.getInstance().useDb) {
+                FoxRank.getInstance().db.setStoredNicknameData(player.getUniqueId(), true, Rank.ofString(rankID), name, skinOption);
+            } else {
+                File file = new File("plugins/FoxRank/PlayerData/" + player.getUniqueId() + ".yml");
+                YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
+                yml.set("isNicked", true);
+                try {
+                    yml.save(file);
+                } catch (IOException error) {
+                    error.printStackTrace();
+                }
             }
             changeName(name, player);
-            FoxRank.setTeam(player, yml.getString("Nickname-Rank"));
+            FoxRank.setTeam(player, rankID);
             Logging.addNicknameLogEntry(new RankedPlayer(player), name, rankID, skinOption);
             FoxRank.getInstance().getServer().getPluginManager().callEvent(new PlayerNicknameEvent(player, name, Rank.ofString(rankID)));
             ActionBar.setupActionBar(player);
@@ -281,16 +274,7 @@ public class Nick implements CommandExecutor {
                 })
                 .onComplete((player, text) -> {
 
-                    File file = new File("plugins/FoxRank/PlayerData/" + player.getUniqueId() + ".yml");
-                    YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
-                    yml.set("isNicked", true);
-                    yml.set("Nickname", text);
                     finalizeNick(player, text);
-                    try {
-                        yml.save(file);
-                    } catch (IOException error) {
-                        error.printStackTrace();
-                    }
                     return AnvilGUI.Response.close();
                 })
                 .text(p.getName())
@@ -316,29 +300,25 @@ public class Nick implements CommandExecutor {
                                 String name = names.get(new Random().nextInt(names.size()-1) +1 );
 
                                 finalizeNick(player, name);
-                                File file = new File("plugins/FoxRank/PlayerData/" + player.getUniqueId() + ".yml");
-                                YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
-                                yml.set("isNicked", true);
-                                yml.set("Nickname", name);
-                                try {
-                                    yml.save(file);
-                                } catch (IOException error) {
-                                    error.printStackTrace();
-                                }
+
                             } else if (args[0].equalsIgnoreCase("set")) {
                                 createAnvil(player);
                             } else if (args[0].equalsIgnoreCase("reset")) {
                                 String realName = FoxRank.getInstance().getTrueName(player.getUniqueId());
-                                    changeSkin(player, realName);
-                                    changeName(realName, player);
-                                    refreshPlayer(player);
-                                File file = new File("plugins/FoxRank/PlayerData/" + player.getUniqueId() + ".yml");
-                                YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
-                                yml.set("isNicked", false);
-                                try {
-                                    yml.save(file);
-                                } catch (IOException error) {
-                                    error.printStackTrace();
+                                changeSkin(player, realName);
+                                changeName(realName, player);
+                                refreshPlayer(player);
+                                if (FoxRank.getInstance().useDb) {
+                                    FoxRank.getInstance().db.setStoredNicknameState(player.getUniqueId(), false);
+                                } else {
+                                    File file = new File("plugins/FoxRank/PlayerData/" + player.getUniqueId() + ".yml");
+                                    YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
+                                    yml.set("isNicked", false);
+                                    try {
+                                        yml.save(file);
+                                    } catch (IOException error) {
+                                        error.printStackTrace();
+                                    }
                                 }
                             } else if (args[0].equals("agree")) {
                                 openRankBook(player);
@@ -346,55 +326,15 @@ public class Nick implements CommandExecutor {
                         } else if (args.length >= 2) {
                             if (args[0].equalsIgnoreCase("rank")) {
                                 if (args[1].equals("DEFAULT")) {
-                                    File file = new File("plugins/FoxRank/PlayerData/" + player.getUniqueId() + ".yml");
-                                    YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
-                                    yml.set("Nickname-Rank", Rank.DEFAULT.getRankID());
                                     rankID = Rank.DEFAULT.getRankID();
-                                    try {
-                                        yml.save(file);
-                                    } catch (IOException error) {
-                                        error.printStackTrace();
-                                    }
                                 } else if (args[1].equals("VIP")) {
-                                    File file = new File("plugins/FoxRank/PlayerData/" + player.getUniqueId() + ".yml");
-                                    YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
-                                    yml.set("Nickname-Rank", Rank.VIP.getRankID());
                                     rankID = Rank.VIP.getRankID();
-                                    try {
-                                        yml.save(file);
-                                    } catch (IOException error) {
-                                        error.printStackTrace();
-                                    }
                                 } else if (args[1].equals("VIP_PLUS")) {
-                                    File file = new File("plugins/FoxRank/PlayerData/" + player.getUniqueId() + ".yml");
-                                    YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
-                                    yml.set("Nickname-Rank", Rank.VIP_PLUS.getRankID());
                                     rankID = Rank.VIP_PLUS.getRankID();
-                                    try {
-                                        yml.save(file);
-                                    } catch (IOException error) {
-                                        error.printStackTrace();
-                                    }
                                 } else if (args[1].equals("MVP")) {
-                                    File file = new File("plugins/FoxRank/PlayerData/" + player.getUniqueId() + ".yml");
-                                    YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
-                                    yml.set("Nickname-Rank", Rank.MVP.getRankID());
                                     rankID = Rank.MVP.getRankID();
-                                    try {
-                                        yml.save(file);
-                                    } catch (IOException error) {
-                                        error.printStackTrace();
-                                    }
                                 } else if (args[1].equals("MVP_PLUS")) {
-                                    File file = new File("plugins/FoxRank/PlayerData/" + player.getUniqueId() + ".yml");
-                                    YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
-                                    yml.set("Nickname-Rank", Rank.MVP_PLUS.getRankID());
                                     rankID = Rank.MVP_PLUS.getRankID();
-                                    try {
-                                        yml.save(file);
-                                    } catch (IOException error) {
-                                        error.printStackTrace();
-                                    }
                                 }
                                 openSkinBook(player);
                             } else if (args[0].equalsIgnoreCase("skin")) {
@@ -410,16 +350,8 @@ public class Nick implements CommandExecutor {
                                         error.printStackTrace();
                                     }
                                 } else if (args[1].equalsIgnoreCase("default")) {
-                                    File file = new File("plugins/FoxRank/PlayerData/" + player.getUniqueId() + ".yml");
-                                    YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
                                     changeSkin(player, null);
-                                    yml.set("Nickname-Skin", getSkin(null));
                                     skinOption = "default";
-                                    try {
-                                        yml.save(file);
-                                    } catch (IOException error) {
-                                        error.printStackTrace();
-                                    }
                                 } else if(args[1].equalsIgnoreCase("random")){
                                     GameProfile profile = ((CraftPlayer) player).getHandle().getGameProfile();
 
@@ -433,28 +365,10 @@ public class Nick implements CommandExecutor {
                                         profile.getProperties().put("textures", new Property("textures", value, signature));
                                         refreshPlayer(player);
 
-                                        File file = new File("plugins/FoxRank/PlayerData/" + player.getUniqueId() + ".yml");
-                                        YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
-                                        yml.set("Nickname-Skin", new Property("textures", value, signature));
                                         skinOption = "random";
-                                        try {
-                                            yml.save(file);
-                                        } catch (IOException error) {
-                                            error.printStackTrace();
-                                        }
                                     } else {
                                         Bukkit.getLogger().log(Level.SEVERE, "Values of RandomSkinSignatureList and RandomSkinValueList are not identical in size");
-
-                                        File file = new File("plugins/FoxRank/PlayerData/" + player.getUniqueId() + ".yml");
-                                        YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
                                         changeSkin(player, null);
-                                        yml.set("Nickname-Skin", getSkin(null));
-                                        try {
-                                            yml.save(file);
-                                        } catch (IOException error) {
-                                            error.printStackTrace();
-                                        }
-
                                     }
                                 }
                                 openNameBook(player);
