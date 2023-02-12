@@ -335,6 +335,9 @@ sqlHost: localhost
 # sqlPort: -> the port for the database (On most it defaults to 3306)
 sqlPort: 3306
 
+# sqlName: -> the name of the database
+sqlName: foxrankdata
+
 # sqlUsername: -> the username for the plugin to use
 sqlUsername: foxikle
 
