@@ -204,4 +204,116 @@ public class Database {
         }
         return false;
     }
+
+    protected String getStoredNickname(UUID uuid) {
+        try {
+            PreparedStatement ps = getConnection().prepareStatement("SELECT NICKNAME FROM foxrankplayerdata WHERE UUID=?");
+            ps.setString(1, uuid.toString());
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                return rs.getString("NICKNAME");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return "";
+    }
+
+    protected String getStoredNicknameSkin(UUID uuid) {
+        try {
+            PreparedStatement ps = getConnection().prepareStatement("SELECT NICKNAME-SKIN FROM foxrankplayerdata WHERE UUID=?");
+            ps.setString(1, uuid.toString());
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                return rs.getString("NICKNAME-SKIN");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return "";
+    }
+
+    protected Rank getStoredNicknameRank(UUID uuid) {
+        try {
+            PreparedStatement ps = getConnection().prepareStatement("SELECT NICKNAME-RANK FROM foxrankplayerdata WHERE UUID=?");
+            ps.setString(1, uuid.toString());
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                return Rank.ofString(rs.getString("NICKNAME-RANK"));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return Rank.DEFAULT;
+    }
+
+    protected String getStoredMuteDuration(UUID uuid) {
+        try {
+            PreparedStatement ps = getConnection().prepareStatement("SELECT MUTEDURATION FROM foxrankplayerdata WHERE UUID=?");
+            ps.setString(1, uuid.toString());
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                return rs.getString("MUTEDURATION");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return Rank.DEFAULT.getRankID();
+    }
+
+    protected String getStoredMuteReason(UUID uuid) {
+        try {
+            PreparedStatement ps = getConnection().prepareStatement("SELECT MUTEREASON FROM foxrankplayerdata WHERE UUID=?");
+            ps.setString(1, uuid.toString());
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                return rs.getString("MUTEREASON");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return Rank.DEFAULT.getRankID();
+    }
+
+    protected String getStoredBanID(UUID uuid) {
+        try {
+            PreparedStatement ps = getConnection().prepareStatement("SELECT BANID FROM foxrankplayerdata WHERE UUID=?");
+            ps.setString(1, uuid.toString());
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                return rs.getString("BANID");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return Rank.DEFAULT.getRankID();
+    }
+
+    protected String getStoredBanDuration(UUID uuid) {
+        try {
+            PreparedStatement ps = getConnection().prepareStatement("SELECT BANDURATION FROM foxrankplayerdata WHERE UUID=?");
+            ps.setString(1, uuid.toString());
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                return rs.getString("BANDURATION");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return Rank.DEFAULT.getRankID();
+    }
+
+    protected String getStoredBanReason(UUID uuid) {
+        try {
+            PreparedStatement ps = getConnection().prepareStatement("SELECT BANREASON FROM foxrankplayerdata WHERE UUID=?");
+            ps.setString(1, uuid.toString());
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                return rs.getString("BANREASON");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return Rank.DEFAULT.getRankID();
+    }
 }
