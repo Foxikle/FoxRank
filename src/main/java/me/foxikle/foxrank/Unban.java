@@ -44,7 +44,7 @@ public class Unban implements CommandExecutor, TabExecutor {
                             } catch (IOException e) {
                                 e.printStackTrace();
                             }
-                            FoxRank.getInstance().addUnbanLogEntry(orp, staff, Integer.toString(hash("FoxRank:" + orp.getName() + ":" + Instant.now()), 16).toUpperCase(Locale.ROOT));
+                            Logging.addUnbanLogEntry(orp, staff, Integer.toString(hash("FoxRank:" + orp.getName() + ":" + Instant.now()), 16).toUpperCase(Locale.ROOT));
                             FoxRank.getInstance().getServer().getPluginManager().callEvent(new ModerationActionEvent(staff.getPlayer(), orp.getOfflinePlayer().getPlayer(), orp.getRank(), staff.getRank(), ModerationAction.UNBAN));
                             staff.sendMessage(ChatColor.translateAlternateColorCodes('§', FoxRank.getInstance().getConfig().getString("UnbanCommandMessage").replace("$USER", orp.getName())));
                         } else{

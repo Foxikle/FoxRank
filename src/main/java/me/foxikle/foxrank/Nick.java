@@ -228,7 +228,7 @@ public class Nick implements CommandExecutor {
             }
             changeName(name, player);
             FoxRank.setTeam(player, yml.getString("Nickname-Rank"));
-            FoxRank.getInstance().addNicknameLogEntry(new RankedPlayer(player), name, rankID, skinOption);
+            Logging.addNicknameLogEntry(new RankedPlayer(player), name, rankID, skinOption);
             FoxRank.getInstance().getServer().getPluginManager().callEvent(new PlayerNicknameEvent(player, name, Rank.ofString(rankID)));
             ActionBar.setupActionBar(player);
         } else {

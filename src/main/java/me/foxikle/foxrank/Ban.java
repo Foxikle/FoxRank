@@ -223,7 +223,7 @@ public class Ban implements CommandExecutor, TabExecutor {
         yml.set("BanDuration", duration.toString());
         yml.set("BanID", banID);
         yml.set("isBanned", true);
-        FoxRank.getInstance().addOnlineBanLogEntry(new RankedPlayer(banee.getPlayer()), banner, Instant.now(), reasonStr, FoxRank.getInstance().getFormattedExpiredString(duration, Instant.now()), banID, silent);
+        Logging.addOnlineBanLogEntry(new RankedPlayer(banee.getPlayer()), banner, Instant.now(), reasonStr, FoxRank.getInstance().getFormattedExpiredString(duration, Instant.now()), banID, silent);
 
         try {
             yml.save(file);
@@ -246,7 +246,7 @@ public class Ban implements CommandExecutor, TabExecutor {
         } else {
             banner.sendMessage(ChatColor.translateAlternateColorCodes('§', FoxRank.getInstance().getConfig().getString("BanSenderMessage").replace("$PLAYER", banee.getName()).replace("$REASON", reasonStr)));
         }
-        FoxRank.getInstance().addOfflineBanLogEntry(new OfflineRankedPlayer(banee), banner, Instant.now(), reasonStr, FoxRank.getInstance().getFormattedExpiredString(duration, Instant.now()), banID, silent);
+        Logging.addOfflineBanLogEntry(new OfflineRankedPlayer(banee), banner, Instant.now(), reasonStr, FoxRank.getInstance().getFormattedExpiredString(duration, Instant.now()), banID, silent);
         if (!FoxRank.getInstance().getBannedPlayers().contains(banee)) {
             File file1 = new File("plugins/FoxRank/bannedPlayers.yml");
             YamlConfiguration yml1 = YamlConfiguration.loadConfiguration(file1);
@@ -262,7 +262,7 @@ public class Ban implements CommandExecutor, TabExecutor {
         yml.set("BanReason", reasonStr);
         yml.set("BanID", banID);
         yml.set("isBanned", true);
-        FoxRank.getInstance().addOfflineBanLogEntry(new OfflineRankedPlayer(banee), banner, Instant.now(), reasonStr, FoxRank.getInstance().getFormattedExpiredString(duration, Instant.now()), banID, silent);
+        Logging.addOfflineBanLogEntry(new OfflineRankedPlayer(banee), banner, Instant.now(), reasonStr, FoxRank.getInstance().getFormattedExpiredString(duration, Instant.now()), banID, silent);
         try {
             yml.save(file);
         } catch (IOException e) {
