@@ -24,35 +24,52 @@ public class Vanish implements CommandExecutor, Listener {
                 if (sender instanceof Player player) {
                     RankedPlayer rp = new RankedPlayer(player);
                     if (rp.getPowerLevel() >= FoxRank.getInstance().getConfig().getInt("VanishPermissions")) {
-                        File file = new File("plugins/FoxRank/PlayerData/" + player.getUniqueId() + ".yml");
-                        YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
-                        if (yml.getString("isVanished").equals("true")) {
-                            player.sendMessage(ChatColor.translateAlternateColorCodes('§', FoxRank.getInstance().getConfig().getString("UnvanishMessage")));
-                            ActionBar.setupActionBar(player);
-                            yml.set("isVanished", false);
-                            try {
-                                yml.save(file);
-                            } catch (IOException error) {
-                                Bukkit.getLogger().log(Level.SEVERE, "ERROR could not save " + player.getName() + "'s Vanished state.");
-                            }
-                            ActionBar.setupActionBar(player);
+                        if (FoxRank.getInstance().useDb) {
+                            Database db = FoxRank.getInstance().db;
+                            if (db.getStoredVanishStatus(player.getUniqueId())) {
+                                player.sendMessage(ChatColor.translateAlternateColorCodes('§', FoxRank.getInstance().getConfig().getString("UnvanishMessage")));
+                                ActionBar.setupActionBar(player);
+                                db.setStoredVanishedState(player.getUniqueId(), false);
+                                for (Player p : Bukkit.getOnlinePlayers()) {
+                                    p.showPlayer(FoxRank.getInstance(), player);
+                                }
 
-                            for (Player p : Bukkit.getOnlinePlayers()) {
-                                p.showPlayer(FoxRank.getInstance(), player);
+                            } else if (!db.getStoredVanishStatus(player.getUniqueId())) {
+                                db.setStoredVanishedState(player.getUniqueId(), true);
+                                FoxRank.getInstance().getServer().getPluginManager().callEvent(new PlayerVanishEvent(player, rp.getRank()));
+                                player.sendMessage(ChatColor.translateAlternateColorCodes('§', FoxRank.getInstance().getConfig().getString("VanishMessage")));
+                                ActionBar.setupActionBar(player);
                             }
+                        } else {
+                            File file = new File("plugins/FoxRank/PlayerData/" + player.getUniqueId() + ".yml");
+                            YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
+                            if (yml.getString("isVanished").equals("true")) {
+                                player.sendMessage(ChatColor.translateAlternateColorCodes('§', FoxRank.getInstance().getConfig().getString("UnvanishMessage")));
+                                yml.set("isVanished", false);
+                                try {
+                                    yml.save(file);
+                                } catch (IOException error) {
+                                    Bukkit.getLogger().log(Level.SEVERE, "ERROR could not save " + player.getName() + "'s Vanished state.");
+                                }
+                                ActionBar.setupActionBar(player);
 
-                        } else if (yml.getString("isVanished").equals("false")) {
-                            yml.set("isVanished", true);
-                            FoxRank.getInstance().getServer().getPluginManager().callEvent(new PlayerVanishEvent(player, rp.getRank()));
-                            player.sendMessage(ChatColor.translateAlternateColorCodes('§', FoxRank.getInstance().getConfig().getString("VanishMessage")));
-                            ActionBar.setupActionBar(player);
-                            for (Player p : Bukkit.getOnlinePlayers()) {
-                                p.hidePlayer(FoxRank.getInstance(), player);
-                            }
-                            try {
-                                yml.save(file);
-                            } catch (IOException error) {
-                                Bukkit.getLogger().log(Level.SEVERE, "ERROR could not save " + player.getName() + "'s Vanished state.");
+                                for (Player p : Bukkit.getOnlinePlayers()) {
+                                    p.showPlayer(FoxRank.getInstance(), player);
+                                }
+
+                            } else if (yml.getString("isVanished").equals("false")) {
+                                yml.set("isVanished", true);
+                                FoxRank.getInstance().getServer().getPluginManager().callEvent(new PlayerVanishEvent(player, rp.getRank()));
+                                player.sendMessage(ChatColor.translateAlternateColorCodes('§', FoxRank.getInstance().getConfig().getString("VanishMessage")));
+                                ActionBar.setupActionBar(player);
+                                for (Player p : Bukkit.getOnlinePlayers()) {
+                                    p.hidePlayer(FoxRank.getInstance(), player);
+                                }
+                                try {
+                                    yml.save(file);
+                                } catch (IOException error) {
+                                    Bukkit.getLogger().log(Level.SEVERE, "ERROR could not save " + player.getName() + "'s Vanished state.");
+                                }
                             }
                         }
                     } else {
