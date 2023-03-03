@@ -2,6 +2,7 @@ package me.foxikle.foxrank;
 
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -193,6 +194,7 @@ public class Listeners implements Listener {
             String reason;
             String duration;
             String id;
+            Database db = FoxRank.instance.db;
             if (FoxRank.getInstance().useDb) {
                 reason = FoxRank.getInstance().db.getStoredBanReason(uuid);
                 duration = FoxRank.getInstance().db.getStoredBanDuration(uuid);
@@ -218,9 +220,12 @@ public class Listeners implements Listener {
                 Instant inst = Instant.parse(duration);
                 if (Instant.now().isAfter(inst)) {
                     FoxRank.getInstance().unbanOfflinePlayer(uuid, null);
-
                     if (FoxRank.getInstance().useDb) {
-
+                        List<OfflinePlayer> list = db.getStoredBannedPlayers();
+                        if (list.contains(Bukkit.getOfflinePlayer(e.getUniqueId()))) {
+                            list.remove(Bukkit.getOfflinePlayer(e.getUniqueId()));
+                            db.setStoredBannedPlayers(list);
+                        }
                     } else {
                         File bannedPlayersFile = new File("plugins/FoxRank/bannedPlayers.yml");
                         YamlConfiguration bannedPlayersyml = YamlConfiguration.loadConfiguration(bannedPlayersFile);
