@@ -209,6 +209,7 @@ public class Ban implements CommandExecutor, TabExecutor {
                 List<OfflinePlayer> player = FoxRank.getInstance().getBannedPlayers();
                 player.add(banee);
                 FoxRank.getInstance().db.setStoredBannedPlayers(player);
+                FoxRank.getInstance().db.setStoredBanData(banee.getUniqueId(), true, reason, duration, banID);
             } else {
                 File file = new File("plugins/FoxRank/PlayerData/" + banee.getUniqueId() + ".yml");
                 YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);

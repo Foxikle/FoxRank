@@ -3,6 +3,7 @@ package me.foxikle.foxrank;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
 
+import javax.annotation.Nullable;
 import java.sql.*;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -190,7 +191,7 @@ public class Database {
         }
     }
 
-    protected void setStoredBanData(UUID uuid, boolean isBanned, String reason, Instant duration, String ID) {
+    protected void setStoredBanData(UUID uuid, boolean isBanned, String reason, @Nullable Instant duration, String ID) {
         try {
             PreparedStatement ps = getConnection().prepareStatement("UPDATE foxrankplayerdata SET isbanned = ?, banduration = ?, banreason = ?, banid = ? WHERE uuid = ?");
             ps.setBoolean(1, isBanned);
