@@ -9,10 +9,8 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabExecutor;
-import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 
-import java.io.File;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -35,9 +33,7 @@ public class Mute implements CommandExecutor, TabExecutor {
                                 rp.sendMessage(ChatColor.translateAlternateColorCodes('§', FoxRank.getInstance().getConfig().getString("MutePlayerWithHigherPowerLevelMessage")));
                             } else {
                                 if (rp.getPowerLevel() >= FoxRank.getInstance().getConfig().getInt("MutePermissions")) {
-                                    File file = new File("plugins/FoxRank/PlayerData/" + mutee.getUniqueId() + ".yml");
-                                    YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
-                                    if (yml.getString("isMuted").equalsIgnoreCase("false")) {
+                                    if (FoxRank.getInstance().isMuted(mutee.getUniqueId())) {
                                         expires = Instant.now();
                                         if (args[1].contains("d") || args[1].contains("h") || args[1].contains("m")) {
                                             String durStr = args[1];
@@ -82,9 +78,7 @@ public class Mute implements CommandExecutor, TabExecutor {
                                 rp.sendMessage(ChatColor.translateAlternateColorCodes('§', FoxRank.getInstance().getConfig().getString("MutePlayerWithHigherPowerLevelMessage")));
                             } else {
                                 if (rp.getPowerLevel() >= FoxRank.getInstance().getConfig().getInt("MutePermissions")) {
-                                    File file = new File("plugins/FoxRank/PlayerData/" + mutee.getUniqueId() + ".yml");
-                                    YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
-                                    if (yml.getString("isMuted").equalsIgnoreCase("false")) {
+                                    if (FoxRank.instance.isMuted(mutee.getUniqueId())) {
                                         expires = Instant.now();
                                         if (args[1].contains("d") || args[1].contains("h") || args[1].contains("m")) {
                                             String durStr = args[1];
@@ -147,7 +141,6 @@ public class Mute implements CommandExecutor, TabExecutor {
                 if (sender instanceof Player player) {
                     if (!FoxRank.getInstance().isMuted(player.getUniqueId())) {
                         player.sendMessage(ChatColor.translateAlternateColorCodes('§', FoxRank.getInstance().getConfig().getString("ImmutedCommandNotMutedMessage")));
-
                     } else if (args.length >= 1) {
                         if (Bukkit.getPlayerExact(args[0]) != null) {
                             Player receiver = Bukkit.getPlayerExact(args[0]);
