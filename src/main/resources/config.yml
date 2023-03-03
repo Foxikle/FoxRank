@@ -291,6 +291,9 @@ VanishMessage: §eYou vanished into the shadows.
 # General configurations for the FoxRank plugin.
 
 
+# Bungeecord: -> Is this server using bungeecord?
+bungeecord: false
+
 # LogsMenuName: -> The name of the menu of /logs ($NAME (Player's logs you're viewing), $LOGTYPE (Type of logs you're viewing), Supports § Colors)
 LogsMenuName: $NAME's §r§0$LOGTYPE history
 
@@ -336,10 +339,10 @@ sqlHost: localhost
 sqlPort: 3306
 
 # sqlName: -> the name of the database
-sqlName: foxrankdata
+sqlName: foxrank
 
 # sqlUsername: -> the username for the plugin to use
-sqlUsername: foxikle
+sqlUsername: root
 
 # sqlPassword: -> the password for the plugin to use
 sqlPassword: password
