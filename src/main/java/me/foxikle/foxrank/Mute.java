@@ -33,7 +33,7 @@ public class Mute implements CommandExecutor, TabExecutor {
                                 rp.sendMessage(ChatColor.translateAlternateColorCodes('§', FoxRank.getInstance().getConfig().getString("MutePlayerWithHigherPowerLevelMessage")));
                             } else {
                                 if (rp.getPowerLevel() >= FoxRank.getInstance().getConfig().getInt("MutePermissions")) {
-                                    if (FoxRank.getInstance().isMuted(mutee.getUniqueId())) {
+                                    if (!FoxRank.getInstance().isMuted(mutee.getUniqueId())) {
                                         expires = Instant.now();
                                         if (args[1].contains("d") || args[1].contains("h") || args[1].contains("m")) {
                                             String durStr = args[1];
