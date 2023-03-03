@@ -43,7 +43,7 @@ public class Database {
     protected void createPlayerDataTable() {
         PreparedStatement ps;
         try {
-            ps = getConnection().prepareStatement("CREATE TABLE IF NOT EXISTS foxrankplayerdata (NAME TINYTEXT, UUID TINYTEXT, RANK TINYTEXT, ISVANISHED BOOL, ISNICKED BOOL, ISMUTED BOOL, ISBANNED BOOL, MUTEDURATION TINYTEXT, MUTEREASON TINYTEXT, NICKNAME TINYTEXT, NICKNAME-RANK TINYTEXT, NICKNAME-SKIN TINYTEXT, BANDURATION TINYTEXT, BANREASON TINYTEXT, BANID TINYTEXT, PRIMARY KEY (UUID))");
+            ps = getConnection().prepareStatement("CREATE TABLE IF NOT EXISTS foxrankplayerdata (name VARCHAR(16), uuid VARCHAR(36), rankid VARCHAR(36), isvanished BOOLEAN, isnicked BOOLEAN, ismuted BOOLEAN, isbanned BOOLEAN, muteduration TEXT, mutereason TEXT, nickname TEXT, nicknamerank TEXT, nicknameskin TEXT, banduration TEXT, banreason TEXT, banid TEXT, PRIMARY KEY(uuid))");
             ps.executeUpdate();
         } catch (SQLException e) {
             e.printStackTrace();
@@ -53,7 +53,7 @@ public class Database {
     protected void createBannedPlayersTable() {
         PreparedStatement ps;
         try {
-            ps = getConnection().prepareStatement("CREATE TABLE IF NOT EXISTS foxrankbannedplayers (UUIDS TEXT, KEY TINYTEXT, PRIMARY KEY (KEY))");
+            ps = getConnection().prepareStatement("CREATE TABLE IF NOT EXISTS foxrankbannedplayers (uuids TEXT, id VARCHAR(100), PRIMARY KEY(id))");
             ps.executeUpdate();
         } catch (SQLException e) {
             e.printStackTrace();
@@ -63,7 +63,7 @@ public class Database {
     protected List<OfflinePlayer> getStoredBannedPlayers() {
         List<OfflinePlayer> returnme = new ArrayList<>();
         try {
-            PreparedStatement ps = getConnection().prepareStatement("SELECT UUIDS FROM foxrankplayerdata WHERE KEY=?");
+            PreparedStatement ps = getConnection().prepareStatement("SELECT uuid FROM foxrankplayerdata WHERE id=?");
             ps.setString(1, "bannedPlayers");
             ResultSet rs = ps.executeQuery();
 
@@ -87,7 +87,7 @@ public class Database {
             for (OfflinePlayer p : players) {
                 uuids.add(p.getUniqueId());
             }
-            PreparedStatement ps = getConnection().prepareStatement("UPDATE foxrankplayerdata SET UUIDS = ? WHERE KEY=?");
+            PreparedStatement ps = getConnection().prepareStatement("UPDATE foxrankplayerdata SET uuids = ? WHERE id=?");
             ps.setString(1, uuids.toString());
             ps.setString(2, "bannedPlayers");
             ps.executeUpdate();
@@ -100,7 +100,7 @@ public class Database {
         UUID uuid = rp.getUniqueId();
         try {
             if (!exists(uuid)) {
-                PreparedStatement ps = getConnection().prepareStatement("INSERT IGNORE INFO foxrankplayerdata (NAME, UUID) VALUES (?,?)");
+                PreparedStatement ps = getConnection().prepareStatement("INSERT IGNORE INTO foxrankplayerdata (name, uuid) VALUES (?,?)");
                 ps.setString(1, rp.getName());
                 ps.setString(2, uuid.toString());
                 ps.executeUpdate();
@@ -112,7 +112,7 @@ public class Database {
 
     private boolean exists(UUID uuid) {
         try {
-            PreparedStatement ps = getConnection().prepareStatement("SELECT * FROM foxrankplayerdata WHERE UUID = ?");
+            PreparedStatement ps = getConnection().prepareStatement("SELECT * FROM foxrankplayerdata WHERE uuid = ?");
             ps.setString(1, uuid.toString());
             ResultSet results = ps.executeQuery();
             return results.next();
@@ -124,7 +124,7 @@ public class Database {
 
     protected void setStoredRank(UUID uuid, Rank rank) {
         try {
-            PreparedStatement ps = getConnection().prepareStatement("UPDATE foxrankplayerdata SET RANK = ? WHERE UUID=?");
+            PreparedStatement ps = getConnection().prepareStatement("UPDATE foxrankplayerdata SET rankid = ? WHERE uuid=?");
             ps.setString(1, rank.getRankID());
             ps.setString(2, uuid.toString());
             ps.executeUpdate();
@@ -135,7 +135,7 @@ public class Database {
 
     protected void setStoredVanishedState(UUID uuid, boolean isVanished) {
         try {
-            PreparedStatement ps = getConnection().prepareStatement("UPDATE foxrankplayerdata SET ISVANISHED = ? WHERE UUID=  ?");
+            PreparedStatement ps = getConnection().prepareStatement("UPDATE foxrankplayerdata SET isvanished = ? WHERE uuid = ?");
             ps.setBoolean(1, isVanished);
             ps.setString(2, uuid.toString());
             ps.executeUpdate();
@@ -146,7 +146,7 @@ public class Database {
 
     protected void setStoredNicknameState(UUID uuid, boolean isNicked) {
         try {
-            PreparedStatement ps = getConnection().prepareStatement("UPDATE foxrankplayerdata SET ISNICKED = ? WHERE UUID = ?");
+            PreparedStatement ps = getConnection().prepareStatement("UPDATE foxrankplayerdata SET isnicked = ? WHERE uuid = ?");
             ps.setBoolean(1, isNicked);
             ps.setString(2, uuid.toString());
             ps.executeUpdate();
@@ -157,7 +157,7 @@ public class Database {
 
     protected void setStoredMuteState(UUID uuid, boolean isMuted) {
         try {
-            PreparedStatement ps = getConnection().prepareStatement("UPDATE foxrankplayerdata SET ISMUTED = ? WHERE UUID = ?");
+            PreparedStatement ps = getConnection().prepareStatement("UPDATE foxrankplayerdata SET ismuted = ? WHERE uuid = ?");
             ps.setBoolean(1, isMuted);
             ps.setString(2, uuid.toString());
             ps.executeUpdate();
@@ -168,7 +168,7 @@ public class Database {
 
     protected void setStoredBanState(UUID uuid, boolean isBanned) {
         try {
-            PreparedStatement ps = getConnection().prepareStatement("UPDATE foxrankplayerdata SET ISBANNED = ? WHERE UUID = ?");
+            PreparedStatement ps = getConnection().prepareStatement("UPDATE foxrankplayerdata SET isbanned = ? WHERE uuid = ?");
             ps.setBoolean(1, isBanned);
             ps.setString(2, uuid.toString());
             ps.executeUpdate();
@@ -179,7 +179,7 @@ public class Database {
 
     protected void setStoredMuteData(UUID uuid, boolean isMuted, String reason, Instant duration) {
         try {
-            PreparedStatement ps = getConnection().prepareStatement("UPDATE foxrankplayerdata SET ISMUTED = ?, MUTEDURATION = ?, MUTEREASON = ? WHERE UUID=?");
+            PreparedStatement ps = getConnection().prepareStatement("UPDATE foxrankplayerdata SET ismuted = ?, muteduration = ?, mutereaosn = ? WHERE uuid=?");
             ps.setBoolean(1, isMuted);
             ps.setString(2, duration.toString());
             ps.setString(3, reason);
@@ -192,7 +192,7 @@ public class Database {
 
     protected void setStoredBanData(UUID uuid, boolean isBanned, String reason, Instant duration, String ID) {
         try {
-            PreparedStatement ps = getConnection().prepareStatement("UPDATE foxrankplayerdata SET ISMUTED = ?, BANDURATION = ?, BANREASON = ?, BANID = ? WHERE UUID=?");
+            PreparedStatement ps = getConnection().prepareStatement("UPDATE foxrankplayerdata SET isbanned = ?, banduration = ?, banreason = ?, banid = ? WHERE uuid = ?");
             ps.setBoolean(1, isBanned);
             ps.setString(2, duration.toString());
             ps.setString(3, reason);
@@ -207,8 +207,8 @@ public class Database {
 
     protected void setStoredNicknameData(UUID uuid, boolean isNicked, Rank rank, String newNick, String skin) {
         try {
-            PreparedStatement ps = getConnection().prepareStatement("UPDATE foxrankplayerdata SET ISNICKED = ?, NICKNAME = ?, NICKNAME-RANK = ?, NICKNAME-SKIN = ? WHERE UUID=?");
-            ps.setBoolean(1, true);
+            PreparedStatement ps = getConnection().prepareStatement("UPDATE foxrankplayerdata SET isnicked = ?, nickname = ?, nicknamerank = ?, nicknameskin = ? WHERE uuid = ?");
+            ps.setBoolean(1, isNicked);
             ps.setString(2, newNick);
             ps.setString(3, rank.getRankID());
             ps.setString(4, skin);
@@ -221,11 +221,11 @@ public class Database {
 
     protected Rank getStoredRank(UUID uuid) {
         try {
-            PreparedStatement ps = getConnection().prepareStatement("SELECT RANK FROM foxrankplayerdata WHERE UUID=?");
+            PreparedStatement ps = getConnection().prepareStatement("SELECT rankid FROM foxrankplayerdata WHERE uuid=?");
             ps.setString(1, uuid.toString());
             ResultSet rs = ps.executeQuery();
             if (rs.next()) {
-                return Rank.ofString(rs.getString("RANK"));
+                return Rank.ofString(rs.getString("rankid"));
             }
         } catch (SQLException e) {
             e.printStackTrace();
@@ -235,11 +235,11 @@ public class Database {
 
     protected boolean getStoredMuteStatus(UUID uuid) {
         try {
-            PreparedStatement ps = getConnection().prepareStatement("SELECT ISMUTED FROM foxrankplayerdata WHERE UUID=?");
+            PreparedStatement ps = getConnection().prepareStatement("SELECT ismuted FROM foxrankplayerdata WHERE uuid=?");
             ps.setString(1, uuid.toString());
             ResultSet rs = ps.executeQuery();
             if (rs.next()) {
-                return rs.getBoolean("ISMUTED");
+                return rs.getBoolean("ismuted");
             }
         } catch (SQLException e) {
             e.printStackTrace();
@@ -249,11 +249,11 @@ public class Database {
 
     protected boolean getStoredBanStatus(UUID uuid) {
         try {
-            PreparedStatement ps = getConnection().prepareStatement("SELECT ISBANNED FROM foxrankplayerdata WHERE UUID=?");
+            PreparedStatement ps = getConnection().prepareStatement("SELECT isbanned FROM foxrankplayerdata WHERE uuid = ?");
             ps.setString(1, uuid.toString());
             ResultSet rs = ps.executeQuery();
             if (rs.next()) {
-                return rs.getBoolean("ISBANNED");
+                return rs.getBoolean("isbanned");
             }
         } catch (SQLException e) {
             e.printStackTrace();
@@ -263,11 +263,11 @@ public class Database {
 
     protected boolean getStoredNicknameStatus(UUID uuid) {
         try {
-            PreparedStatement ps = getConnection().prepareStatement("SELECT ISNICKED FROM foxrankplayerdata WHERE UUID=?");
+            PreparedStatement ps = getConnection().prepareStatement("SELECT isnicked FROM foxrankplayerdata WHERE uuid=?");
             ps.setString(1, uuid.toString());
             ResultSet rs = ps.executeQuery();
             if (rs.next()) {
-                return rs.getBoolean("ISNICKED");
+                return rs.getBoolean("isnicked");
             }
         } catch (SQLException e) {
             e.printStackTrace();
@@ -277,11 +277,11 @@ public class Database {
 
     protected boolean getStoredVanishStatus(UUID uuid) {
         try {
-            PreparedStatement ps = getConnection().prepareStatement("SELECT ISVANISHED FROM foxrankplayerdata WHERE UUID=?");
+            PreparedStatement ps = getConnection().prepareStatement("SELECT isvanished FROM foxrankplayerdata WHERE uuid = ?");
             ps.setString(1, uuid.toString());
             ResultSet rs = ps.executeQuery();
             if (rs.next()) {
-                return rs.getBoolean("ISVANISHED");
+                return rs.getBoolean("isvanished");
             }
         } catch (SQLException e) {
             e.printStackTrace();
@@ -291,11 +291,11 @@ public class Database {
 
     protected String getStoredNickname(UUID uuid) {
         try {
-            PreparedStatement ps = getConnection().prepareStatement("SELECT NICKNAME FROM foxrankplayerdata WHERE UUID=?");
+            PreparedStatement ps = getConnection().prepareStatement("SELECT nickname FROM foxrankplayerdata WHERE uuid = ?");
             ps.setString(1, uuid.toString());
             ResultSet rs = ps.executeQuery();
             if (rs.next()) {
-                return rs.getString("NICKNAME");
+                return rs.getString("nickname");
             }
         } catch (SQLException e) {
             e.printStackTrace();
@@ -305,11 +305,11 @@ public class Database {
 
     protected String getStoredNicknameSkin(UUID uuid) {
         try {
-            PreparedStatement ps = getConnection().prepareStatement("SELECT NICKNAME-SKIN FROM foxrankplayerdata WHERE UUID=?");
+            PreparedStatement ps = getConnection().prepareStatement("SELECT nicknameskin FROM foxrankplayerdata WHERE uuid = ?");
             ps.setString(1, uuid.toString());
             ResultSet rs = ps.executeQuery();
             if (rs.next()) {
-                return rs.getString("NICKNAME-SKIN");
+                return rs.getString("nicknameskin");
             }
         } catch (SQLException e) {
             e.printStackTrace();
@@ -319,11 +319,11 @@ public class Database {
 
     protected Rank getStoredNicknameRank(UUID uuid) {
         try {
-            PreparedStatement ps = getConnection().prepareStatement("SELECT NICKNAME-RANK FROM foxrankplayerdata WHERE UUID=?");
+            PreparedStatement ps = getConnection().prepareStatement("SELECT nicknamerank FROM foxrankplayerdata WHERE uuid = ?");
             ps.setString(1, uuid.toString());
             ResultSet rs = ps.executeQuery();
             if (rs.next()) {
-                return Rank.ofString(rs.getString("NICKNAME-RANK"));
+                return Rank.ofString(rs.getString("nicknamerank"));
             }
         } catch (SQLException e) {
             e.printStackTrace();
@@ -333,11 +333,11 @@ public class Database {
 
     protected String getStoredMuteDuration(UUID uuid) {
         try {
-            PreparedStatement ps = getConnection().prepareStatement("SELECT MUTEDURATION FROM foxrankplayerdata WHERE UUID=?");
+            PreparedStatement ps = getConnection().prepareStatement("SELECT muteduration FROM foxrankplayerdata WHERE uuid = ?");
             ps.setString(1, uuid.toString());
             ResultSet rs = ps.executeQuery();
             if (rs.next()) {
-                return rs.getString("MUTEDURATION");
+                return rs.getString("muteduration");
             }
         } catch (SQLException e) {
             e.printStackTrace();
@@ -347,11 +347,11 @@ public class Database {
 
     protected String getStoredMuteReason(UUID uuid) {
         try {
-            PreparedStatement ps = getConnection().prepareStatement("SELECT MUTEREASON FROM foxrankplayerdata WHERE UUID=?");
+            PreparedStatement ps = getConnection().prepareStatement("SELECT mutereason FROM foxrankplayerdata WHERE uuid = ?");
             ps.setString(1, uuid.toString());
             ResultSet rs = ps.executeQuery();
             if (rs.next()) {
-                return rs.getString("MUTEREASON");
+                return rs.getString("mutereason");
             }
         } catch (SQLException e) {
             e.printStackTrace();
@@ -361,11 +361,11 @@ public class Database {
 
     protected String getStoredBanID(UUID uuid) {
         try {
-            PreparedStatement ps = getConnection().prepareStatement("SELECT BANID FROM foxrankplayerdata WHERE UUID=?");
+            PreparedStatement ps = getConnection().prepareStatement("SELECT banid FROM foxrankplayerdata WHERE uuid = ?");
             ps.setString(1, uuid.toString());
             ResultSet rs = ps.executeQuery();
             if (rs.next()) {
-                return rs.getString("BANID");
+                return rs.getString("banid");
             }
         } catch (SQLException e) {
             e.printStackTrace();
@@ -375,11 +375,11 @@ public class Database {
 
     protected String getStoredBanDuration(UUID uuid) {
         try {
-            PreparedStatement ps = getConnection().prepareStatement("SELECT BANDURATION FROM foxrankplayerdata WHERE UUID=?");
+            PreparedStatement ps = getConnection().prepareStatement("SELECT banduration FROM foxrankplayerdata WHERE uuid = ?");
             ps.setString(1, uuid.toString());
             ResultSet rs = ps.executeQuery();
             if (rs.next()) {
-                return rs.getString("BANDURATION");
+                return rs.getString("banduration");
             }
         } catch (SQLException e) {
             e.printStackTrace();
@@ -389,11 +389,11 @@ public class Database {
 
     protected String getStoredBanReason(UUID uuid) {
         try {
-            PreparedStatement ps = getConnection().prepareStatement("SELECT BANREASON FROM foxrankplayerdata WHERE UUID=?");
+            PreparedStatement ps = getConnection().prepareStatement("SELECT banreason FROM foxrankplayerdata WHERE uuid = ?");
             ps.setString(1, uuid.toString());
             ResultSet rs = ps.executeQuery();
             if (rs.next()) {
-                return rs.getString("BANREASON");
+                return rs.getString("banreason");
             }
         } catch (SQLException e) {
             e.printStackTrace();
