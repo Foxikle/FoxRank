@@ -63,7 +63,7 @@ public class Database {
     protected List<OfflinePlayer> getStoredBannedPlayers() {
         List<OfflinePlayer> returnme = new ArrayList<>();
         try {
-            PreparedStatement ps = getConnection().prepareStatement("SELECT uuid FROM foxrankplayerdata WHERE id=?");
+            PreparedStatement ps = getConnection().prepareStatement("SELECT uuids FROM foxrankbannedplayers WHERE id=?");
             ps.setString(1, "bannedPlayers");
             ResultSet rs = ps.executeQuery();
 
@@ -87,7 +87,7 @@ public class Database {
             for (OfflinePlayer p : players) {
                 uuids.add(p.getUniqueId());
             }
-            PreparedStatement ps = getConnection().prepareStatement("UPDATE foxrankplayerdata SET uuids = ? WHERE id=?");
+            PreparedStatement ps = getConnection().prepareStatement("UPDATE foxrankbannedplayers SET uuids = ? WHERE id = ?");
             ps.setString(1, uuids.toString());
             ps.setString(2, "bannedPlayers");
             ps.executeUpdate();
@@ -179,7 +179,7 @@ public class Database {
 
     protected void setStoredMuteData(UUID uuid, boolean isMuted, String reason, Instant duration) {
         try {
-            PreparedStatement ps = getConnection().prepareStatement("UPDATE foxrankplayerdata SET ismuted = ?, muteduration = ?, mutereaosn = ? WHERE uuid=?");
+            PreparedStatement ps = getConnection().prepareStatement("UPDATE foxrankplayerdata SET ismuted = ?, muteduration = ?, mutereason = ? WHERE uuid=?");
             ps.setBoolean(1, isMuted);
             ps.setString(2, duration.toString());
             ps.setString(3, reason);
