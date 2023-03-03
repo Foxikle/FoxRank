@@ -196,9 +196,9 @@ public class Listeners implements Listener {
             String id;
             Database db = FoxRank.instance.db;
             if (FoxRank.getInstance().useDb) {
-                reason = FoxRank.getInstance().db.getStoredBanReason(uuid);
-                duration = FoxRank.getInstance().db.getStoredBanDuration(uuid);
-                id = FoxRank.getInstance().db.getStoredBanID(uuid);
+                reason = db.getStoredBanReason(uuid);
+                duration = db.getStoredBanDuration(uuid);
+                id = db.getStoredBanID(uuid);
             } else {
 
                 File file = new File("plugins/FoxRank/PlayerData/" + uuid + ".yml");
@@ -225,6 +225,7 @@ public class Listeners implements Listener {
                         if (list.contains(Bukkit.getOfflinePlayer(e.getUniqueId()))) {
                             list.remove(Bukkit.getOfflinePlayer(e.getUniqueId()));
                             db.setStoredBannedPlayers(list);
+                            return;
                         }
                     } else {
                         File bannedPlayersFile = new File("plugins/FoxRank/bannedPlayers.yml");
