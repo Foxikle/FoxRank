@@ -64,7 +64,7 @@ public class Listeners implements Listener {
                         newMessage = ChatColor.GRAY + nick + ": " + eventMessage;
                         Bukkit.broadcastMessage(newMessage);
                     } else {
-                        newMessage = rank.getPrefix() + "" + rank + ChatColor.RESET + ": " + eventMessage;
+                        newMessage = rank.getPrefix() + "" + e.getPlayer().getName() + ChatColor.RESET + ": " + eventMessage;
                         Bukkit.broadcastMessage(newMessage);
                     }
                 } else {
@@ -114,7 +114,7 @@ public class Listeners implements Listener {
                         newMessage = ChatColor.GRAY + nick + ": " + eventMessage;
                         Bukkit.broadcastMessage(newMessage);
                     } else {
-                        newMessage = rank.getPrefix() + "" + nick + ChatColor.RESET + ": " + eventMessage;
+                        newMessage = rank.getPrefix() + "" + e.getPlayer().getName() + ChatColor.RESET + ": " + eventMessage;
                         Bukkit.broadcastMessage(newMessage);
                     }
                 } else {
