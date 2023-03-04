@@ -61,6 +61,56 @@ public class Database {
         }
     }
 
+    protected void createAuditLogTable() {
+        PreparedStatement ps;
+        try {
+            ps = getConnection().prepareStatement("CREATE TABLE IF NOT EXISTS foxrankauditlog (uuid VARCHAR(100), data TEXT, PRIMARY KEY(uuid))");
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    protected void addEntry(UUID uuid, Entry entry) {
+        List<Entry> entries = getEntries(uuid);
+        entries.add(entry);
+        StringBuilder str = new StringBuilder();
+        for (Entry entry1 : entries) {
+            str.append("::" + entry1.serialize());
+        }
+        String str1 = str.toString().replaceFirst("::", "");
+        try {
+            PreparedStatement ps = getConnection().prepareStatement("UPDATE foxrankauditlog SET data = ? WHERE uuid = ?");
+            ps.setString(1, str1);
+            ps.setString(2, uuid.toString());
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    protected List<Entry> getEntries(UUID uuid) {
+        List<Entry> returnme = new ArrayList<>();
+        try {
+            PreparedStatement ps = getConnection().prepareStatement("SELECT data FROM foxrankauditlog WHERE uuid = ?");
+            ps.setString(1, uuid.toString());
+            ResultSet rs = ps.executeQuery();
+
+            if (rs.next()) {
+                String str = rs.getString("data");
+                if (str == null || str.equals("")) return new ArrayList<>();
+                List<String> list1 = List.of(str.split("::"));
+
+                for (String s : list1) {
+                    returnme.add(Entry.deserialize(s));
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return returnme;
+    }
+
     protected List<OfflinePlayer> getStoredBannedPlayers() {
         List<OfflinePlayer> returnme = new ArrayList<>();
         try {
@@ -99,6 +149,25 @@ public class Database {
 
     protected void addPlayerData(RankedPlayer rp) {
         UUID uuid = rp.getUniqueId();
+        boolean exists = false;
+        try {
+            try {
+                PreparedStatement ps = getConnection().prepareStatement("SELECT * FROM foxrankauditlog WHERE uuid = ?");
+                ps.setString(1, uuid.toString());
+                ResultSet results = ps.executeQuery();
+                exists = results.next();
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+            if (!exists) {
+                PreparedStatement ps = getConnection().prepareStatement("INSERT IGNORE INTO foxrankauditlog (data, uuid) VALUES (?,?)");
+                ps.setString(1, "");
+                ps.setString(2, uuid.toString());
+                ps.executeUpdate();
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
         try {
             if (!exists(uuid)) {
                 PreparedStatement ps = getConnection().prepareStatement("INSERT IGNORE INTO foxrankplayerdata (name, uuid) VALUES (?,?)");
