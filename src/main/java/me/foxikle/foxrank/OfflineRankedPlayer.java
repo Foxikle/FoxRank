@@ -136,7 +136,7 @@ public class OfflineRankedPlayer implements OfflineCustomPlayer{
      **/
     @Override
     public void mutePlayer(RankedPlayer staff, Instant duration, String reason) {
-        FoxRank.getInstance().muteOfflinePlayer(this, duration, reason, staff);
+        ModerationAction.muteOfflinePlayer(this, duration, reason, staff);
     }
 
     /**
@@ -145,7 +145,7 @@ public class OfflineRankedPlayer implements OfflineCustomPlayer{
      **/
     @Override
     public void unmutePlayer(RankedPlayer staff) {
-        FoxRank.getInstance().unmuteOfflinePlayer(offlinePlayer, staff);
+        ModerationAction.unmuteOfflinePlayer(offlinePlayer, staff);
     }
 
     /**
@@ -192,6 +192,6 @@ public class OfflineRankedPlayer implements OfflineCustomPlayer{
      */
     @Override
     public boolean isBanned() {
-        return FoxRank.instance.isBanned(this.offlinePlayer.getUniqueId());
+        return FoxRank.getInstance().isBanned(this.offlinePlayer.getUniqueId());
     }
 }
