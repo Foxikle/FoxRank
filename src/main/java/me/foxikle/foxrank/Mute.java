@@ -59,7 +59,7 @@ public class Mute implements CommandExecutor, TabExecutor {
                                             list.remove(1);
                                             list.remove(0);
                                             reason = String.join(" ", list);
-                                            mrp.mutePlayer(rp, expires, reason);
+                                            me.foxikle.foxrank.ModerationAction.mutePlayer(mrp, expires, reason, rp);
                                             FoxRank.getInstance().getServer().getPluginManager().callEvent(new ModerationActionEvent(((Player) sender).getPlayer(), mrp.getPlayer(), mrp.getRank(), rp.getRank(), ModerationAction.MUTE));
                                         }
                                     } else {
@@ -104,7 +104,7 @@ public class Mute implements CommandExecutor, TabExecutor {
                                             list.remove(1);
                                             list.remove(0);
                                             reason = String.join(" ", list);
-                                            mrp.mutePlayer(rp, expires, reason);
+                                            me.foxikle.foxrank.ModerationAction.muteOfflinePlayer(mrp, expires, reason, rp);
                                             rp.sendMessage(ChatColor.translateAlternateColorCodes('§', FoxRank.getInstance().getConfig().getString("muteSenderMessage").replace("$PLAYER", mrp.getName()).replace("$REASON", reason)));
                                             FoxRank.getInstance().getServer().getPluginManager().callEvent(new ModerationActionEvent(((Player) sender).getPlayer(), mrp.getOfflinePlayer().getPlayer(), mrp.getRank(), rp.getRank(), ModerationAction.MUTE));
                                         }
@@ -188,7 +188,7 @@ public class Mute implements CommandExecutor, TabExecutor {
                                 if (!FoxRank.getInstance().isMuted(receiver.getUniqueId())) {
                                     player.sendMessage(ChatColor.translateAlternateColorCodes('§', FoxRank.getInstance().getConfig().getString("UnmuteCommandPlayerNotMuted").replace("$PLAYER", receiver.getName())));
                                 } else {
-                                    FoxRank.getInstance().unmutePlayer(new RankedPlayer(receiver), rp);
+                                    me.foxikle.foxrank.ModerationAction.unmutePlayer(new RankedPlayer(receiver), rp);
                                     FoxRank.getInstance().getServer().getPluginManager().callEvent(new ModerationActionEvent(((Player) sender).getPlayer(), receiver.getPlayer(), new OfflineRankedPlayer(receiver).getRank(), rp.getRank(), ModerationAction.UNMUTE));
                                     player.sendMessage(ChatColor.translateAlternateColorCodes('§', FoxRank.getInstance().getConfig().getString("UnmuteSenderMessage").replace("$PLAYER", receiver.getName())));
                                 }
@@ -197,7 +197,7 @@ public class Mute implements CommandExecutor, TabExecutor {
                                 if (!FoxRank.getInstance().isMuted(receiver.getUniqueId())) {
                                     player.sendMessage(ChatColor.translateAlternateColorCodes('§', FoxRank.getInstance().getConfig().getString("UnmuteCommandPlayerNotMuted").replace("$PLAYER", receiver.getName())));
                                 } else {
-                                    FoxRank.getInstance().unmuteOfflinePlayer(receiver, rp);
+                                    me.foxikle.foxrank.ModerationAction.unmuteOfflinePlayer(receiver, rp);
                                     FoxRank.getInstance().getServer().getPluginManager().callEvent(new ModerationActionEvent(((Player) sender).getPlayer(), receiver.getPlayer(), new OfflineRankedPlayer(receiver).getRank(), rp.getRank(), ModerationAction.UNMUTE));
                                     player.sendMessage(ChatColor.translateAlternateColorCodes('§', FoxRank.getInstance().getConfig().getString("UnmuteSenderMessage").replace("$PLAYER", receiver.getName())));
                                 }

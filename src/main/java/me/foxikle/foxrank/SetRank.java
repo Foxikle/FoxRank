@@ -17,8 +17,8 @@ import static me.foxikle.foxrank.FoxRank.getRank;
 
 public class SetRank implements CommandExecutor, TabExecutor {
 
-    Map<String, Integer> rankList = new HashMap<>();
     private final FoxRank foxRank = FoxRank.getInstance();
+    Map<String, Integer> rankList = new HashMap<>();
 
     public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
 
@@ -53,9 +53,9 @@ public class SetRank implements CommandExecutor, TabExecutor {
                             }
                         } else if (args.length >= 2) {
 
-                                if (Bukkit.getServer().getPlayer(args[1]) != null) {
-                                    Player p = Bukkit.getServer().getPlayer(args[1]);
-                                    if (getRank(player).getPowerLevel() > getRank(p).getPowerLevel()){
+                            if (Bukkit.getServer().getPlayer(args[1]) != null) {
+                                Player p = Bukkit.getServer().getPlayer(args[1]);
+                                if (getRank(player).getPowerLevel() > getRank(p).getPowerLevel()) {
                                     if (rankList.containsKey(args[0])) {
                                         foxRank.setRank(p, Rank.valueOf(args[0]));
                                         new RankedPlayer(p).sendMessage(ChatColor.translateAlternateColorCodes('§', FoxRank.getInstance().getConfig().getString("RankIsNowMessage").replace("$RANK", Rank.valueOf(args[0]).getPrefix())));
@@ -65,7 +65,7 @@ public class SetRank implements CommandExecutor, TabExecutor {
                                         FoxRank.getInstance().sendInvalidArgsMessage("Rank", new RankedPlayer(player));
                                     }
                                 } else {
-                                    FoxRank.getInstance().sendInvalidArgsMessage("Player", new RankedPlayer(player));
+                                    player.sendMessage(ChatColor.RED + "Your rank must be higher than " + new RankedPlayer(p).getPrefix() + new RankedPlayer(p).getName() + " to change their rank!");
                                 }
                             }
                         } else {

@@ -1,21 +1,15 @@
 package me.foxikle.foxrank;
 
-import me.foxikle.foxrank.events.ModerationAction;
-import me.foxikle.foxrank.events.ModerationActionEvent;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.OfflinePlayer;
-import org.bukkit.Sound;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabExecutor;
 import org.bukkit.configuration.file.FileConfiguration;
-import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 
-import java.io.File;
-import java.io.IOException;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -23,6 +17,8 @@ import java.util.List;
 import java.util.Locale;
 
 import static java.util.Objects.hash;
+import static me.foxikle.foxrank.ModerationAction.banOfflinePlayer;
+import static me.foxikle.foxrank.ModerationAction.banPlayer;
 
 public class Ban implements CommandExecutor, TabExecutor {
     private final FileConfiguration yml = FoxRank.getInstance().getConfig();
@@ -99,7 +95,7 @@ public class Ban implements CommandExecutor, TabExecutor {
                                 }
                                 reason = removeUnderScore(reason);
                                 banID = getBanID(banee);
-                                banPlayer(staff, banee, silent, reason, expires, args[1]);
+                                banPlayer(staff, banee, silent, reason, expires, args[1], banID);
 
                             }
                         } else {
@@ -159,7 +155,7 @@ public class Ban implements CommandExecutor, TabExecutor {
                                         }
                                         reason = removeUnderScore(reason);
                                         banID = getBanID(banee);
-                                        banOfflinePlayer(staff, banee, reason, expires, args[1]);
+                                        banOfflinePlayer(staff, banee, reason, expires, args[1], banID);
 
                                     }
                                 }
@@ -179,96 +175,6 @@ public class Ban implements CommandExecutor, TabExecutor {
             return onCommand(sender, cmd, label, args);
         }
         return true;
-    }
-
-    private void banPlayer(RankedPlayer banner, Player banee, boolean silent, String reasonStr, Instant duration, String broadcastReason) {
-        FoxRank.getInstance().getServer().getPluginManager().callEvent(new ModerationActionEvent(banee, banner.getPlayer(), new RankedPlayer(banee.getPlayer()).getRank(), banner.getRank(), ModerationAction.BAN));
-        String bumper = "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n";
-        if (!FoxRank.getInstance().getBannedPlayers().contains(banee)) {
-            if (duration != null) {
-                banee.kickPlayer(bumper + FoxRank.getInstance().getConfig().getString("TempBanMessageFormat").replace("$DURATION", FoxRank.getInstance().getFormattedExpiredString(duration, Instant.now())).replace("$SERVER_NAME", FoxRank.getInstance().getConfig().getString("ServerName")).replace("$REASON", reason).replace("$APPEAL_LINK", FoxRank.getInstance().getConfig().getString("BanAppealLink")).replace("$ID", banID).replace("\\n", "\n") + bumper);
-            } else {
-                banee.kickPlayer(bumper + FoxRank.getInstance().getConfig().getString("PermBanMessageFormat").replace("$SERVER_NAME", FoxRank.getInstance().getConfig().getString("ServerName")).replace("$REASON", reason).replace("$APPEAL_LINK", FoxRank.getInstance().getConfig().getString("BanAppealLink")).replace("$ID", banID).replace("\\n", "\n") + bumper);
-            }
-            if (!broadcastReason.equalsIgnoreCase("SECURITY")) {
-                if (silent) {
-                    banner.sendMessage(ChatColor.translateAlternateColorCodes('§', FoxRank.getInstance().getConfig().getString("SilentBanSenderMessage").replace("$PLAYER", banee.getName()).replace("$REASON", reasonStr)));
-                } else {
-                    if (removeUnderScore(broadcastReason).equalsIgnoreCase("CUSTOM")) {
-                        Bukkit.broadcastMessage(ChatColor.RED + "" + ChatColor.BOLD + banee.getName() + " was removed from your game.");
-                    } else {
-                        Bukkit.broadcastMessage(ChatColor.RED + "" + ChatColor.BOLD + banee.getName() + " was removed from your game for " + removeUnderScore(broadcastReason));
-                    }
-                    banee.getWorld().playSound(banner.getLocation(), Sound.ENTITY_LIGHTNING_BOLT_THUNDER, 1000f, 1);
-                    banner.sendMessage(ChatColor.translateAlternateColorCodes('§', FoxRank.getInstance().getConfig().getString("BanSenderMessage").replace("$PLAYER", banee.getName()).replace("$REASON", "'" + reasonStr + "'")));
-                }
-            } else {
-                banner.sendMessage(ChatColor.translateAlternateColorCodes('§', FoxRank.getInstance().getConfig().getString("SecurityBanSenderMessage").replace("$PLAYER", banee.getName())));
-            }
-            if (FoxRank.getInstance().useDb) {
-                List<OfflinePlayer> player = FoxRank.getInstance().getBannedPlayers();
-                player.add(banee);
-                FoxRank.getInstance().db.setStoredBannedPlayers(player);
-                FoxRank.getInstance().db.setStoredBanData(banee.getUniqueId(), true, reason, duration, banID);
-            } else {
-                File file = new File("plugins/FoxRank/PlayerData/" + banee.getUniqueId() + ".yml");
-                YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
-                yml.set("BanReason", reasonStr);
-                yml.set("BanDuration", duration.toString());
-                yml.set("BanID", banID);
-                yml.set("isBanned", true);
-                Logging.addOnlineBanLogEntry(new RankedPlayer(banee.getPlayer()), banner, Instant.now(), reasonStr, FoxRank.getInstance().getFormattedExpiredString(duration, Instant.now()), banID, silent);
-
-                try {
-                    yml.save(file);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-
-                File file1 = new File("plugins/FoxRank/bannedPlayers.yml");
-                YamlConfiguration yml1 = YamlConfiguration.loadConfiguration(file1);
-                List<String> list = yml1.getStringList("CurrentlyBannedPlayers");
-                list.add(banee.getUniqueId().toString());
-                try {
-                    yml1.set("CurrentlyBannedPlayers", list);
-                    yml1.save(file1);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-        }
-    }
-
-    private void banOfflinePlayer(RankedPlayer banner, OfflinePlayer banee, String reasonStr, Instant duration, String broadcastReason) {
-        FoxRank.getInstance().getServer().getPluginManager().callEvent(new ModerationActionEvent(banee.getPlayer(), banner.getPlayer(), new RankedPlayer(banee.getPlayer()).getRank(), banner.getRank(), ModerationAction.BAN));
-
-        if (broadcastReason.equalsIgnoreCase("SECURITY")) {
-            banner.sendMessage(ChatColor.translateAlternateColorCodes('§', FoxRank.getInstance().getConfig().getString("SecurityBanSenderMessage").replace("$PLAYER", banee.getName())));
-        } else {
-            banner.sendMessage(ChatColor.translateAlternateColorCodes('§', FoxRank.getInstance().getConfig().getString("BanSenderMessage").replace("$PLAYER", banee.getName()).replace("$REASON", reasonStr)));
-        }
-        Logging.addOfflineBanLogEntry(new OfflineRankedPlayer(banee), banner, Instant.now(), reasonStr, FoxRank.getInstance().getFormattedExpiredString(duration, Instant.now()), banID, silent);
-        if (!FoxRank.getInstance().getBannedPlayers().contains(banee)) {
-            if (FoxRank.getInstance().useDb) {
-                List<OfflinePlayer> player = FoxRank.getInstance().getBannedPlayers();
-                player.add(banee);
-                FoxRank.getInstance().db.setStoredBannedPlayers(player);
-            } else {
-                File file = new File("plugins/FoxRank/PlayerData/" + banee.getUniqueId() + ".yml");
-                YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
-                yml.set("BanReason", reasonStr);
-                yml.set("BanDuration", duration.toString());
-                yml.set("BanID", banID);
-                yml.set("isBanned", true);
-                Logging.addOnlineBanLogEntry(new RankedPlayer(banee.getPlayer()), banner, Instant.now(), reasonStr, FoxRank.getInstance().getFormattedExpiredString(duration, Instant.now()), banID, silent);
-
-                try {
-                    yml.save(file);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-        }
     }
 
     private String getBanID(OfflinePlayer banee) {
@@ -306,7 +212,7 @@ public class Ban implements CommandExecutor, TabExecutor {
 
             return arguments;
         }
-        return null;
+        return new ArrayList<>();
     }
 
     private String removeUnderScore(String string) {
