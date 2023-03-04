@@ -44,7 +44,7 @@ public class Listeners implements Listener {
                 Instant date = Instant.parse(FoxRank.getInstance().db.getStoredMuteDuration(uuid));
                 Instant now = Instant.now();
                 if (date.isBefore(now)) {
-                    FoxRank.getInstance().unmutePlayer(new RankedPlayer(player), new RankedPlayer(player));
+                    ModerationAction.unmutePlayer(new RankedPlayer(player), new RankedPlayer(player));
                 } else {
                     String reason = FoxRank.getInstance().db.getStoredMuteReason(uuid);
                     String border = RED + "" + STRIKETHROUGH + "                                                                   ";
@@ -93,7 +93,7 @@ public class Listeners implements Listener {
                 Instant date = Instant.parse(yml.getString("MuteDuration"));
                 Instant now = Instant.now();
                 if (date.isBefore(now)) {
-                    FoxRank.getInstance().unmutePlayer(new RankedPlayer(player), new RankedPlayer(player));
+                    ModerationAction.unmutePlayer(new RankedPlayer(player), new RankedPlayer(player));
                 } else {
                     String reason = yml.getString("MuteReason");
                     String border = RED + "" + STRIKETHROUGH + "                                                                   ";
@@ -181,7 +181,7 @@ public class Listeners implements Listener {
         FoxRank.getInstance().loadRank(p);
         if (FoxRank.getInstance().isMuted(p.getUniqueId())) {
             if (FoxRank.getInstance().getMuteDuration(p.getUniqueId()).isBefore(Instant.now())) {
-                FoxRank.getInstance().unmutePlayer(new RankedPlayer(p), new RankedPlayer(p));
+                ModerationAction.unmutePlayer(new RankedPlayer(p), new RankedPlayer(p));
             }
         }
     }
@@ -219,7 +219,7 @@ public class Listeners implements Listener {
             } else {
                 Instant inst = Instant.parse(duration);
                 if (Instant.now().isAfter(inst)) {
-                    FoxRank.getInstance().unbanOfflinePlayer(uuid, null);
+                    ModerationAction.unbanOfflinePlayer(uuid, null);
                     if (FoxRank.getInstance().useDb) {
                         List<OfflinePlayer> list = db.getStoredBannedPlayers();
                         if (list.contains(Bukkit.getOfflinePlayer(e.getUniqueId()))) {
