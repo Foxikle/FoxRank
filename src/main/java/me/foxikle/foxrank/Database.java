@@ -59,6 +59,15 @@ public class Database {
         } catch (SQLException e) {
             e.printStackTrace();
         }
+        PreparedStatement ps2;
+        try {
+            ps2 = getConnection().prepareStatement("INSERT IGNORE INTO foxrankbannedplayers (uuids, id) VALUES (?,?)");
+            ps2.setString(1, "");
+            ps2.setString(2, "bannedPlayers");
+            ps2.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
 
     protected void createAuditLogTable() {
@@ -119,11 +128,13 @@ public class Database {
             ResultSet rs = ps.executeQuery();
 
             if (rs.next()) {
-                String str = rs.getString("bannedPlayers");
-                List<String> list1 = List.of(str.split(":"));
+                String str = rs.getString("uuids");
+                if (!str.equals("")) {
+                    List<String> list1 = List.of(str.split(":"));
 
-                for (String s : list1) {
-                    returnme.add(Bukkit.getOfflinePlayer(UUID.fromString(s)));
+                    for (String s : list1) {
+                        returnme.add(Bukkit.getOfflinePlayer(UUID.fromString(s)));
+                    }
                 }
             }
         } catch (SQLException e) {
@@ -133,13 +144,15 @@ public class Database {
     }
 
     protected void setStoredBannedPlayers(List<OfflinePlayer> players) {
-        List<UUID> uuids = new ArrayList<>();
+        List<String> uuids = new ArrayList<>();
         try {
             for (OfflinePlayer p : players) {
-                uuids.add(p.getUniqueId());
+                uuids.add(p.getUniqueId().toString());
             }
+            String str = String.join(":", uuids);
+            Bukkit.broadcastMessage(str);
             PreparedStatement ps = getConnection().prepareStatement("UPDATE foxrankbannedplayers SET uuids = ? WHERE id = ?");
-            ps.setString(1, uuids.toString());
+            ps.setString(1, str);
             ps.setString(2, "bannedPlayers");
             ps.executeUpdate();
         } catch (SQLException e) {

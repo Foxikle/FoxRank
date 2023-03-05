@@ -119,6 +119,9 @@ public class ModerationAction {
         }
         String id = Integer.toString(hash("FoxRank:" + rp + ":" + Instant.now()), 16).toUpperCase(Locale.ROOT).replace("-", "");
         if (useDb) {
+            List<OfflinePlayer> bannedPlayers = db.getStoredBannedPlayers();
+            bannedPlayers.remove(Bukkit.getOfflinePlayer(rp));
+            db.setStoredBannedPlayers(bannedPlayers);
             db.setStoredBanData(rp, false, db.getStoredBanReason(rp), Instant.parse(db.getStoredBanDuration(rp)), db.getStoredBanID(rp));
         } else {
             File file = new File("plugins/FoxRank/PlayerData/" + rp + ".yml");
@@ -159,9 +162,10 @@ public class ModerationAction {
                 banner.sendMessage(ChatColor.translateAlternateColorCodes('§', FoxRank.getInstance().getConfig().getString("SecurityBanSenderMessage").replace("$PLAYER", banee.getName())));
             }
             if (FoxRank.getInstance().useDb) {
-                List<OfflinePlayer> player = FoxRank.getInstance().getBannedPlayers();
-                player.add(banee);
-                FoxRank.getInstance().db.setStoredBannedPlayers(player);
+                List<OfflinePlayer> bannedPlayers = db.getStoredBannedPlayers();
+                bannedPlayers.add(banee);
+                Bukkit.broadcastMessage(bannedPlayers.toString());
+                FoxRank.getInstance().db.setStoredBannedPlayers(bannedPlayers);
                 FoxRank.getInstance().db.setStoredBanData(banee.getUniqueId(), true, reasonStr, duration, banID);
             } else {
                 File file = new File("plugins/FoxRank/PlayerData/" + banee.getUniqueId() + ".yml");
@@ -204,9 +208,10 @@ public class ModerationAction {
         Logging.addLogEntry(EntryType.BAN, new OfflineRankedPlayer(banee), banner.getUniqueId(), duration, reasonStr, "true", banID);
         if (!FoxRank.getInstance().getBannedPlayers().contains(banee)) {
             if (FoxRank.getInstance().useDb) {
-                List<OfflinePlayer> player = FoxRank.getInstance().getBannedPlayers();
+                List<OfflinePlayer> player = db.getStoredBannedPlayers();
                 player.add(banee);
                 FoxRank.getInstance().db.setStoredBannedPlayers(player);
+                db.setStoredBanData(banee.getUniqueId(), true, reasonStr, duration, banID);
             } else {
                 File file = new File("plugins/FoxRank/PlayerData/" + banee.getUniqueId() + ".yml");
                 YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
