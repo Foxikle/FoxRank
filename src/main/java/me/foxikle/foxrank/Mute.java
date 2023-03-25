@@ -139,32 +139,57 @@ public class Mute implements CommandExecutor, TabExecutor {
                     if (!FoxRank.getInstance().isMuted(player.getUniqueId())) {
                         player.sendMessage(ChatColor.translateAlternateColorCodes('§', FoxRank.getInstance().getConfig().getString("ImmutedCommandNotMutedMessage")));
                     } else if (args.length >= 1) {
-                        if (Bukkit.getPlayerExact(args[0]) != null) {
-                            Player receiver = Bukkit.getPlayerExact(args[0]);
-                            RankedPlayer rrp = new RankedPlayer(receiver);
-                            RankedPlayer mrp = new RankedPlayer(player);
+                        if (FoxRank.instance.getPlayerNames((Player) sender).contains(args[0])) {
+
                             String to = FoxRank.getInstance().getConfig().getString("IAmMutedCommandMessageToMuted");
                             String from = FoxRank.getInstance().getConfig().getString("IAmMutedCommandMessageFromMuted");
 
-                            if (FoxRank.getInstance().getConfig().getBoolean("DisableRankVisibility")) {
-                                to = to.replace("$RECEIVERRANKPREFIX", "");
-                                from = from.replace("$MUTEDUSERRANKPREFIX", "");
+                            if (FoxRank.getInstance().bungeecord) {
+                                if (FoxRank.getInstance().getConfig().getBoolean("DisableRankVisibility")) {
+                                    to = to.replace("$RECEIVERRANKPREFIX", "");
+                                    from = from.replace("$MUTEDUSERRANKPREFIX", "");
+                                } else {
+                                    from = from.replace("$MUTEDUSERRANKPREFIX", FoxRank.getRank(player).getPrefix());
+                                    to = to.replace("$RECEIVERRANKPREFIX", FoxRank.getInstance().db.getStoredRank(FoxRank.instance.getUUID(args[0])).getPrefix());
+                                }
+
+                                to = to.replace("$RECIEVER", args[0]);
+                                to = to.replace("$MUTEDUSER", player.getName());
+                                to = ChatColor.translateAlternateColorCodes('§', to);
+
+
+                                from = from.replace("$RECIEVER", args[0]);
+                                from = from.replace("$MUTEDUSER", player.getName());
+                                from = ChatColor.translateAlternateColorCodes('§', from);
+
+                                FoxRank.getPluginChannelListener().sendMessage(player, args[0], from);
+                                player.sendMessage(to);
+
                             } else {
-                                from = from.replace("$MUTEDUSERRANKPREFIX", mrp.getRank().getPrefix());
-                                to = to.replace("$RECEIVERRANKPREFIX", rrp.getRank().getPrefix());
+                                Player receiver = Bukkit.getPlayerExact(args[0]);
+                                RankedPlayer rrp = new RankedPlayer(receiver);
+                                RankedPlayer mrp = new RankedPlayer(player);
+
+                                if (FoxRank.getInstance().getConfig().getBoolean("DisableRankVisibility")) {
+                                    to = to.replace("$RECEIVERRANKPREFIX", "");
+                                    from = from.replace("$MUTEDUSERRANKPREFIX", "");
+                                } else {
+                                    from = from.replace("$MUTEDUSERRANKPREFIX", mrp.getRank().getPrefix());
+                                    to = to.replace("$RECEIVERRANKPREFIX", rrp.getRank().getPrefix());
+                                }
+
+                                to = to.replace("$RECIEVER", rrp.getName());
+                                to = to.replace("$MUTEDUSER", mrp.getName());
+                                to = ChatColor.translateAlternateColorCodes('§', to);
+
+
+                                from = from.replace("$RECIEVER", rrp.getName());
+                                from = from.replace("$MUTEDUSER", mrp.getName());
+                                from = ChatColor.translateAlternateColorCodes('§', from);
+
+                                rrp.sendMessage(from);
+                                mrp.sendMessage(to);
                             }
-
-                            to = to.replace("$RECIEVER", rrp.getName());
-                            to = to.replace("$MUTEDUSER", mrp.getName());
-                            to = ChatColor.translateAlternateColorCodes('§', to);
-
-
-                            from = from.replace("$RECIEVER", rrp.getName());
-                            from = from.replace("$MUTEDUSER", mrp.getName());
-                            from = ChatColor.translateAlternateColorCodes('§', from);
-
-                            rrp.sendMessage(from);
-                            mrp.sendMessage(to);
                         }
                     } else {
                         FoxRank.getInstance().sendMissingArgsMessage("/immuted", "<player>", new RankedPlayer(player));
