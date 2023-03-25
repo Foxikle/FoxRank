@@ -192,6 +192,15 @@ public class Listeners implements Listener {
                 pcl.getPlayers(Iterables.getFirst(Bukkit.getOnlinePlayers(), null));
             }, 30);
         }
+
+        if (FoxRank.getInstance().isNicked(p.getUniqueId())) {
+            if (FoxRank.getInstance().useDb) {
+                FoxRank.setTeam(p, FoxRank.getInstance().db.getStoredNicknameRank(p.getUniqueId()).getRankID());
+                Nick.changeName(FoxRank.getInstance().db.getStoredNickname(p.getUniqueId()), p);
+                Nick.loadSkin(p);
+                Nick.refreshPlayer(p);
+            }
+        }
     }
 
     @EventHandler

@@ -239,6 +239,29 @@ public class Nick implements CommandExecutor {
         refreshPlayer(player);
     }
 
+    protected static void loadSkin(Player player) {
+        if (FoxRank.getInstance().useDb) {
+            GameProfile profile = ((CraftPlayer) player).getHandle().getGameProfile();
+            profile.getProperties().removeAll("textures");
+            switch (FoxRank.getInstance().db.getStoredNicknameSkin(player.getUniqueId())) {
+                case "real":
+                    profile.getProperties().put("textures", getSkin(FoxRank.getInstance().getTrueName(player.getUniqueId())));
+                case "random":
+                    List<String> values = FoxRank.getInstance().getConfig().getStringList("RandomSkinValueList");
+                    List<String> signatures = FoxRank.getInstance().getConfig().getStringList("RandomSkinSignatureList");
+                    if (signatures.size() == values.size()) {
+                        int rnd = new Random().nextInt(values.size() - 1) + 1;
+                        String value = values.get(rnd);
+                        String signature = signatures.get(rnd);
+                        profile.getProperties().put("textures", new Property("textures", value, signature));
+                    }
+                case "default":
+                    profile.getProperties().put("textures", getSkin(null));
+            }
+            refreshPlayer(player);
+        }
+    }
+
     protected static void refreshPlayer(Player player) {
         for (Player p : Bukkit.getOnlinePlayers()) {
             ServerPlayer sp = ((CraftPlayer) p).getHandle();
