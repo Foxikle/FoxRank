@@ -277,7 +277,7 @@ public class Database {
         try {
             PreparedStatement ps = getConnection().prepareStatement("UPDATE foxrankplayerdata SET isbanned = ?, banduration = ?, banreason = ?, banid = ? WHERE uuid = ?");
             ps.setBoolean(1, isBanned);
-            ps.setString(2, duration.toString());
+            ps.setString(2, (duration == null) ? null : duration.toString());
             ps.setString(3, reason);
             ps.setString(4, ID);
             ps.setString(5, uuid.toString());
@@ -482,5 +482,41 @@ public class Database {
             e.printStackTrace();
         }
         return Rank.DEFAULT.getRankID();
+    }
+
+    protected List<String> getNames() {
+        List<String> returnme = new ArrayList<>();
+        try {
+            PreparedStatement ps = getConnection().prepareStatement("SELECT * FROM foxrankplayerdata");
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                if (rs.getString("name") == null) {
+                } else {
+                    returnme.add(rs.getString("name"));
+                }
+            }
+            return returnme;
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return new ArrayList<>();
+    }
+
+    protected List<UUID> getUUIDs() {
+        List<UUID> returnme = new ArrayList<>();
+        try {
+            PreparedStatement ps = getConnection().prepareStatement("SELECT * FROM foxrankplayerdata");
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                if (rs.getString("uuid") == null) {
+                } else {
+                    returnme.add(UUID.fromString(rs.getString("uuid")));
+                }
+            }
+            return returnme;
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return new ArrayList<>();
     }
 }
