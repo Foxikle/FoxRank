@@ -1,5 +1,6 @@
 package me.foxikle.foxrank;
 
+import me.foxikle.foxrank.events.PlayerVanishEvent;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
@@ -20,21 +21,21 @@ public class Vanish implements CommandExecutor, Listener {
     public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
         if (label.equalsIgnoreCase("vanish")) {
             if (!FoxRank.getInstance().getConfig().getBoolean("DisableVanish")) {
-                if (sender instanceof Player) {
-                    Player player = (Player) sender;
+                if (sender instanceof Player player) {
                     RankedPlayer rp = new RankedPlayer(player);
                     if (rp.getPowerLevel() >= FoxRank.getInstance().getConfig().getInt("VanishPermissions")) {
                         File file = new File("plugins/FoxRank/PlayerData/" + player.getUniqueId() + ".yml");
                         YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
                         if (yml.getString("isVanished").equals("true")) {
                             player.sendMessage(ChatColor.translateAlternateColorCodes('§', FoxRank.getInstance().getConfig().getString("UnvanishMessage")));
+                            ActionBar.setupActionBar(player);
                             yml.set("isVanished", false);
                             try {
                                 yml.save(file);
                             } catch (IOException error) {
                                 Bukkit.getLogger().log(Level.SEVERE, "ERROR could not save " + player.getName() + "'s Vanished state.");
                             }
-                            actionBar.setupActionBar(player);
+                            ActionBar.setupActionBar(player);
 
                             for (Player p : Bukkit.getOnlinePlayers()) {
                                 p.showPlayer(FoxRank.getInstance(), player);
@@ -42,8 +43,9 @@ public class Vanish implements CommandExecutor, Listener {
 
                         } else if (yml.getString("isVanished").equals("false")) {
                             yml.set("isVanished", true);
+                            FoxRank.getInstance().getServer().getPluginManager().callEvent(new PlayerVanishEvent(player, rp.getRank()));
                             player.sendMessage(ChatColor.translateAlternateColorCodes('§', FoxRank.getInstance().getConfig().getString("VanishMessage")));
-
+                            ActionBar.setupActionBar(player);
                             for (Player p : Bukkit.getOnlinePlayers()) {
                                 p.hidePlayer(FoxRank.getInstance(), player);
                             }

@@ -1,5 +1,7 @@
 package me.foxikle.foxrank;
 
+import me.foxikle.foxrank.events.ModerationAction;
+import me.foxikle.foxrank.events.ModerationActionEvent;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.OfflinePlayer;
@@ -181,6 +183,7 @@ public class Ban implements CommandExecutor, TabExecutor {
     }
 
     private void banPlayer(RankedPlayer banner, Player banee, boolean silent, String reasonStr, Instant duration, String broadcastReason) {
+        FoxRank.getInstance().getServer().getPluginManager().callEvent(new ModerationActionEvent(banee, banner.getPlayer(), new RankedPlayer(banee.getPlayer()).getRank(), banner.getRank(), ModerationAction.BAN));
         String bumper = "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n";
         if (!FoxRank.getInstance().getBannedPlayers().contains(banee)) {
             File file = new File("plugins/FoxRank/bannedPlayers.yml");
@@ -230,6 +233,7 @@ public class Ban implements CommandExecutor, TabExecutor {
     }
 
     private void banOfflinePlayer(RankedPlayer banner, OfflinePlayer banee, String reasonStr, Instant duration, String broadcastReason) {
+        FoxRank.getInstance().getServer().getPluginManager().callEvent(new ModerationActionEvent(banee.getPlayer(), banner.getPlayer(), new RankedPlayer(banee.getPlayer()).getRank(), banner.getRank(), ModerationAction.BAN));
         File file = new File("plugins/FoxRank/PlayerData/" + banee.getUniqueId() + ".yml");
         YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
         if (duration == null) {

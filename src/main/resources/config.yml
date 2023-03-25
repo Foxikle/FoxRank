@@ -86,6 +86,9 @@ DisableImMuted: false
 # DisableRankVisibility: -> Disables users ability to see player's ranks. (THIS DOES NOT DISABLE RANKS, PlAYER'S WILL STILL HAVE RANKS FOR PERMISSION PURPOSES) (Defaults to false)
 DisableRankVisibility: false
 
+# DisableActionbar: -> Disables the actionbar with you current nickname and vanish status.
+DisableActionbar: false
+
 
 # ------------------------------------------------------
 #  _  _   _        _

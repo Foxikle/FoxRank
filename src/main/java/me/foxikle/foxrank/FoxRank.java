@@ -1,6 +1,7 @@
 package me.foxikle.foxrank;
 
 import com.google.gson.JsonParser;
+import me.foxikle.foxrank.events.RankChangeEvent;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.OfflinePlayer;
@@ -96,7 +97,7 @@ public class FoxRank extends JavaPlugin implements Listener {
         reloadConfig();
         for (Player p : this.getServer().getOnlinePlayers()) {
             loadRank(p);
-            actionBar.setupActionBar(p);
+            ActionBar.setupActionBar(p);
         }
         getCommand("nick").setExecutor(new Nick());
         getCommand("vanish").setExecutor(new Vanish());
@@ -116,6 +117,16 @@ public class FoxRank extends JavaPlugin implements Listener {
         for (Player p : this.getServer().getOnlinePlayers()) {
             saveRank(p);
         }
+        DefualtTeam.unregister();
+        OwnerTeam.unregister();
+        AdminTeam.unregister();
+        ModeratorTeam.unregister();
+        YoutubeTeam.unregister();
+        TwitchTeam.unregister();
+        MvppTeam.unregister();
+        MvpTeam.unregister();
+        VippTeam.unregister();
+        VipTeam.unregister();
     }
 
     private void setupTeams() {
@@ -292,6 +303,7 @@ public class FoxRank extends JavaPlugin implements Listener {
     }
 
     protected void setRank(Player player, Rank rank) {
+        this.getServer().getPluginManager().callEvent(new RankChangeEvent(player, rank));
         ranks.put(player, rank);
         File file = new File("plugins/FoxRank/PlayerData/" + player.getUniqueId() + ".yml");
         YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
@@ -470,7 +482,7 @@ public class FoxRank extends JavaPlugin implements Listener {
         } catch (IOException error) {
             error.printStackTrace();
         }
-        actionBar.setupActionBar(p);
+        ActionBar.setupActionBar(p);
         loadRank(p);
         if (this.isMuted(p.getUniqueId())) {
             if (this.getMuteDuration(p.getUniqueId()).isBefore(Instant.now())) {
@@ -770,16 +782,16 @@ public class FoxRank extends JavaPlugin implements Listener {
         }
     }
 
-    protected void sendNoPermissionMessage(int powerLevel, RankedPlayer rp) {
-        rp.sendMessage(ChatColor.translateAlternateColorCodes('§', this.getConfig().getString("NoPermissionMessage").replace("$POWERLEVEL", powerLevel + "").replace("\\n", "\n")));
+    public void sendNoPermissionMessage(int powerLevel, RankedPlayer rp) {
+        rp.sendMessage(ChatColor.translateAlternateColorCodes('§', FoxRank.getInstance().getConfig().getString("NoPermissionMessage").replace("$POWERLEVEL", powerLevel + "").replace("\\n", "\n")));
     }
 
-    protected void sendMissingArgsMessage(String command, String args, RankedPlayer rp) {
-        rp.sendMessage(ChatColor.translateAlternateColorCodes('§', this.getConfig().getString("MissingArgsMessage").replace("$COMMAND", command + "").replace("$ARGS", args)));
+    public void sendMissingArgsMessage(String command, String args, RankedPlayer rp) {
+        rp.sendMessage(ChatColor.translateAlternateColorCodes('§', FoxRank.getInstance().getConfig().getString("MissingArgsMessage").replace("$COMMAND", command + "").replace("$ARGS", args)));
     }
 
-    protected void sendInvalidArgsMessage(String args, RankedPlayer rp) {
-        rp.sendMessage(ChatColor.translateAlternateColorCodes('§', this.getConfig().getString("InvalidArgumentMessage").replace("$ARGTYPE", args)));
+    public void sendInvalidArgsMessage(String args, RankedPlayer rp) {
+        rp.sendMessage(ChatColor.translateAlternateColorCodes('§', FoxRank.getInstance().getConfig().getString("InvalidArgumentMessage").replace("$ARGTYPE", args)));
     }
 
     protected String getTrueName(UUID uuid) {

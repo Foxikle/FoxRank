@@ -30,12 +30,6 @@ interface CustomPlayer {
 
     void unmutePlayer(RankedPlayer staff);
 
-    @Deprecated
-    void mutePlayer(Instant duration, String reason);
-
-    @Deprecated
-    void unmutePlayer();
-
     String getNickname();
 
     String getRankId();

@@ -1,5 +1,7 @@
 package me.foxikle.foxrank;
 
+import me.foxikle.foxrank.events.ModerationAction;
+import me.foxikle.foxrank.events.ModerationActionEvent;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
@@ -26,7 +28,7 @@ public class Unban implements CommandExecutor, TabExecutor {
                 if (staff.getPowerLevel() >= FoxRank.getInstance().getConfig().getInt("UnbanPermissions")) {
                     if (args.length >= 1) {
                         Bukkit.getServer().getOfflinePlayer(args[0]);
-                        OfflineRankedPlayer  orp = new OfflineRankedPlayer(Bukkit.getServer().getOfflinePlayer(args[0]));
+                        OfflineRankedPlayer orp = new OfflineRankedPlayer(Bukkit.getServer().getOfflinePlayer(args[0]));
                         File file = new File("plugins/FoxRank/bannedPlayers.yml");
                         YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
                         List<String> list = yml.getStringList("CurrentlyBannedPlayers");
@@ -43,6 +45,7 @@ public class Unban implements CommandExecutor, TabExecutor {
                                 e.printStackTrace();
                             }
                             FoxRank.getInstance().addUnbanLogEntry(orp, staff, Integer.toString(hash("FoxRank:" + orp.getName() + ":" + Instant.now()), 16).toUpperCase(Locale.ROOT));
+                            FoxRank.getInstance().getServer().getPluginManager().callEvent(new ModerationActionEvent(staff.getPlayer(), orp.getOfflinePlayer().getPlayer(), orp.getRank(), staff.getRank(), ModerationAction.UNBAN));
                             staff.sendMessage(ChatColor.translateAlternateColorCodes('§', FoxRank.getInstance().getConfig().getString("UnbanCommandMessage").replace("$USER", orp.getName())));
                         } else{
                             FoxRank.getInstance().getConfig().getString("UnbanCommandNotBanned");
