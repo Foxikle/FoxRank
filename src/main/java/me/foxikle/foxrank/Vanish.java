@@ -34,11 +34,14 @@ public class Vanish implements CommandExecutor, Listener {
                                     p.showPlayer(FoxRank.getInstance(), player);
                                 }
 
-                            } else if (!db.getStoredVanishStatus(player.getUniqueId())) {
+                            } else {
                                 db.setStoredVanishedState(player.getUniqueId(), true);
                                 FoxRank.getInstance().getServer().getPluginManager().callEvent(new PlayerVanishEvent(player, rp.getRank()));
                                 player.sendMessage(ChatColor.translateAlternateColorCodes('§', FoxRank.getInstance().getConfig().getString("VanishMessage")));
                                 ActionBar.setupActionBar(player);
+                                for (Player p : Bukkit.getOnlinePlayers()) {
+                                    p.hidePlayer(FoxRank.getInstance(), player);
+                                }
                             }
                         } else {
                             File file = new File("plugins/FoxRank/PlayerData/" + player.getUniqueId() + ".yml");
