@@ -12,10 +12,7 @@ import org.bukkit.command.TabExecutor;
 import org.bukkit.entity.Player;
 
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 
 public class Mute implements CommandExecutor, TabExecutor {
     public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
@@ -78,7 +75,7 @@ public class Mute implements CommandExecutor, TabExecutor {
                                 rp.sendMessage(ChatColor.translateAlternateColorCodes('§', FoxRank.getInstance().getConfig().getString("MutePlayerWithHigherPowerLevelMessage")));
                             } else {
                                 if (rp.getPowerLevel() >= FoxRank.getInstance().getConfig().getInt("MutePermissions")) {
-                                    if (FoxRank.instance.isMuted(mutee.getUniqueId())) {
+                                    if (!FoxRank.getInstance().isMuted(mutee.getUniqueId())) {
                                         expires = Instant.now();
                                         if (args[1].contains("d") || args[1].contains("h") || args[1].contains("m")) {
                                             String durStr = args[1];
@@ -228,10 +225,7 @@ public class Mute implements CommandExecutor, TabExecutor {
                 return arguments;
 
             } else if (args.length == 1) {
-                List<String> playerNames = new ArrayList<>();
-                for (Player player : Bukkit.getOnlinePlayers()) {
-                    playerNames.add(player.getName());
-                }
+                List<String> playerNames = new ArrayList<>(FoxRank.getInstance().getPlayerNames((Player) sender));
                 for (OfflinePlayer player : Bukkit.getOfflinePlayers()) {
                     playerNames.add(player.getName());
                 }
@@ -240,15 +234,25 @@ public class Mute implements CommandExecutor, TabExecutor {
         } else if (command.getLabel().equalsIgnoreCase("unmute")) {
             if (args.length == 1) {
                 List<String> playerNames = new ArrayList<>();
-                for (Player player : Bukkit.getOnlinePlayers()) {
-                    if (new RankedPlayer(player).isMuted()) playerNames.add(player.getName());
-                }
-                for (OfflinePlayer player : Bukkit.getOfflinePlayers()) {
-                    if (new OfflineRankedPlayer(player).isMuted()) playerNames.add(player.getName());
+                if (FoxRank.getInstance().useDb) {
+                    for (UUID uuid : FoxRank.getInstance().db.getUUIDs()) {
+                        if (FoxRank.getInstance().isMuted(uuid)) {
+                            playerNames.add(FoxRank.getInstance().getTrueName(uuid));
+                        }
+                    }
+                } else {
+                    for (String player : FoxRank.getInstance().getPlayerNames((Player) sender)) {
+                        if (FoxRank.getInstance().isMuted(FoxRank.getInstance().getUUID(player))) {
+                            playerNames.add(player);
+                        }
+                    }
+                    for (OfflinePlayer player : Bukkit.getOfflinePlayers()) {
+                        if (FoxRank.instance.isMuted(player.getUniqueId())) playerNames.add(player.getName());
+                    }
                 }
                 return playerNames;
             }
         }
-        return null;
+        return new ArrayList<>();
     }
 }
