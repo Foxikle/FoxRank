@@ -22,7 +22,7 @@ public class Unban implements CommandExecutor, TabExecutor {
                         Bukkit.getServer().getOfflinePlayer(args[0]);
                         OfflineRankedPlayer orp = new OfflineRankedPlayer(Bukkit.getServer().getOfflinePlayer(args[0]));
                         if (orp.isBanned()) {
-                            ModerationAction.unbanOfflinePlayer(orp.getUniqueId(), staff.getUniqueId());
+                            ModerationAction.unbanPlayer(orp.getUniqueId(), staff.getUniqueId());
                             staff.sendMessage(ChatColor.GREEN + "" + orp.getName() + " was unbanned.");
                         } else {
                             staff.sendMessage(ChatColor.RED + orp.getName() + " is not banned!");
