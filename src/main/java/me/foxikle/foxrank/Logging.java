@@ -11,14 +11,14 @@ import java.util.List;
 import java.util.UUID;
 
 public class Logging {
-    protected static void addLogEntry(EntryType type, OfflineRankedPlayer involved, @Nullable UUID staff, @Nullable Instant duration, @Nullable String option, @Nullable String option2, @Nullable String id) {
-        Entry entry = new Entry(type, involved.getUniqueId(), Instant.now(), duration, option, option2, staff, id);
+    protected static void addLogEntry(EntryType type, UUID involved, @Nullable UUID staff, @Nullable Instant duration, @Nullable String option, @Nullable String option2, @Nullable String id) {
+        Entry entry = new Entry(type, involved, Instant.now(), duration, option, option2, staff, id);
         if (FoxRank.getInstance().useDb) {
-            FoxRank.getInstance().db.addEntry(involved.getUniqueId(), entry);
+            FoxRank.getInstance().db.addEntry(involved, entry);
         } else {
             File file = new File("plugins/FoxRank/auditlog.yml");
             YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
-            yml.getStringList(involved.getUniqueId().toString()).add(entry.serialize());
+            yml.getStringList(involved.toString()).add(entry.serialize());
             try {
                 yml.save(file);
             } catch (IOException e) {
