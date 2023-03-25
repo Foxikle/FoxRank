@@ -201,6 +201,15 @@ public class Listeners implements Listener {
                 FoxRank.setTeam(p, FoxRank.getInstance().db.getStoredNicknameRank(p.getUniqueId()).getRankID());
             }
         }
+        if (FoxRank.getInstance().isVanished(p.getUniqueId())) {
+            FoxRank.getInstance().vanishedPlayers.add(p);
+            for (Player player : FoxRank.getInstance().vanishedPlayers) {
+                player.hidePlayer(FoxRank.getInstance(), p);
+            }
+        }
+        for (Player player : FoxRank.getInstance().vanishedPlayers) {
+            p.hidePlayer(FoxRank.getInstance(), player);
+        }
     }
 
     @EventHandler

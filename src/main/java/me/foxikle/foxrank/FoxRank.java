@@ -29,6 +29,7 @@ public class FoxRank extends JavaPlugin implements Listener {
 
     protected static FoxRank instance;
     protected final boolean disableRankVis = this.getConfig().getBoolean("DisableRankVisiblity");
+    protected List<Player> vanishedPlayers = new ArrayList<>();
     protected static PluginChannelListener pcl;
     protected boolean useDb = this.getConfig().getBoolean("UseSQLStorage");
     protected boolean bungeecord = false;

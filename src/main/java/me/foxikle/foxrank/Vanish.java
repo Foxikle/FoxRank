@@ -33,7 +33,7 @@ public class Vanish implements CommandExecutor, Listener {
                                 for (Player p : Bukkit.getOnlinePlayers()) {
                                     p.showPlayer(FoxRank.getInstance(), player);
                                 }
-
+                                FoxRank.instance.vanishedPlayers.remove(player);
                             } else {
                                 db.setStoredVanishedState(player.getUniqueId(), true);
                                 FoxRank.getInstance().getServer().getPluginManager().callEvent(new PlayerVanishEvent(player, rp.getRank()));
@@ -42,6 +42,7 @@ public class Vanish implements CommandExecutor, Listener {
                                 for (Player p : Bukkit.getOnlinePlayers()) {
                                     p.hidePlayer(FoxRank.getInstance(), player);
                                 }
+                                FoxRank.getInstance().vanishedPlayers.add(player);
                             }
                         } else {
                             File file = new File("plugins/FoxRank/PlayerData/" + player.getUniqueId() + ".yml");
