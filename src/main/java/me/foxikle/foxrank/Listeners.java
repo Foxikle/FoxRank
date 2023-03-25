@@ -1,5 +1,6 @@
 package me.foxikle.foxrank;
 
+import com.google.common.collect.Iterables;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.OfflinePlayer;
@@ -19,6 +20,7 @@ import java.util.List;
 import java.util.UUID;
 
 import static me.foxikle.foxrank.FoxRank.getRank;
+import static me.foxikle.foxrank.FoxRank.pcl;
 import static me.foxikle.foxrank.Rank.DEFAULT;
 import static me.foxikle.foxrank.Rank.ofString;
 import static org.bukkit.ChatColor.RED;
@@ -184,6 +186,12 @@ public class Listeners implements Listener {
                 ModerationAction.unmutePlayer(new RankedPlayer(p), new RankedPlayer(p));
             }
         }
+        if (Bukkit.getOnlinePlayers().size() == 1) {
+
+            Bukkit.getScheduler().runTaskLater(FoxRank.getInstance(), () -> {
+                pcl.getPlayers(Iterables.getFirst(Bukkit.getOnlinePlayers(), null));
+            }, 30);
+        }
     }
 
     @EventHandler
@@ -219,7 +227,7 @@ public class Listeners implements Listener {
             } else {
                 Instant inst = Instant.parse(duration);
                 if (Instant.now().isAfter(inst)) {
-                    ModerationAction.unbanOfflinePlayer(uuid, null);
+                    ModerationAction.unbanPlayer(uuid, null);
                     if (FoxRank.getInstance().useDb) {
                         List<OfflinePlayer> list = db.getStoredBannedPlayers();
                         if (list.contains(Bukkit.getOfflinePlayer(e.getUniqueId()))) {
