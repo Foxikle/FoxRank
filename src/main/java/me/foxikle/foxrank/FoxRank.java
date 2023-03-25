@@ -19,10 +19,7 @@ import java.net.URL;
 import java.sql.SQLException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.logging.Level;
 
 import static me.foxikle.foxrank.Rank.*;
@@ -32,9 +29,9 @@ public class FoxRank extends JavaPlugin implements Listener {
 
     protected static FoxRank instance;
     protected final boolean disableRankVis = this.getConfig().getBoolean("DisableRankVisiblity");
-    private static PluginChannelListener pcl;
+    protected static PluginChannelListener pcl;
     protected boolean useDb = this.getConfig().getBoolean("UseSQLStorage");
-    protected boolean bungeecord = this.getConfig().getBoolean("bungeecord");
+    protected boolean bungeecord = false;
     protected Database db;
     static Map<Player, Rank> ranks = new HashMap<>();
     private static Team DefualtTeam = null;
@@ -47,6 +44,7 @@ public class FoxRank extends JavaPlugin implements Listener {
     private static Team MvpTeam = null;
     private static Team VippTeam = null;
     private static Team VipTeam = null;
+    protected List<String> playerNames = new ArrayList<>();
 
     protected static FoxRank getInstance() {
         return instance;
@@ -85,7 +83,7 @@ public class FoxRank extends JavaPlugin implements Listener {
         }
     }
 
-    protected static PluginChannelListener pluginChannelListener() {
+    protected static PluginChannelListener getPluginChannelListener() {
         return pcl;
     }
 
@@ -95,8 +93,11 @@ public class FoxRank extends JavaPlugin implements Listener {
             this.saveResource("config.yml", false);
         }
         instance = this;
+        pcl = new PluginChannelListener();
+        bungeecord = this.getConfig().getBoolean("bungeecord");
         this.getServer().getMessenger().registerOutgoingPluginChannel(this, "BungeeCord");
-        this.getServer().getMessenger().registerIncomingPluginChannel(this, "BungeeCord", pcl = new PluginChannelListener());
+        this.getServer().getMessenger().registerIncomingPluginChannel(this, "BungeeCord", pcl);
+
         if (useDb) {
             getInstance().db = new Database();
             try {
@@ -561,5 +562,15 @@ public class FoxRank extends JavaPlugin implements Listener {
             players.add(Bukkit.getOfflinePlayer(UUID.fromString(str)));
         }
         return players;
+    }
+
+    protected List<String> getPlayerNames(Player player) {
+        if (bungeecord) {
+            return playerNames;
+        } else {
+            List<String> returnme = new ArrayList<>();
+            Bukkit.getOnlinePlayers().forEach(player1 -> returnme.add(player1.getName()));
+            return returnme;
+        }
     }
 }
