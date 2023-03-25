@@ -205,9 +205,7 @@ public class Logs implements CommandExecutor, TabExecutor, Listener {
 
         } else if (args.length == 1) {
             List<String> playerNames = new ArrayList<>();
-            for (Player player : Bukkit.getOnlinePlayers()) {
-                playerNames.add(player.getName());
-            }
+            playerNames.addAll(FoxRank.getInstance().getPlayerNames((Player) sender));
             for (OfflinePlayer player : Bukkit.getOfflinePlayers()) {
                 playerNames.add(player.getName());
             }
@@ -338,10 +336,6 @@ public class Logs implements CommandExecutor, TabExecutor, Listener {
                 }
             }
         }
-    }
-
-    private void setEntries(List<Entry> entries) {
-
     }
 }
 
