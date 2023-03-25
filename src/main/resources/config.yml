@@ -163,7 +163,7 @@ RandomSkinSignatureList:
 NicknameTooLongMessage: §cYour nickname ($NICKNAME) is greater than 16 characters.
 
 # NickNameChangedMessage: -> The message displayed to a use when they change their nickname. ($NEWNICK, Supports § colors)
-NickNameChangedMessage: §aYour nicname is now §l§a$NEWNICK.
+NickNameChangedMessage: §aYour nickname is now §l§a$NEWNICK.
 
 # BlacklistedNicknameMessage: -> The message displayed to a user when they attempt to use a blacklisted nickname. (BLACKLISTEDNAME, supports § colors.)
 BlacklistedNicknameMessage: §cThe nickname §l§c'$BLACKLISTEDNAME' §r§c is blacklisted.
