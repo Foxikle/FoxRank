@@ -95,11 +95,11 @@ public class Ban implements CommandExecutor, TabExecutor {
                                 }
                                 reason = removeUnderScore(reason);
                                 banID = getBanID(banee);
-                                banPlayer(staff, banee, silent, reason, expires, args[1], banID);
+                                banPlayer(staff, banee, silent, reason, expires, reason, banID);
 
                             }
                         } else {
-                            if (Bukkit.getOfflinePlayer(FoxRank.getInstance().getUUID(args[0])) != null) {
+                            if (FoxRank.getInstance().db.getNames().contains(args[0])) {
                                 OfflinePlayer banee = Bukkit.getServer().getOfflinePlayer(FoxRank.getInstance().getUUID(args[0]));
                                 if (banee != null) {
                                     OfflineRankedPlayer baneeRp = new OfflineRankedPlayer(banee);
@@ -155,7 +155,7 @@ public class Ban implements CommandExecutor, TabExecutor {
                                         }
                                         reason = removeUnderScore(reason);
                                         banID = getBanID(banee);
-                                        banOfflinePlayer(staff, banee, reason, expires, args[1], banID);
+                                        banOfflinePlayer(staff, banee, reason, expires, reason, banID);
 
                                     }
                                 }
@@ -184,19 +184,7 @@ public class Ban implements CommandExecutor, TabExecutor {
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
         if (args.length == 1) {
-            List<String> playerNames = new ArrayList<>();
-            Player[] players = new Player[Bukkit.getServer().getOnlinePlayers().size()];
-            Bukkit.getServer().getOnlinePlayers().toArray(players);
-            for (Player player : players) {
-                playerNames.add(player.getName());
-            }
-            for (OfflinePlayer player : Bukkit.getOfflinePlayers()) {
-                if (!player.isBanned()) {
-                    playerNames.add(player.getName());
-                }
-            }
-
-            return playerNames;
+            return FoxRank.getInstance().db.getNames();
         } else if (args.length == 2) {
             List<String> arguments = new ArrayList<>();
             arguments.addAll(FoxRank.getInstance().getConfig().getConfigurationSection("BanReasons").getKeys(false));
