@@ -40,7 +40,7 @@ public class ModerationAction {
                 e.printStackTrace();
             }
         }
-        Logging.addLogEntry(EntryType.MUTE, new OfflineRankedPlayer(rp.getPlayer()), admin.getUniqueId(), duration, reason, null, id);
+        Logging.addLogEntry(EntryType.MUTE, rp.getUniqueId(), admin.getUniqueId(), duration, reason, null, id);
 
         String border = RED + "" + STRIKETHROUGH + "                                                                   ";
         String muteMessage = FoxRank.getInstance().getConfig().getString("MuteMessage").replace("$LINE", border);
@@ -48,8 +48,11 @@ public class ModerationAction {
         muteMessage = muteMessage.replace("$DURATION", FoxRank.getInstance().getFormattedExpiredString(duration, Instant.now()));
         muteMessage = muteMessage.replace("$REASON", reason);
         muteMessage = ChatColor.translateAlternateColorCodes('§', muteMessage);
-        rp.sendMessage(muteMessage);
-
+        if (FoxRank.getInstance().bungeecord) {
+            FoxRank.getPluginChannelListener().sendMessage(admin.getPlayer(), rp.getPlayer().getName(), muteMessage);
+        } else {
+            rp.sendMessage(muteMessage);
+        }
     }
 
     protected static void unmutePlayer(RankedPlayer rp, RankedPlayer staff) {
@@ -68,8 +71,12 @@ public class ModerationAction {
                 e.printStackTrace();
             }
         }
-        Logging.addLogEntry(EntryType.UNMUTE, new OfflineRankedPlayer(rp.getPlayer()), staff.getUniqueId(), null, null, null, id);
+        Logging.addLogEntry(EntryType.UNMUTE, rp.getUniqueId(), staff.getUniqueId(), null, null, null, id);
         String border = GREEN + "" + STRIKETHROUGH + "                                                                     ";
+        if (FoxRank.instance.bungeecord) {
+            FoxRank.getPluginChannelListener().sendMessage(staff.getPlayer(), rp.getPlayer().getName(), ChatColor.translateAlternateColorCodes('§', FoxRank.getInstance().getConfig().getString("UnmuteRecieverMessage").replace("$LINE", border).replace("\\n", "\n")));
+            return;
+        }
         rp.sendMessage(ChatColor.translateAlternateColorCodes('§', FoxRank.getInstance().getConfig().getString("UnmuteRecieverMessage").replace("$LINE", border).replace("\\n", "\n")));
     }
 
@@ -89,12 +96,22 @@ public class ModerationAction {
                 e.printStackTrace();
             }
         }
-        Logging.addLogEntry(EntryType.UNMUTE, new OfflineRankedPlayer(p.getPlayer()), staff.getUniqueId(), null, null, null, id);
+        Logging.addLogEntry(EntryType.UNMUTE, p.getUniqueId(), staff.getUniqueId(), null, null, null, id);
 
     }
 
     protected static void muteOfflinePlayer(OfflineRankedPlayer rp, Instant duration, String reason, RankedPlayer admin) {
         String id = Integer.toString(hash("FoxRank:" + rp.getName() + ":" + Instant.now()), 16).toUpperCase(Locale.ROOT).replace("-", "");
+
+        if (FoxRank.instance.bungeecord) {
+            String border = RED + "" + STRIKETHROUGH + "                                                                   ";
+            String muteMessage = FoxRank.getInstance().getConfig().getString("MuteMessage").replace("$LINE", border);
+            muteMessage = muteMessage.replace("\\n", "\n");
+            muteMessage = muteMessage.replace("$DURATION", FoxRank.getInstance().getFormattedExpiredString(duration, Instant.now()));
+            muteMessage = muteMessage.replace("$REASON", reason);
+            muteMessage = ChatColor.translateAlternateColorCodes('§', muteMessage);
+            FoxRank.getPluginChannelListener().sendMessage(admin.getPlayer(), rp.getName(), muteMessage);
+        }
         if (useDb) {
             db.setStoredMuteData(rp.getUniqueId(), true, reason, duration);
         } else {
@@ -110,10 +127,10 @@ public class ModerationAction {
                 e.printStackTrace();
             }
         }
-        Logging.addLogEntry(EntryType.MUTE, rp, admin.getUniqueId(), duration, reason, null, id);
+        Logging.addLogEntry(EntryType.MUTE, rp.getUniqueId(), admin.getUniqueId(), duration, reason, null, id);
     }
 
-    protected static void unbanOfflinePlayer(UUID rp, UUID staff) {
+    protected static void unbanPlayer(UUID rp, UUID staff) {
         if (staff == null) {
             staff = rp;
         }
@@ -122,7 +139,7 @@ public class ModerationAction {
             List<OfflinePlayer> bannedPlayers = db.getStoredBannedPlayers();
             bannedPlayers.remove(Bukkit.getOfflinePlayer(rp));
             db.setStoredBannedPlayers(bannedPlayers);
-            db.setStoredBanData(rp, false, db.getStoredBanReason(rp), Instant.parse(db.getStoredBanDuration(rp)), db.getStoredBanID(rp));
+            db.setStoredBanData(rp, false, db.getStoredBanReason(rp), Instant.now(), db.getStoredBanID(rp));
         } else {
             File file = new File("plugins/FoxRank/PlayerData/" + rp + ".yml");
             YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
@@ -134,7 +151,7 @@ public class ModerationAction {
                 e.printStackTrace();
             }
         }
-        Logging.addLogEntry(EntryType.UNBAN, new OfflineRankedPlayer(Bukkit.getOfflinePlayer(rp)), staff, null, null, null, id);
+        Logging.addLogEntry(EntryType.UNBAN, rp, staff, null, null, null, id);
     }
 
     protected static void banPlayer(RankedPlayer banner, Player banee, boolean silent, String reasonStr, Instant duration, String broadcastReason, String banID) {
@@ -143,13 +160,13 @@ public class ModerationAction {
         if (!FoxRank.getInstance().getBannedPlayers().contains(banee)) {
             if (duration != null) {
                 if (FoxRank.getInstance().bungeecord) {
-                    FoxRank.pluginChannelListener().kickPlayer(banner.getPlayer(), banee, bumper + FoxRank.getInstance().getConfig().getString("TempBanMessageFormat").replace("$DURATION", FoxRank.getInstance().getFormattedExpiredString(duration, Instant.now())).replace("$SERVER_NAME", FoxRank.getInstance().getConfig().getString("ServerName")).replace("$REASON", reasonStr).replace("$APPEAL_LINK", FoxRank.getInstance().getConfig().getString("BanAppealLink")).replace("$ID", banID).replace("\\n", "\n") + bumper);
+                    FoxRank.getPluginChannelListener().kickPlayer(banner.getPlayer(), banee.getName(), bumper + FoxRank.getInstance().getConfig().getString("TempBanMessageFormat").replace("$DURATION", FoxRank.getInstance().getFormattedExpiredString(duration, Instant.now())).replace("$SERVER_NAME", FoxRank.getInstance().getConfig().getString("ServerName")).replace("$REASON", reasonStr).replace("$APPEAL_LINK", FoxRank.getInstance().getConfig().getString("BanAppealLink")).replace("$ID", banID).replace("\\n", "\n") + bumper);
                 } else {
                     banee.kickPlayer(bumper + FoxRank.getInstance().getConfig().getString("TempBanMessageFormat").replace("$DURATION", FoxRank.getInstance().getFormattedExpiredString(duration, Instant.now())).replace("$SERVER_NAME", FoxRank.getInstance().getConfig().getString("ServerName")).replace("$REASON", reasonStr).replace("$APPEAL_LINK", FoxRank.getInstance().getConfig().getString("BanAppealLink")).replace("$ID", banID).replace("\\n", "\n") + bumper);
                 }
             } else {
-                if (FoxRank.instance.bungeecord) {
-                    FoxRank.pluginChannelListener().kickPlayer(banner.getPlayer(), banee, bumper + FoxRank.getInstance().getConfig().getString("PermBanMessageFormat").replace("$SERVER_NAME", FoxRank.getInstance().getConfig().getString("ServerName")).replace("$REASON", reasonStr).replace("$APPEAL_LINK", FoxRank.getInstance().getConfig().getString("BanAppealLink")).replace("$ID", banID).replace("\\n", "\n") + bumper);
+                if (FoxRank.getInstance().bungeecord) {
+                    FoxRank.getPluginChannelListener().kickPlayer(banner.getPlayer(), banee.getName(), bumper + FoxRank.getInstance().getConfig().getString("PermBanMessageFormat").replace("$SERVER_NAME", FoxRank.getInstance().getConfig().getString("ServerName")).replace("$REASON", reasonStr).replace("$APPEAL_LINK", FoxRank.getInstance().getConfig().getString("BanAppealLink")).replace("$ID", banID).replace("\\n", "\n") + bumper);
                 } else {
                     banee.kickPlayer(bumper + FoxRank.getInstance().getConfig().getString("PermBanMessageFormat").replace("$SERVER_NAME", FoxRank.getInstance().getConfig().getString("ServerName")).replace("$REASON", reasonStr).replace("$APPEAL_LINK", FoxRank.getInstance().getConfig().getString("BanAppealLink")).replace("$ID", banID).replace("\\n", "\n") + bumper);
                 }
@@ -172,7 +189,6 @@ public class ModerationAction {
             if (FoxRank.getInstance().useDb) {
                 List<OfflinePlayer> bannedPlayers = db.getStoredBannedPlayers();
                 bannedPlayers.add(banee);
-                Bukkit.broadcastMessage(bannedPlayers.toString());
                 FoxRank.getInstance().db.setStoredBannedPlayers(bannedPlayers);
                 FoxRank.getInstance().db.setStoredBanData(banee.getUniqueId(), true, reasonStr, duration, banID);
             } else {
@@ -201,19 +217,29 @@ public class ModerationAction {
                     e.printStackTrace();
                 }
             }
-            Logging.addLogEntry(EntryType.BAN, new OfflineRankedPlayer(banee), banner.getUniqueId(), duration, reasonStr, silent + "", banID);
+            Logging.addLogEntry(EntryType.BAN, banee.getUniqueId(), banner.getUniqueId(), duration, reasonStr, silent + "", banID);
         }
     }
 
     protected static void banOfflinePlayer(RankedPlayer banner, OfflinePlayer banee, String reasonStr, Instant duration, String broadcastReason, String banID) {
         FoxRank.getInstance().getServer().getPluginManager().callEvent(new ModerationActionEvent(banee.getPlayer(), banner.getPlayer(), new RankedPlayer(banee.getPlayer()).getRank(), banner.getRank(), me.foxikle.foxrank.events.ModerationAction.BAN));
+        String bumper = "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n";
+        if (duration != null) {
+            if (FoxRank.getInstance().bungeecord) {
+                FoxRank.getPluginChannelListener().kickPlayer(banner.getPlayer(), banee.getName(), bumper + FoxRank.getInstance().getConfig().getString("TempBanMessageFormat").replace("$DURATION", FoxRank.getInstance().getFormattedExpiredString(duration, Instant.now())).replace("$SERVER_NAME", FoxRank.getInstance().getConfig().getString("ServerName")).replace("$REASON", reasonStr).replace("$APPEAL_LINK", FoxRank.getInstance().getConfig().getString("BanAppealLink")).replace("$ID", banID).replace("\\n", "\n") + bumper);
+            }
+        } else {
+            if (FoxRank.getInstance().bungeecord) {
+                FoxRank.getPluginChannelListener().kickPlayer(banner.getPlayer(), banee.getName(), bumper + FoxRank.getInstance().getConfig().getString("PermBanMessageFormat").replace("$SERVER_NAME", FoxRank.getInstance().getConfig().getString("ServerName")).replace("$REASON", reasonStr).replace("$APPEAL_LINK", FoxRank.getInstance().getConfig().getString("BanAppealLink")).replace("$ID", banID).replace("\\n", "\n") + bumper);
+            }
+        }
 
         if (broadcastReason.equalsIgnoreCase("SECURITY")) {
             banner.sendMessage(ChatColor.translateAlternateColorCodes('§', FoxRank.getInstance().getConfig().getString("SecurityBanSenderMessage").replace("$PLAYER", banee.getName())));
         } else {
             banner.sendMessage(ChatColor.translateAlternateColorCodes('§', FoxRank.getInstance().getConfig().getString("BanSenderMessage").replace("$PLAYER", banee.getName()).replace("$REASON", reasonStr)));
         }
-        Logging.addLogEntry(EntryType.BAN, new OfflineRankedPlayer(banee), banner.getUniqueId(), duration, reasonStr, "true", banID);
+        Logging.addLogEntry(EntryType.BAN, banee.getUniqueId(), banner.getUniqueId(), duration, reasonStr, "true", banID);
         if (!FoxRank.getInstance().getBannedPlayers().contains(banee)) {
             if (FoxRank.getInstance().useDb) {
                 List<OfflinePlayer> player = db.getStoredBannedPlayers();
