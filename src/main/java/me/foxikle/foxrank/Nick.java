@@ -221,7 +221,7 @@ public class Nick implements CommandExecutor {
             }
             changeName(name, player);
             FoxRank.setTeam(player, rankID);
-            Logging.addLogEntry(EntryType.NICKNAME, new OfflineRankedPlayer(player), null, null, Rank.ofString(rankID).getPrefix() + name, skinOption, null);
+            Logging.addLogEntry(EntryType.NICKNAME, player.getUniqueId(), null, null, Rank.ofString(rankID).getPrefix() + name, skinOption, null);
             FoxRank.getInstance().getServer().getPluginManager().callEvent(new PlayerNicknameEvent(player, name, Rank.ofString(rankID)));
             ActionBar.setupActionBar(player);
         } else {
