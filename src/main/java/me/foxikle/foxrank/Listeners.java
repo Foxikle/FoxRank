@@ -195,10 +195,10 @@ public class Listeners implements Listener {
 
         if (FoxRank.getInstance().isNicked(p.getUniqueId())) {
             if (FoxRank.getInstance().useDb) {
-                FoxRank.setTeam(p, FoxRank.getInstance().db.getStoredNicknameRank(p.getUniqueId()).getRankID());
                 Nick.changeName(FoxRank.getInstance().db.getStoredNickname(p.getUniqueId()), p);
                 Nick.loadSkin(p);
                 Nick.refreshPlayer(p);
+                FoxRank.setTeam(p, FoxRank.getInstance().db.getStoredNicknameRank(p.getUniqueId()).getRankID());
             }
         }
     }
