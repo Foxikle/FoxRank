@@ -146,7 +146,7 @@ public class RankedPlayer implements CustomPlayer{
      **/
     @Override
     public void mutePlayer(RankedPlayer staff, Instant duration, String reason) {
-        FoxRank.getInstance().mutePlayer(this, duration, reason, staff);
+        ModerationAction.mutePlayer(this, duration, reason, staff);
     }
 
     /**
@@ -156,7 +156,7 @@ public class RankedPlayer implements CustomPlayer{
      **/
     @Override
     public void unmutePlayer(RankedPlayer staff) {
-        FoxRank.getInstance().unmutePlayer(this, staff);
+        ModerationAction.unmutePlayer(this, staff);
     }
 
     /**

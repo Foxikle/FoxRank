@@ -34,6 +34,7 @@ public enum Rank {
     }
 
     public static Rank ofString(String s) {
+        if (s == null) return DEFAULT;
         if (s.equalsIgnoreCase("DEFAULT")) {
             return Rank.DEFAULT;
         } else if (s.equalsIgnoreCase("OWNER")) {

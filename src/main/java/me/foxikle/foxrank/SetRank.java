@@ -9,34 +9,20 @@ import org.bukkit.command.TabExecutor;
 import org.bukkit.entity.Player;
 
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 
 import static me.foxikle.foxrank.FoxRank.getRank;
 
 public class SetRank implements CommandExecutor, TabExecutor {
 
-    Map<String, Integer> rankList = new HashMap<>();
     private final FoxRank foxRank = FoxRank.getInstance();
+    List<String> rankList = Arrays.asList("OWNER", "ADMIN", "MODERATOR", "YOUTUBE", "TWITCH", "MVP_PLUS", "MVP", "VIP_PLUS", "VIP", "DEFAULT");
 
     public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
 
-        String[] foo = new String[]{"OWNER", "ADMIN", "MODERATOR", "YOUTUBE", "TWITCH", "MVP_PLUS", "MVP", "VIP_PLUS", "VIP", "DEFAULT"};
-        rankList.put(foo[0], 1);
-        rankList.put(foo[1], 2);
-        rankList.put(foo[2], 3);
-        rankList.put(foo[3], 4);
-        rankList.put(foo[4], 5);
-        rankList.put(foo[5], 6);
-        rankList.put(foo[6], 7);
-        rankList.put(foo[7], 8);
-        rankList.put(foo[8], 9);
-        rankList.put(foo[9], 10);
-
         Player player = (Player) sender;
         RankedPlayer rankedPlayer = new RankedPlayer(player);
-
         if (label.equalsIgnoreCase("setrank")) {
             if (!FoxRank.getInstance().getConfig().getBoolean("DisableSetRank")) {
                 if (sender instanceof Player) {
@@ -44,7 +30,7 @@ public class SetRank implements CommandExecutor, TabExecutor {
                         if (args.length < 1) {
                             FoxRank.getInstance().sendMissingArgsMessage("/setrank", "<rankID> [player]", new RankedPlayer(player));
                         } else if (args.length == 1) {
-                            if (rankList.containsKey(args[0])) {
+                            if (rankList.contains(args[0])) {
                                 foxRank.setRank(player, Rank.valueOf(args[0]));
                                 rankedPlayer.sendMessage(ChatColor.translateAlternateColorCodes('§', FoxRank.getInstance().getConfig().getString("RankIsNowMessage").replace("$RANK", Rank.valueOf(args[0]).getPrefix())));
                                 foxRank.loadRank(player);
@@ -52,22 +38,25 @@ public class SetRank implements CommandExecutor, TabExecutor {
                                 FoxRank.getInstance().sendInvalidArgsMessage("Rank", new RankedPlayer(player));
                             }
                         } else if (args.length >= 2) {
-
-                                if (Bukkit.getServer().getPlayer(args[1]) != null) {
-                                    Player p = Bukkit.getServer().getPlayer(args[1]);
-                                    if (getRank(player).getPowerLevel() > getRank(p).getPowerLevel()){
-                                    if (rankList.containsKey(args[0])) {
-                                        foxRank.setRank(p, Rank.valueOf(args[0]));
-                                        new RankedPlayer(p).sendMessage(ChatColor.translateAlternateColorCodes('§', FoxRank.getInstance().getConfig().getString("RankIsNowMessage").replace("$RANK", Rank.valueOf(args[0]).getPrefix())));
-                                        foxRank.loadRank(player);
-                                        foxRank.loadRank(p);
-                                    } else {
-                                        FoxRank.getInstance().sendInvalidArgsMessage("Rank", new RankedPlayer(player));
-                                    }
-                                } else {
-                                    FoxRank.getInstance().sendInvalidArgsMessage("Player", new RankedPlayer(player));
-                                }
+                            if (foxRank.bungeecord) {
+                                FoxRank.getInstance().setRankOfflinePlayer(Bukkit.getOfflinePlayer(args[1]), Rank.ofString(args[0]));
+                                FoxRank.getPluginChannelListener().sendUpdateDataMessage(args[1]);
+                                FoxRank.getPluginChannelListener().sendMessage(player, args[1], ChatColor.translateAlternateColorCodes('§', FoxRank.getInstance().getConfig().getString("RankIsNowMessage").replace("$RANK", Rank.valueOf(args[0]).getPrefix())));
+                                return true;
                             }
+                            Player p = Bukkit.getServer().getPlayer(args[1]);
+                            if (getRank(player).getPowerLevel() > getRank(p).getPowerLevel()) {
+                                if (rankList.contains(args[0])) {
+                                    Rank rank = Rank.valueOf(args[0]);
+                                    foxRank.setRank(p, rank);
+                                    new RankedPlayer(p).sendMessage(ChatColor.translateAlternateColorCodes('§', FoxRank.getInstance().getConfig().getString("RankIsNowMessage").replace("$RANK", Rank.valueOf(args[0]).getPrefix())));
+                                    foxRank.loadRank(p);
+                                } else {
+                                    FoxRank.getInstance().sendInvalidArgsMessage("Rank", new RankedPlayer(player));
+                                }
+                                } else {
+                                    player.sendMessage(ChatColor.RED + "Your rank must be higher than " + new RankedPlayer(p).getPrefix() + new RankedPlayer(p).getName() + " to change their rank!");
+                                }
                         } else {
                             FoxRank.getInstance().sendMissingArgsMessage("/setrank", "<rankID> [player]", new RankedPlayer(player));
                         }
@@ -100,14 +89,8 @@ public class SetRank implements CommandExecutor, TabExecutor {
             return arguments;
 
         } else if (args.length == 2) {
-            List<String> playerNames = new ArrayList<>();
-            Player[] players = new Player[Bukkit.getServer().getOnlinePlayers().size()];
-            Bukkit.getServer().getOnlinePlayers().toArray(players);
-            for (int i = 0; i < players.length; i++) {
-                playerNames.add(players[i].getName());
-            }
-            return playerNames;
+            return FoxRank.getInstance().getPlayerNames((Player) sender);
         }
-        return null;
+        return new ArrayList<>();
     }
 }

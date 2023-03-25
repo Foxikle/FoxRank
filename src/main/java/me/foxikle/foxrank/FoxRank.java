@@ -5,15 +5,9 @@ import me.foxikle.foxrank.events.RankChangeEvent;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.OfflinePlayer;
-import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
-import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
-import org.bukkit.event.player.AsyncPlayerChatEvent;
-import org.bukkit.event.player.AsyncPlayerPreLoginEvent;
-import org.bukkit.event.player.PlayerJoinEvent;
-import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scoreboard.Scoreboard;
 import org.bukkit.scoreboard.Team;
@@ -22,18 +16,24 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URL;
+import java.sql.SQLException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.logging.Level;
 
-import static java.util.Objects.hash;
 import static me.foxikle.foxrank.Rank.*;
-import static org.bukkit.ChatColor.*;
+import static org.bukkit.ChatColor.RED;
 
 public class FoxRank extends JavaPlugin implements Listener {
 
     protected static FoxRank instance;
+    protected final boolean disableRankVis = this.getConfig().getBoolean("DisableRankVisiblity");
+    protected List<Player> vanishedPlayers = new ArrayList<>();
+    protected static PluginChannelListener pcl;
+    protected boolean useDb = this.getConfig().getBoolean("UseSQLStorage");
+    protected boolean bungeecord = false;
+    protected Database db;
     static Map<Player, Rank> ranks = new HashMap<>();
     private static Team DefualtTeam = null;
     private static Team OwnerTeam = null;
@@ -45,13 +45,14 @@ public class FoxRank extends JavaPlugin implements Listener {
     private static Team MvpTeam = null;
     private static Team VippTeam = null;
     private static Team VipTeam = null;
+    protected List<String> playerNames = new ArrayList<>();
 
     protected static FoxRank getInstance() {
         return instance;
     }
 
     protected static void setTeam(Player player, String teamID) {
-        if (!instance.getConfig().getBoolean("DisableRankVisibility")) {
+        if (!getInstance().disableRankVis) {
             Scoreboard board = Bukkit.getScoreboardManager().getMainScoreboard();
             player.setScoreboard(board);
             switch (teamID) {
@@ -74,28 +75,62 @@ public class FoxRank extends JavaPlugin implements Listener {
     }
 
     protected static Rank getOfflineRank(OfflinePlayer player) {
-        File file = new File("plugins/FoxRank/PlayerData/" + player.getUniqueId() + ".yml");
-        YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
-        return Rank.ofString(yml.getString("Rank"));
+        if (getInstance().useDb) {
+            return getInstance().db.getStoredRank(player.getUniqueId());
+        } else {
+            File file = new File("plugins/FoxRank/PlayerData/" + player.getUniqueId() + ".yml");
+            YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
+            return Rank.ofString(yml.getString("Rank"));
+        }
+    }
+
+    protected static PluginChannelListener getPluginChannelListener() {
+        return pcl;
     }
 
     @Override
     public void onEnable() {
-        setupTeams();
         if (!new File("plugins/FoxRank/config.yml").exists()) {
             this.saveResource("config.yml", false);
-        } else if (!new File("plugins/FoxRank/auditlog.yml").exists()) {
-            this.saveResource("auditlog.yml", false);
-        } else if (!new File("plugins/FoxRank/bannedPlayers.yml").exists()) {
-            this.saveResource("bannedPlayers.yml", false);
         }
         instance = this;
+        pcl = new PluginChannelListener();
+        bungeecord = this.getConfig().getBoolean("bungeecord");
+        this.getServer().getMessenger().registerOutgoingPluginChannel(this, "BungeeCord");
+        this.getServer().getMessenger().registerIncomingPluginChannel(this, "BungeeCord", pcl);
+
+        if (useDb) {
+            getInstance().db = new Database();
+            try {
+                db.connect();
+            } catch (ClassNotFoundException | SQLException ignored) {
+                Bukkit.getLogger().log(Level.SEVERE, "Invalid database credentials. Disabling plugin.");
+                this.getPluginLoader().disablePlugin(this);
+                return;
+            }
+            Bukkit.getLogger().log(Level.INFO, "Database connected.");
+            db.createPlayerDataTable();
+            db.createBannedPlayersTable();
+            db.createAuditLogTable();
+
+        } else {
+            if (!new File("plugins/FoxRank/auditlog.yml").exists()) {
+                this.saveResource("auditlog.yml", false);
+            } else if (!new File("plugins/FoxRank/bannedPlayers.yml").exists()) {
+                this.saveResource("bannedPlayers.yml", false);
+            }
+        }
+
+        setupTeams();
+
         getServer().getPluginManager().registerEvents(this, this);
         getServer().getPluginManager().registerEvents(new Vanish(), this);
         getServer().getPluginManager().registerEvents(new JoinLeaveMsgs(), this);
         getServer().getPluginManager().registerEvents(new Logs(), this);
+        getServer().getPluginManager().registerEvents(new Listeners(), this);
         reloadConfig();
         for (Player p : this.getServer().getOnlinePlayers()) {
+            db.addPlayerData(new RankedPlayer(p));
             loadRank(p);
             ActionBar.setupActionBar(p);
         }
@@ -127,11 +162,14 @@ public class FoxRank extends JavaPlugin implements Listener {
         MvpTeam.unregister();
         VippTeam.unregister();
         VipTeam.unregister();
+        db.disconnect();
+        this.getServer().getMessenger().unregisterOutgoingPluginChannel(this);
+        this.getServer().getMessenger().unregisterIncomingPluginChannel(this);
     }
 
-    private void setupTeams() {
+    void setupTeams() {
         Scoreboard board = Bukkit.getScoreboardManager().getMainScoreboard();
-        if (!this.getConfig().getBoolean("DisableRankVisibility")) {
+        if (!disableRankVis) {
             try {
                 Team dT = board.registerNewTeam(DEFAULT.getRankID());
                 dT.setColor(ChatColor.GRAY);
@@ -305,118 +343,73 @@ public class FoxRank extends JavaPlugin implements Listener {
     protected void setRank(Player player, Rank rank) {
         this.getServer().getPluginManager().callEvent(new RankChangeEvent(player, rank));
         ranks.put(player, rank);
-        File file = new File("plugins/FoxRank/PlayerData/" + player.getUniqueId() + ".yml");
-        YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
-        yml.set("Rank", rank.getRankID());
-        if (this.getConfig().getBoolean("DisableRankVisibility")) {
+        if (useDb) {
+            db.setStoredRank(player.getUniqueId(), rank);
+        } else {
+            File file = new File("plugins/FoxRank/PlayerData/" + player.getUniqueId() + ".yml");
+            YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
+            yml.set("Rank", rank.getRankID());
+            try {
+                yml.save(file);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+        if (disableRankVis) {
             player.setDisplayName(player.getName());
             player.setPlayerListName(player.getDisplayName());
         } else {
             player.setDisplayName(rank.getPrefix() + player.getName());
             player.setPlayerListName(rank.getPrefix() + player.getName());
         }
-        try {
-            yml.save(file);
-        } catch (IOException error) {
-            error.printStackTrace();
-        }
+
     }
 
     protected void setRankOfflinePlayer(OfflinePlayer player, Rank rank) {
-        File file = new File("plugins/FoxRank/PlayerData/" + player.getUniqueId() + ".yml");
-        YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
-        yml.set("Rank", rank.getRankID());
-        try {
-            yml.save(file);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
+        if (useDb) {
+            db.setStoredRank(player.getUniqueId(), rank);
+        } else {
+            File file = new File("plugins/FoxRank/PlayerData/" + player.getUniqueId() + ".yml");
+            YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
+            yml.set("Rank", rank.getRankID());
+            try {
+                yml.save(file);
+            } catch (IOException error) {
+                error.printStackTrace();
+            }
         }
     }
 
     protected void loadRank(Player player) {
-        File file = new File("plugins/FoxRank/PlayerData/" + player.getUniqueId() + ".yml");
-        YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
-        String rankID = yml.getString("Rank");
-        if (rankID != null) {
-
-            Rank rank = ofString(rankID);
-            setTeam(player, rank.getRankID());
-            setRank(player, rank);
+        String rankID;
+        if (useDb) {
+            rankID = db.getStoredRank(player.getUniqueId()).getRankID();
         } else {
-            Bukkit.getLogger().log(Level.SEVERE, "rankID is null");
+            File file = new File("plugins/FoxRank/PlayerData/" + player.getUniqueId() + ".yml");
+            YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
+            rankID = yml.getString("Rank");
         }
+        Rank rank = ofString(rankID);
+        setTeam(player, rank.getRankID());
+        setRank(player, rank);
     }
+
 
     protected void saveRank(Player player) {
-        File file = new File("plugins/FoxRank/PlayerData/" + player.getUniqueId() + ".yml");
-        YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
-        yml.set("Rank", getRank(player).getRankID());
-        try {
-            yml.save(file);
-        } catch (IOException error) {
-            error.printStackTrace();
+        if (useDb) {
+            db.setStoredRank(player.getUniqueId(), getRank(player));
+        } else {
+            File file = new File("plugins/FoxRank/PlayerData/" + player.getUniqueId() + ".yml");
+            YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
+            yml.set("Rank", getRank(player).getRankID());
+            try {
+                yml.save(file);
+            } catch (IOException error) {
+                error.printStackTrace();
+            }
         }
         ranks.remove(player);
-    }
-
-    @EventHandler
-    public void onLeave(PlayerQuitEvent event) {
-        Player p = event.getPlayer();
-        saveRank(p);
-    }
-
-    @EventHandler
-    public void onPlayerChat(AsyncPlayerChatEvent e) {
-        e.setCancelled(true);
-        String eventMessage = e.getMessage();
-        String newMessage;
-        Player player = e.getPlayer();
-        File file = new File("plugins/FoxRank/PlayerData/" + player.getUniqueId() + ".yml");
-        YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
-        boolean disableVisibility = this.getConfig().getBoolean("DisableRankVisibility");
-        if (isMuted(player.getUniqueId())) {
-            Instant date = Instant.parse(yml.getString("MuteDuration"));
-            Instant now = Instant.now();
-            if (date.isBefore(now)) {
-                unmutePlayer(new RankedPlayer(player), new RankedPlayer(player));
-            } else {
-                String reason = yml.getString("MuteReason");
-                String border = RED + "" + STRIKETHROUGH + "                                                                   ";
-                String muteMessage = FoxRank.getInstance().getConfig().getString("ChatWhileMutedMessage").replace("$LINE", border);
-                muteMessage = muteMessage.replace("\\n", "\n");
-                muteMessage = muteMessage.replace("$DURATION", getFormattedExpiredString(Instant.parse(yml.getString("MuteDuration")), Instant.now()));
-                muteMessage = muteMessage.replace("$REASON", reason);
-                muteMessage = ChatColor.translateAlternateColorCodes('§', muteMessage);
-                player.sendMessage(muteMessage);
-                return;
-            }
-        }
-        if (yml.getString("isNicked").equals("true")) {
-            if (!disableVisibility) {
-                if (ofString(yml.getString("Nickname-Rank")) == DEFAULT) {
-                    newMessage = ChatColor.GRAY + yml.getString("Nickname") + ": " + eventMessage;
-                    Bukkit.broadcastMessage(newMessage);
-                } else if (ofString(yml.getString("Nickname-Rank")) != DEFAULT) {
-                    newMessage = ofString(yml.getString("Nickname-Rank")).getPrefix() + "" + yml.getString("Nickname") + ChatColor.RESET + ": " + eventMessage;
-                    Bukkit.broadcastMessage(newMessage);
-                }
-            } else {
-                Bukkit.broadcastMessage(yml.getString("Nickname") + ": " + e.getMessage());
-            }
-        } else {
-
-            if (!disableVisibility) {
-                if (getRank(player) != DEFAULT) {
-                    newMessage = getRank(player).getPrefix() + player.getName() + ChatColor.RESET + ": " + eventMessage;
-                    Bukkit.broadcastMessage(newMessage);
-                } else if (getRank(player) == DEFAULT) {
-                    newMessage = getRank(player).getPrefix() + player.getName() + ChatColor.RESET + "" + ChatColor.GRAY + ": " + eventMessage;
-                    Bukkit.broadcastMessage(newMessage);
-                }
-            } else {
-                Bukkit.broadcastMessage(player.getName() + ": " + e.getMessage());
-            }
-        }
     }
 
     protected String getFormattedExpiredString(Instant date, Instant now) {
@@ -448,338 +441,59 @@ public class FoxRank extends JavaPlugin implements Listener {
         }
     }
 
-    @EventHandler
-    public void OnPlayerLogin(PlayerJoinEvent e) {
-        this.setupTeams();
-        Player p = e.getPlayer();
-        File file = new File("plugins/FoxRank/PlayerData/" + p.getUniqueId() + ".yml");
-        if (!file.exists()) {
-            try {
-                file.createNewFile();
-            } catch (IOException error) {
-                error.printStackTrace();
-            }
-        }
-        YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
-        yml.addDefault("Name", p.getName());
-        yml.addDefault("UUID", p.getUniqueId().toString());
-        yml.addDefault("Rank", "DEFAULT");
-        yml.addDefault("isVanished", false);
-        yml.addDefault("isNicked", false);
-        yml.addDefault("isMuted", false);
-        yml.addDefault("MuteDuration", "");
-        yml.addDefault("MuteReason", "");
-        yml.addDefault("Nickname", p.getName());
-        yml.addDefault("Nickname-Rank", "DEFAULT");
-        yml.addDefault("Nickname-Skin", "");
-        yml.addDefault("BanDuration", "");
-        yml.addDefault("BanReason", "");
-        yml.addDefault("BanID", "");
-        yml.addDefault("isBanned", false);
-        yml.options().copyDefaults(true);
-        try {
-            yml.save(file);
-        } catch (IOException error) {
-            error.printStackTrace();
-        }
-        ActionBar.setupActionBar(p);
-        loadRank(p);
-        if (this.isMuted(p.getUniqueId())) {
-            if (this.getMuteDuration(p.getUniqueId()).isBefore(Instant.now())) {
-                this.unmutePlayer(new RankedPlayer(p), new RankedPlayer(p));
-            }
-        }
-    }
-
     protected boolean isVanished(UUID uuid) {
-        File file = new File("plugins/FoxRank/PlayerData/" + uuid + ".yml");
-        YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
-        return yml.getBoolean("isVanished");
+        if (useDb) {
+            return db.getStoredVanishStatus(uuid);
+        } else {
+            File file = new File("plugins/FoxRank/PlayerData/" + uuid + ".yml");
+            YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
+            return yml.getBoolean("isVanished");
+        }
     }
 
     protected boolean isNicked(UUID uuid) {
+        if (useDb) {
+            return db.getStoredNicknameStatus(uuid);
+        }
         File file = new File("plugins/FoxRank/PlayerData/" + uuid + ".yml");
         YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
         return yml.getBoolean("isNicked");
     }
 
     protected boolean isBanned(UUID uuid) {
+        if (useDb) {
+            return db.getStoredBanStatus(uuid);
+        }
         File file = new File("plugins/FoxRank/PlayerData/" + uuid + ".yml");
         YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
         return yml.getBoolean("isBanned");
     }
 
     protected boolean isMuted(UUID uuid) {
+        if (useDb) {
+            return db.getStoredMuteStatus(uuid);
+        }
         File file = new File("plugins/FoxRank/PlayerData/" + uuid + ".yml");
         YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
         return yml.getBoolean("isMuted");
     }
 
     protected String getMuteReason(UUID uuid) {
+        if (useDb) {
+            return db.getStoredMuteReason(uuid);
+        }
         File file = new File("plugins/FoxRank/PlayerData/" + uuid + ".yml");
         YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
         return yml.getString("MuteReason");
     }
 
     protected Instant getMuteDuration(UUID uuid) {
+        if (useDb) {
+            return Instant.parse(db.getStoredMuteDuration(uuid));
+        }
         File file = new File("plugins/FoxRank/PlayerData/" + uuid + ".yml");
         YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
         return Instant.parse(yml.getString("MuteDuration"));
-    }
-
-    protected void mutePlayer(RankedPlayer rp, Instant duration, String reason, RankedPlayer admin) {
-        String id = Integer.toString(hash("FoxRank:" + rp.getName() + ":" + Instant.now()), 16).toUpperCase(Locale.ROOT);
-        File file = new File("plugins/FoxRank/PlayerData/" + rp.getUniqueId() + ".yml");
-        YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
-        yml.set("isMuted", true);
-        yml.set("MuteDuration", duration.toString());
-        yml.set("MuteReason", reason);
-        try {
-            yml.save(file);
-        } catch (IOException e) {
-            Bukkit.getLogger().log(Level.SEVERE, "Could not save " + rp.getUniqueId() + "'s Mute status!");
-            e.printStackTrace();
-        }
-        addMuteLogEntry(rp, duration, reason, admin, id);
-
-        String border = RED + "" + STRIKETHROUGH + "                                                                   ";
-        String muteMessage = FoxRank.getInstance().getConfig().getString("MuteMessage").replace("$LINE", border);
-        muteMessage = muteMessage.replace("\\n", "\n");
-        muteMessage = muteMessage.replace("$DURATION", getFormattedExpiredString(duration, Instant.now()));
-        muteMessage = muteMessage.replace("$REASON", reason);
-        muteMessage = ChatColor.translateAlternateColorCodes('§', muteMessage);
-        rp.sendMessage(muteMessage);
-
-    }
-
-    protected void unmutePlayer(RankedPlayer rp, RankedPlayer staff) {
-        String id = Integer.toString(hash("FoxRank:" + rp.getName() + ":" + Instant.now()), 16).toUpperCase(Locale.ROOT);
-        File file = new File("plugins/FoxRank/PlayerData/" + rp.getUniqueId() + ".yml");
-        YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
-        yml.set("isMuted", false);
-        addUnmuteLogEntry(rp, staff, id);
-        String border = GREEN + "" + STRIKETHROUGH + "                                                                     ";
-        rp.sendMessage(ChatColor.translateAlternateColorCodes('§', FoxRank.getInstance().getConfig().getString("UnmuteRecieverMessage").replace("$LINE", border).replace("\\n", "\n")));
-        try {
-            yml.save(file);
-        } catch (IOException e) {
-            Bukkit.getLogger().log(Level.SEVERE, "Could not save " + rp.getUniqueId() + "'s Mute status at line");
-            e.printStackTrace();
-
-        }
-    }
-
-    protected void unmuteOfflinePlayer(OfflinePlayer offlinePlayer, RankedPlayer staff) {
-        String id = Integer.toString(hash("FoxRank:" + offlinePlayer.getName() + ":" + Instant.now()), 16).toUpperCase(Locale.ROOT);
-        File file = new File("plugins/FoxRank/PlayerData/" + offlinePlayer.getUniqueId() + ".yml");
-        YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
-        yml.set("isMuted", false);
-        addOfflinePlayerUnmuteLogEntry(new OfflineRankedPlayer(offlinePlayer), staff, id);
-        try {
-            yml.save(file);
-        } catch (IOException e) {
-            Bukkit.getLogger().log(Level.SEVERE, "Could not save " + offlinePlayer.getUniqueId() + "'s Mute status at line");
-            e.printStackTrace();
-
-        }
-    }
-
-    protected void muteOfflinePlayer(OfflineRankedPlayer rp, Instant duration, String reason, RankedPlayer admin) {
-        String id = Integer.toString(hash("FoxRank:" + rp.getName() + ":" + Instant.now()), 16).toUpperCase(Locale.ROOT);
-        File file = new File("plugins/FoxRank/PlayerData/" + rp.getUniqueId() + ".yml");
-        YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
-        yml.set("isMuted", true);
-        yml.set("MuteDuration", duration.toString());
-        yml.set("MuteReason", reason);
-        try {
-            yml.save(file);
-        } catch (IOException e) {
-            Bukkit.getLogger().log(Level.SEVERE, "Could not save " + rp.getUniqueId() + "'s Mute status!");
-            e.printStackTrace();
-        }
-        addOfflinePlayerMuteLogEntry(rp, duration, reason, admin, id);
-    }
-
-    protected void addOfflinePlayerMuteLogEntry(OfflineRankedPlayer player, Instant expires, String reason, RankedPlayer admin, String ID) {
-        File file = new File("plugins/FoxRank/auditlog.yml");
-        YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
-        ConfigurationSection section = yml.createSection("MUTE." + player.getUniqueId() + "." + ID);
-        try {
-            yml.save(file);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-        section.addDefault("Player", player.getRank().getPrefix() + player.getName());
-        section.addDefault("ID", ID);
-        section.addDefault("Date", Instant.now().toString());
-        section.addDefault("Expires", expires.toString());
-        section.addDefault("Reason", reason);
-        section.addDefault("Staff", admin.getRank().getPrefix() + admin.getName());
-        yml.options().copyDefaults(true);
-        try {
-            yml.save(file);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    protected void addMuteLogEntry(RankedPlayer player, Instant expires, String reason, RankedPlayer admin, String ID) {
-        File file = new File("plugins/FoxRank/auditlog.yml");
-        YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
-        ConfigurationSection section = yml.createSection("MUTE." + player.getUniqueId() + "." + ID);
-        try {
-            yml.save(file);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-        section.addDefault("Player", player.getRank().getPrefix() + player.getName());
-        section.addDefault("ID", ID);
-        section.addDefault("Date", Instant.now().toString());
-        section.addDefault("Expires", expires.toString());
-        section.addDefault("Reason", reason);
-        section.addDefault("Staff", admin.getRank().getPrefix() + admin.getName());
-        yml.options().copyDefaults(true);
-        try {
-            yml.save(file);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    protected void addUnmuteLogEntry(RankedPlayer player, RankedPlayer staff, String ID) {
-        File file = new File("plugins/FoxRank/auditlog.yml");
-        YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
-        ConfigurationSection section = yml.createSection("UNMUTE." + player.getUniqueId() + "." + ID);
-        try {
-            yml.save(file);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-        section.addDefault("Player", player.getRank().getPrefix() + player.getName());
-        section.addDefault("Date", Instant.now().toString());
-        section.addDefault("ID", ID);
-        section.addDefault("Staff", staff.getRank().getPrefix() + staff.getName());
-        yml.options().copyDefaults(true);
-        try {
-            yml.save(file);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    protected void addOnlineBanLogEntry(RankedPlayer banned, RankedPlayer staff, Instant when, String reason, String duration, String ID, boolean silent) {
-        File file = new File("plugins/FoxRank/auditlog.yml");
-        YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
-        ConfigurationSection section = yml.createSection("BAN." + banned.getUniqueId() + "." + ID);
-        try {
-            yml.save(file);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-        section.addDefault("Staff", staff.getName());
-        section.addDefault("Player", banned.getName());
-        section.addDefault("Reason", reason);
-        section.addDefault("Duration", duration);
-        section.addDefault("Silent", silent);
-        section.addDefault("When", when.toString());
-        section.addDefault("ID", ID);
-        section.addDefault("Type", "ONLINE");
-        yml.options().copyDefaults(true);
-        try {
-            yml.save(file);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    protected void addOfflineBanLogEntry(OfflineRankedPlayer banned, RankedPlayer staff, Instant when, String reason, String duration, String ID, boolean silent) {
-        File file = new File("plugins/FoxRank/auditlog.yml");
-        YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
-        ConfigurationSection section = yml.createSection("BAN." + banned.getUniqueId() + "." + ID);
-        try {
-            yml.save(file);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-        section.addDefault("Staff", staff.getName());
-        section.addDefault("Player", banned.getName());
-        section.addDefault("Reason", reason);
-        section.addDefault("Duration", duration);
-        section.addDefault("Silent", silent);
-        section.addDefault("When", when.toString());
-        section.addDefault("ID", ID);
-        section.addDefault("Type", "OFFLINE");
-        yml.options().copyDefaults(true);
-        try {
-            yml.save(file);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    protected void addOfflinePlayerUnmuteLogEntry(OfflineRankedPlayer player, RankedPlayer staff, String ID) {
-        File file = new File("plugins/FoxRank/auditlog.yml");
-        YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
-        ConfigurationSection section = yml.createSection("UNMUTE." + player.getUniqueId() + "." + ID);
-        try {
-            yml.save(file);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-        section.addDefault("Player", player.getRank().getPrefix() + player.getName());
-        section.addDefault("Date", Instant.now().toString());
-        section.addDefault("ID", ID);
-        section.addDefault("Staff", staff.getRank().getPrefix() + staff.getName());
-        yml.options().copyDefaults(true);
-        try {
-            yml.save(file);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    protected void addNicknameLogEntry(RankedPlayer player, String newNick, String rankID, String skinOption) {
-        File file = new File("plugins/FoxRank/auditlog.yml");
-        YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
-        ConfigurationSection section = yml.createSection("NICKNAME." + player.getUniqueId() + "." + Integer.toString(hash("FoxRank:" + player.getName() + ":" + Instant.now()), 16).toUpperCase(Locale.ROOT));
-        try {
-            yml.save(file);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-        section.addDefault("Player", player.getUniqueId().toString());
-        section.addDefault("Nickname", newNick);
-        section.addDefault("RankID", rankID);
-        section.addDefault("Skin", skinOption);
-        section.addDefault("Date", Instant.now().toString());
-        yml.options().copyDefaults(true);
-
-        try {
-            yml.save(file);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    protected void addUnbanLogEntry(OfflineRankedPlayer player, RankedPlayer staff, String ID) {
-        File file = new File("plugins/FoxRank/auditlog.yml");
-        YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
-        ConfigurationSection section = yml.createSection("UNBAN." + player.getUniqueId() + "." + ID);
-        try {
-            yml.save(file);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-        section.addDefault("Player", player.getRank().getPrefix() + player.getName());
-        section.addDefault("Date", Instant.now().toString());
-        section.addDefault("ID", ID);
-        section.addDefault("Staff", staff.getRank().getPrefix() + staff.getName());
-        yml.options().copyDefaults(true);
-        try {
-            yml.save(file);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
     }
 
     public void sendNoPermissionMessage(int powerLevel, RankedPlayer rp) {
@@ -801,16 +515,20 @@ public class FoxRank extends JavaPlugin implements Listener {
             InputStreamReader reader = new InputStreamReader(url.openStream());
             return new JsonParser().parse(reader).getAsJsonObject().get("name").getAsString();
         } catch (IOException e) {
-            Bukkit.getLogger().log(Level.SEVERE, "Cannot get a player's name from Mojang");
+            Bukkit.getLogger().log(Level.SEVERE, "Could get a player's name from Mojang");
         }
         return null;
     }
 
     protected String getNickname(UUID uuid) {
         if (isNicked(uuid)) {
-            File file = new File("plugins/FoxRank/PlayerData/" + uuid + ".yml");
-            YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
-            return yml.getString("Nickname");
+            if (useDb) {
+                return db.getStoredNickname(uuid);
+            } else {
+                File file = new File("plugins/FoxRank/PlayerData/" + uuid + ".yml");
+                YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
+                return yml.getString("Nickname");
+            }
         } else {
             return getTrueName(uuid);
         }
@@ -830,70 +548,11 @@ public class FoxRank extends JavaPlugin implements Listener {
         return uid;
     }
 
-    @EventHandler
-    public void BanHandler(AsyncPlayerPreLoginEvent e) {
-        if (isBanned(e.getUniqueId())) {
-            String uuid = e.getUniqueId().toString();
-            File file = new File("plugins/FoxRank/PlayerData/" + uuid + ".yml");
-            YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
-            String reason = yml.getString("BanReason");
-            String duration = yml.getString("BanDuration");
-            String id = yml.getString("BanID");
-            String bumper = "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n";
-            if (duration == null) {
-                System.out.println("Duration Null!");
-                String finalMessage = this.getConfig().getString("PermBanMessageFormat")
-                        .replace("$SERVER_NAME", this.getConfig().getString("ServerName"))
-                        .replace("$REASON", reason)
-                        .replace("$APPEAL_LINK", this.getConfig().getString("BanAppealLink"))
-                        .replace("$ID", id)
-                        .replace("\\n", "\n");
-                e.disallow(AsyncPlayerPreLoginEvent.Result.KICK_BANNED, ChatColor.translateAlternateColorCodes('§', bumper + finalMessage + bumper));
-            } else {
-                Instant inst = Instant.parse(duration);
-                if (Instant.now().isAfter(inst)) {
-                    yml.set("isBanned", false);
-
-                    File bannedPlayersFile = new File("plugins/FoxRank/bannedPlayers.yml");
-                    YamlConfiguration bannedPlayersyml = YamlConfiguration.loadConfiguration(bannedPlayersFile);
-                    List<String> list = bannedPlayersyml.getStringList("CurrentlyBannedPlayers");
-                    if (list.contains(e.getUniqueId().toString())) {
-                        System.out.println(e.getUniqueId() + "<-- UUID");
-
-                        if (list.remove(e.getUniqueId().toString())) {
-                            bannedPlayersyml.set("CurrentlyBannedPlayers", list);
-                            System.out.println("Removed.");
-                            try {
-                                bannedPlayersyml.save(bannedPlayersFile);
-                            } catch (IOException ex) {
-                                ex.printStackTrace();
-                            }
-                        }
-                    }
-                    try {
-                        yml.save(file);
-                        bannedPlayersyml.save(bannedPlayersFile);
-                    } catch (IOException ex) {
-                        ex.printStackTrace();
-                    }
-                    e.allow();
-                    return;
-                }
-                String finalMessage = this.getConfig().getString("TempBanMessageFormat")
-                        .replace("$DURATION", getFormattedExpiredString(inst, Instant.now()))
-                        .replace("$SERVER_NAME", this.getConfig().getString("ServerName"))
-                        .replace("$REASON", reason)
-                        .replace("$APPEAL_LINK", this.getConfig().getString("BanAppealLink"))
-                        .replace("$ID", id)
-                        .replace("\\n", "\n");
-                e.disallow(AsyncPlayerPreLoginEvent.Result.KICK_BANNED, ChatColor.translateAlternateColorCodes('§', bumper + finalMessage + bumper));
-            }
-        } else {
-            e.allow();
-        }
-    }
 
     public List<OfflinePlayer> getBannedPlayers() {
+        if (useDb) {
+            return db.getStoredBannedPlayers();
+        }
         File file = new File("plugins/FoxRank/bannedPlayers.yml");
         YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
         List<OfflinePlayer> players = List.of();
@@ -904,5 +563,15 @@ public class FoxRank extends JavaPlugin implements Listener {
             players.add(Bukkit.getOfflinePlayer(UUID.fromString(str)));
         }
         return players;
+    }
+
+    protected List<String> getPlayerNames(Player player) {
+        if (bungeecord) {
+            return playerNames;
+        } else {
+            List<String> returnme = new ArrayList<>();
+            Bukkit.getOnlinePlayers().forEach(player1 -> returnme.add(player1.getName()));
+            return returnme;
+        }
     }
 }
