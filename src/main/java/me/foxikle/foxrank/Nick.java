@@ -56,7 +56,6 @@ public class Nick implements CommandExecutor {
             String message = FoxRank.getInstance().getConfig().getString("NickNameChangedMessage");
             message = message.replace("$NEWNICK", name);
             player.sendMessage(ChatColor.translateAlternateColorCodes('§', message));
-            refreshPlayer(player);
 
         } else {
             String message = FoxRank.getInstance().getConfig().getString("NicknameTooLongMessage");
@@ -224,6 +223,13 @@ public class Nick implements CommandExecutor {
             Logging.addLogEntry(EntryType.NICKNAME, player.getUniqueId(), null, null, Rank.ofString(rankID).getPrefix() + name, skinOption, null);
             FoxRank.getInstance().getServer().getPluginManager().callEvent(new PlayerNicknameEvent(player, name, Rank.ofString(rankID)));
             ActionBar.setupActionBar(player);
+            if (FoxRank.getInstance().isVanished(player.getUniqueId())) {
+                for (Player p : Bukkit.getOnlinePlayers()) {
+                    p.hidePlayer(FoxRank.getInstance(), player);
+                }
+            } else {
+                refreshPlayer(player);
+            }
         } else {
             String message = FoxRank.getInstance().getConfig().getString("BlacklistedNicknameMessage");
             message = message.replace("$BLACKLISTEDNAME", name);
@@ -236,7 +242,6 @@ public class Nick implements CommandExecutor {
 
         profile.getProperties().removeAll("textures");
         profile.getProperties().put("textures", getSkin(skin));
-        refreshPlayer(player);
     }
 
     protected static void loadSkin(Player player) {
@@ -330,7 +335,8 @@ public class Nick implements CommandExecutor {
                                 String realName = FoxRank.getInstance().getTrueName(player.getUniqueId());
                                 changeSkin(player, realName);
                                 changeName(realName, player);
-                                refreshPlayer(player);
+                                if (!FoxRank.instance.isVanished(player.getUniqueId()))
+                                    refreshPlayer(player);
                                 if (FoxRank.getInstance().useDb) {
                                     FoxRank.getInstance().db.setStoredNicknameState(player.getUniqueId(), false);
                                 } else {
@@ -386,7 +392,7 @@ public class Nick implements CommandExecutor {
                                         String signature = signatures.get(rnd);
                                         profile.getProperties().removeAll("textures");
                                         profile.getProperties().put("textures", new Property("textures", value, signature));
-                                        refreshPlayer(player);
+                                        //refreshPlayer(player);
 
                                         skinOption = "random";
                                     } else {
