@@ -23,7 +23,7 @@ public class ModerationAction {
     private static final boolean useDb = FoxRank.getInstance().useDb;
     private static final Database db = FoxRank.instance.db;
 
-    protected static void mutePlayer(RankedPlayer rp, Instant duration, String reason, RankedPlayer admin) {
+    public static void mutePlayer(RankedPlayer rp, Instant duration, String reason, RankedPlayer admin) {
         String id = Integer.toString(hash("FoxRank:" + rp.getName() + ":" + Instant.now()), 16).toUpperCase(Locale.ROOT).replace("-", "");
         if (useDb) {
             db.setStoredMuteData(rp.getUniqueId(), true, reason, duration);
@@ -55,7 +55,7 @@ public class ModerationAction {
         }
     }
 
-    protected static void unmutePlayer(RankedPlayer rp, RankedPlayer staff) {
+    public static void unmutePlayer(RankedPlayer rp, RankedPlayer staff) {
         String id = Integer.toString(hash("FoxRank:" + rp.getName() + ":" + Instant.now()), 16).toUpperCase(Locale.ROOT).replace("-", "");
         if (useDb) {
             db.setStoredMuteData(rp.getUniqueId(), false, rp.getMuteReason(), rp.getMuteDuration());
@@ -80,7 +80,7 @@ public class ModerationAction {
         rp.sendMessage(ChatColor.translateAlternateColorCodes('§', FoxRank.getInstance().getConfig().getString("UnmuteRecieverMessage").replace("$LINE", border).replace("\\n", "\n")));
     }
 
-    protected static void unmuteOfflinePlayer(OfflinePlayer p, RankedPlayer staff) {
+    public static void unmuteOfflinePlayer(OfflinePlayer p, RankedPlayer staff) {
         String id = Integer.toString(hash("FoxRank:" + p.getName() + ":" + Instant.now()), 16).toUpperCase(Locale.ROOT).replace("-", "");
         if (useDb) {
             db.setStoredMuteData(p.getUniqueId(), false, db.getStoredMuteReason(p.getUniqueId()), Instant.parse(db.getStoredMuteDuration(p.getUniqueId())));
@@ -100,7 +100,7 @@ public class ModerationAction {
 
     }
 
-    protected static void muteOfflinePlayer(OfflineRankedPlayer rp, Instant duration, String reason, RankedPlayer admin) {
+    public static void muteOfflinePlayer(OfflineRankedPlayer rp, Instant duration, String reason, RankedPlayer admin) {
         String id = Integer.toString(hash("FoxRank:" + rp.getName() + ":" + Instant.now()), 16).toUpperCase(Locale.ROOT).replace("-", "");
 
         if (FoxRank.instance.bungeecord) {
@@ -130,7 +130,7 @@ public class ModerationAction {
         Logging.addLogEntry(EntryType.MUTE, rp.getUniqueId(), admin.getUniqueId(), duration, reason, null, id);
     }
 
-    protected static void unbanPlayer(UUID rp, UUID staff) {
+    public static void unbanPlayer(UUID rp, UUID staff) {
         if (staff == null) {
             staff = rp;
         }
@@ -154,7 +154,7 @@ public class ModerationAction {
         Logging.addLogEntry(EntryType.UNBAN, rp, staff, null, null, null, id);
     }
 
-    protected static void banPlayer(RankedPlayer banner, Player banee, boolean silent, String reasonStr, Instant duration, String broadcastReason, String banID) {
+    public static void banPlayer(RankedPlayer banner, Player banee, boolean silent, String reasonStr, Instant duration, String broadcastReason, String banID) {
         FoxRank.getInstance().getServer().getPluginManager().callEvent(new ModerationActionEvent(banee, banner.getPlayer(), new RankedPlayer(banee.getPlayer()).getRank(), banner.getRank(), me.foxikle.foxrank.events.ModerationAction.BAN));
         String bumper = "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n";
         if (!FoxRank.getInstance().getBannedPlayers().contains(banee)) {
@@ -221,7 +221,7 @@ public class ModerationAction {
         }
     }
 
-    protected static void banOfflinePlayer(RankedPlayer banner, OfflinePlayer banee, String reasonStr, Instant duration, String broadcastReason, String banID) {
+    public static void banOfflinePlayer(RankedPlayer banner, OfflinePlayer banee, String reasonStr, Instant duration, String broadcastReason, String banID) {
         FoxRank.getInstance().getServer().getPluginManager().callEvent(new ModerationActionEvent(banee.getPlayer(), banner.getPlayer(), new RankedPlayer(banee.getPlayer()).getRank(), banner.getRank(), me.foxikle.foxrank.events.ModerationAction.BAN));
         String bumper = "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n";
         if (duration != null) {
