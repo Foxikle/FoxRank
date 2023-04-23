@@ -341,7 +341,7 @@ public class FoxRank extends JavaPlugin implements Listener {
     }
 
     protected void setRank(Player player, Rank rank) {
-        this.getServer().getPluginManager().callEvent(new RankChangeEvent(player, rank));
+        this.getServer().getPluginManager().callEvent(new RankChangeEvent(player, rank, getRank(player)));
         ranks.put(player, rank);
         if (useDb) {
             db.setStoredRank(player.getUniqueId(), rank);
@@ -497,11 +497,11 @@ public class FoxRank extends JavaPlugin implements Listener {
     }
 
     public void sendNoPermissionMessage(int powerLevel, RankedPlayer rp) {
-        rp.sendMessage(ChatColor.translateAlternateColorCodes('§', FoxRank.getInstance().getConfig().getString("NoPermissionMessage").replace("$POWERLEVEL", powerLevel + "").replace("\\n", "\n")));
+        rp.sendMessage(ChatColor.translateAlternateColorCodes('§', FoxRank.getInstance().getConfig().getString("NoPermissionMessage").replace("$POWERLEVEL", String.valueOf(powerLevel)).replace("\\n", "\n")));
     }
 
     public void sendMissingArgsMessage(String command, String args, RankedPlayer rp) {
-        rp.sendMessage(ChatColor.translateAlternateColorCodes('§', FoxRank.getInstance().getConfig().getString("MissingArgsMessage").replace("$COMMAND", command + "").replace("$ARGS", args)));
+        rp.sendMessage(ChatColor.translateAlternateColorCodes('§', FoxRank.getInstance().getConfig().getString("MissingArgsMessage").replace("$COMMAND", command).replace("$ARGS", args)));
     }
 
     public void sendInvalidArgsMessage(String args, RankedPlayer rp) {
