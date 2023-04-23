@@ -7,11 +7,11 @@ import org.bukkit.event.HandlerList;
 
 public class RankChangeEvent extends Event {
     private final Player player;
-    private final Rank rank;
+    private final Rank newRank;
 
-    public RankChangeEvent(Player player, Rank rank) {
+    public RankChangeEvent(Player player, Rank newRank) {
         this.player = player;
-        this.rank = rank;
+        this.newRank = newRank;
     }
 
     /**
@@ -33,8 +33,8 @@ public class RankChangeEvent extends Event {
      * @see Rank Please see the {@link me.foxikle.foxrank.Rank}
      * @since 1.8.1
      */
-    public Rank getRank() {
-        return rank;
+    public Rank getNewRank() {
+        return newRank;
     }
 
     /**
