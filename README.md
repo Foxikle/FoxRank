@@ -1,5 +1,4 @@
 # FoxRank
-
 [![version](https://img.shields.io/badge/Release-v1.9.4-blue)](https://github.com/Foxikle/FoxRank/releases/)
 [![version](https://img.shields.io/badge/Wiki_Pages-2-green)](https://github.com/Foxikle/FoxRank/wiki)
 
