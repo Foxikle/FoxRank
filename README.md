@@ -10,7 +10,7 @@ Check out the wiki linked [Here](https://github.com/Foxikle/FoxRank/wiki).
 
 FoxRank does support other plugins through the use of its API.
 
-To get started, add the folling `dependancy` tag to your `pom.xml`
+To get started, add the following dependency tag to your `pom.xml`
 
 ```xml
 
