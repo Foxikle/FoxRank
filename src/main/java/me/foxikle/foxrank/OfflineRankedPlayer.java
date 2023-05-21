@@ -16,7 +16,7 @@ public class OfflineRankedPlayer implements OfflineCustomPlayer{
             throw new NullPointerException();
         }
         this.offlinePlayer = player;
-        this.rank = FoxRank.getOfflineRank(player);
+        this.rank = FoxRank.getInstance().getOfflineRank(player);
         File file = new File("plugins/FoxRank/PlayerData/" + offlinePlayer.getUniqueId() + ".yml");
         yml = YamlConfiguration.loadConfiguration(file);
     }
