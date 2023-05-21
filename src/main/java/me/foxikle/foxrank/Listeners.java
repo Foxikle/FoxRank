@@ -19,7 +19,6 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
-import static me.foxikle.foxrank.FoxRank.getRank;
 import static me.foxikle.foxrank.FoxRank.pcl;
 import static me.foxikle.foxrank.Rank.DEFAULT;
 import static me.foxikle.foxrank.Rank.ofString;
@@ -46,10 +45,10 @@ public class Listeners implements Listener {
                 Instant date = Instant.parse(FoxRank.getInstance().db.getStoredMuteDuration(uuid));
                 Instant now = Instant.now();
                 if (date.isBefore(now)) {
-                    ModerationAction.unmutePlayer(new RankedPlayer(player), new RankedPlayer(player));
+                    ModerationAction.unmutePlayer(new RankedPlayer(player, FoxRank.getInstance()), new RankedPlayer(player, FoxRank.getInstance()));
                 } else {
                     String reason = FoxRank.getInstance().db.getStoredMuteReason(uuid);
-                    String border = RED + "" + STRIKETHROUGH + "                                                                   ";
+                    String border = RED + String.valueOf(STRIKETHROUGH) + "                                                                   ";
                     String muteMessage = FoxRank.getInstance().getConfig().getString("ChatWhileMutedMessage").replace("$LINE", border);
                     muteMessage = muteMessage.replace("\\n", "\n");
                     muteMessage = muteMessage.replace("$DURATION", FoxRank.getInstance().getFormattedExpiredString(date, Instant.now()));
@@ -67,7 +66,7 @@ public class Listeners implements Listener {
                         newMessage = ChatColor.GRAY + nick + ": " + eventMessage;
                         Bukkit.broadcastMessage(newMessage);
                     } else {
-                        newMessage = rank.getPrefix() + "" + e.getPlayer().getName() + ChatColor.RESET + ": " + eventMessage;
+                        newMessage = rank.getPrefix() + e.getPlayer().getName() + ChatColor.RESET + ": " + eventMessage;
                         Bukkit.broadcastMessage(newMessage);
                     }
                 } else {
@@ -76,11 +75,11 @@ public class Listeners implements Listener {
             } else {
 
                 if (!FoxRank.getInstance().disableRankVis) {
-                    if (getRank(player) != DEFAULT) {
-                        newMessage = getRank(player).getPrefix() + player.getName() + ChatColor.RESET + ": " + eventMessage;
+                    if (FoxRank.getInstance().getRank(player) != DEFAULT) {
+                        newMessage = FoxRank.getInstance().getRank(player).getPrefix() + player.getName() + ChatColor.RESET + ": " + eventMessage;
                         Bukkit.broadcastMessage(newMessage);
-                    } else if (getRank(player) == DEFAULT) {
-                        newMessage = getRank(player).getPrefix() + player.getName() + ChatColor.RESET + "" + ChatColor.GRAY + ": " + eventMessage;
+                    } else if (FoxRank.getInstance().getRank(player) == DEFAULT) {
+                        newMessage = FoxRank.getInstance().getRank(player).getPrefix() + player.getName() + ChatColor.RESET + ChatColor.GRAY + ": " + eventMessage;
                         Bukkit.broadcastMessage(newMessage);
                     }
                 } else {
@@ -95,10 +94,10 @@ public class Listeners implements Listener {
                 Instant date = Instant.parse(yml.getString("MuteDuration"));
                 Instant now = Instant.now();
                 if (date.isBefore(now)) {
-                    ModerationAction.unmutePlayer(new RankedPlayer(player), new RankedPlayer(player));
+                    ModerationAction.unmutePlayer(new RankedPlayer(player, FoxRank.getInstance()), new RankedPlayer(player, FoxRank.getInstance()));
                 } else {
                     String reason = yml.getString("MuteReason");
-                    String border = RED + "" + STRIKETHROUGH + "                                                                   ";
+                    String border = RED + String.valueOf(STRIKETHROUGH) + "                                                                   ";
                     String muteMessage = FoxRank.getInstance().getConfig().getString("ChatWhileMutedMessage").replace("$LINE", border);
                     muteMessage = muteMessage.replace("\\n", "\n");
                     muteMessage = muteMessage.replace("$DURATION", FoxRank.getInstance().getFormattedExpiredString(date, Instant.now()));
@@ -117,7 +116,7 @@ public class Listeners implements Listener {
                         newMessage = ChatColor.GRAY + nick + ": " + eventMessage;
                         Bukkit.broadcastMessage(newMessage);
                     } else {
-                        newMessage = rank.getPrefix() + "" + e.getPlayer().getName() + ChatColor.RESET + ": " + eventMessage;
+                        newMessage = rank.getPrefix() + e.getPlayer().getName() + ChatColor.RESET + ": " + eventMessage;
                         Bukkit.broadcastMessage(newMessage);
                     }
                 } else {
@@ -126,11 +125,11 @@ public class Listeners implements Listener {
             } else {
 
                 if (!FoxRank.instance.disableRankVis) {
-                    if (getRank(player) != DEFAULT) {
-                        newMessage = getRank(player).getPrefix() + player.getName() + ChatColor.RESET + ": " + eventMessage;
+                    if (FoxRank.getInstance().getRank(player) != DEFAULT) {
+                        newMessage = FoxRank.getInstance().getRank(player).getPrefix() + player.getName() + ChatColor.RESET + ": " + eventMessage;
                         Bukkit.broadcastMessage(newMessage);
-                    } else if (getRank(player) == DEFAULT) {
-                        newMessage = getRank(player).getPrefix() + player.getName() + ChatColor.RESET + "" + ChatColor.GRAY + ": " + eventMessage;
+                    } else if (FoxRank.getInstance().getRank(player) == DEFAULT) {
+                        newMessage = FoxRank.getInstance().getRank(player).getPrefix() + player.getName() + ChatColor.RESET + ChatColor.GRAY + ": " + eventMessage;
                         Bukkit.broadcastMessage(newMessage);
                     }
                 } else {
@@ -145,7 +144,7 @@ public class Listeners implements Listener {
         FoxRank.getInstance().setupTeams();
         Player p = e.getPlayer();
         if (FoxRank.getInstance().useDb) {
-            FoxRank.getInstance().db.addPlayerData(new RankedPlayer(p));
+            FoxRank.getInstance().db.addPlayerData(new RankedPlayer(p, FoxRank.getInstance()));
         } else {
 
             File file = new File("plugins/FoxRank/PlayerData/" + p.getUniqueId() + ".yml");
@@ -183,14 +182,15 @@ public class Listeners implements Listener {
         FoxRank.getInstance().loadRank(p);
         if (FoxRank.getInstance().isMuted(p.getUniqueId())) {
             if (FoxRank.getInstance().getMuteDuration(p.getUniqueId()).isBefore(Instant.now())) {
-                ModerationAction.unmutePlayer(new RankedPlayer(p), new RankedPlayer(p));
+                ModerationAction.unmutePlayer(new RankedPlayer(p, FoxRank.getInstance()), new RankedPlayer(p, FoxRank.getInstance()));
             }
         }
         if (Bukkit.getOnlinePlayers().size() == 1) {
-
-            Bukkit.getScheduler().runTaskLater(FoxRank.getInstance(), () -> {
-                pcl.getPlayers(Iterables.getFirst(Bukkit.getOnlinePlayers(), null));
-            }, 30);
+            if (FoxRank.instance.bungeecord) {
+                Bukkit.getScheduler().runTaskLater(FoxRank.getInstance(), () -> {
+                    pcl.getPlayers(Iterables.getFirst(Bukkit.getOnlinePlayers(), null));
+                }, 30);
+            }
         }
 
         if (FoxRank.getInstance().isNicked(p.getUniqueId())) {
