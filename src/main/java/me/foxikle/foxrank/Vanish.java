@@ -22,7 +22,7 @@ public class Vanish implements CommandExecutor, Listener {
         if (label.equalsIgnoreCase("vanish")) {
             if (!FoxRank.getInstance().getConfig().getBoolean("DisableVanish")) {
                 if (sender instanceof Player player) {
-                    RankedPlayer rp = new RankedPlayer(player);
+                    RankedPlayer rp = new RankedPlayer(player, FoxRank.getInstance());
                     if (rp.getPowerLevel() >= FoxRank.getInstance().getConfig().getInt("VanishPermissions")) {
                         if (FoxRank.getInstance().useDb) {
                             Database db = FoxRank.getInstance().db;

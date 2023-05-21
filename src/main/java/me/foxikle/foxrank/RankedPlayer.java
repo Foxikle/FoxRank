@@ -7,26 +7,26 @@ import org.bukkit.entity.Player;
 import java.time.Instant;
 import java.util.UUID;
 
-public class RankedPlayer implements CustomPlayer{
+public class RankedPlayer implements CustomPlayer {
     private final Player player;
     private final Rank rank;
+    private final FoxRank instance;
 
-    public RankedPlayer(Player player) {
-        this(player, FoxRank.getRank(player));
-    }
-
-    public RankedPlayer(Player player, Rank rank) {
+    public RankedPlayer(Player player, FoxRank instance) {
         this.player = player;
-        this.rank = rank;
+        this.rank = instance.getRank(player);
+        this.instance = instance;
+
+        Bukkit.broadcastMessage("initalized");
     }
 
     /**
-     Get the Player's name
-
-     @return String The player's name
+     * Get the Player's name
+     *
+     * @return String The player's name
      **/
     public String getName() {
-        return FoxRank.getInstance().getTrueName(player.getUniqueId());
+        return instance.getTrueName(player.getUniqueId());
     }
 
     /**
@@ -65,7 +65,12 @@ public class RankedPlayer implements CustomPlayer{
 
     @Override
     public Rank getRank() {
-        return this.rank;
+        if (instance != FoxRank.getInstance()) {
+            Bukkit.broadcastMessage("Instances do not match");
+        }
+        Rank returnme = instance.getRank(getPlayer());
+        Bukkit.broadcastMessage("returnme = " + returnme);
+        return returnme;
     }
     /**
      Sets the player's rank
@@ -74,7 +79,7 @@ public class RankedPlayer implements CustomPlayer{
 
     @Override
     public void setRank(Rank rank) {
-        FoxRank.instance.setRank(this.getPlayer(), rank);
+        instance.setRank(this.getPlayer(), rank);
     }
 
     /**
@@ -104,7 +109,7 @@ public class RankedPlayer implements CustomPlayer{
      **/
     @Override
     public boolean isNicked() {
-        return FoxRank.getInstance().isNicked(getPlayer().getUniqueId());
+        return instance.isNicked(getPlayer().getUniqueId());
     }
 
     /**
@@ -114,7 +119,7 @@ public class RankedPlayer implements CustomPlayer{
      **/
     @Override
     public boolean isVanished() {
-        return FoxRank.instance.isVanished(getPlayer().getUniqueId());
+        return instance.isVanished(getPlayer().getUniqueId());
     }
 
     /**
@@ -124,7 +129,7 @@ public class RankedPlayer implements CustomPlayer{
      **/
     @Override
     public boolean isMuted() {
-        return FoxRank.instance.isMuted(getPlayer().getUniqueId());
+        return instance.isMuted(getPlayer().getUniqueId());
     }
 
     /**
@@ -164,7 +169,7 @@ public class RankedPlayer implements CustomPlayer{
      */
     @Override
     public String getNickname() {
-        return FoxRank.getInstance().getNickname(player.getUniqueId());
+        return instance.getNickname(player.getUniqueId());
     }
 
     /**
@@ -174,7 +179,7 @@ public class RankedPlayer implements CustomPlayer{
      **/
     @Override
     public String getRankId() {
-        return FoxRank.getRank(this.player).getRankID();
+        return instance.getRank(this.player).getRankID();
     }
 
 
@@ -194,7 +199,7 @@ public class RankedPlayer implements CustomPlayer{
      **/
     @Override
     public String getMuteReason() {
-        return FoxRank.getInstance().getMuteReason(player.getUniqueId());
+        return instance.getMuteReason(player.getUniqueId());
     }
 
     /**
@@ -204,7 +209,7 @@ public class RankedPlayer implements CustomPlayer{
      **/
     @Override
     public Instant getMuteDuration() {
-        return FoxRank.instance.getMuteDuration(player.getUniqueId());
+        return instance.getMuteDuration(player.getUniqueId());
     }
 
     /**Gets a formatted string of when the player's mute will expire.
@@ -213,7 +218,7 @@ public class RankedPlayer implements CustomPlayer{
      */
     @Override
     public String getFormattedMuteDuration() {
-        return FoxRank.getInstance().getFormattedExpiredString(this.getMuteDuration(), Instant.now());
+        return instance.getFormattedExpiredString(this.getMuteDuration(), Instant.now());
     }
 
     /**

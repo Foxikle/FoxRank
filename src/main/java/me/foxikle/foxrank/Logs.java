@@ -36,10 +36,10 @@ public class Logs implements CommandExecutor, TabExecutor, Listener {
                 if (!FoxRank.getInstance().getConfig().getBoolean("DisableLogsCommand")) {
                     if (sender instanceof Player player) {
                         playerPages.remove(player);
-                        RankedPlayer rankedPlayer = new RankedPlayer(player);
+                        RankedPlayer rankedPlayer = new RankedPlayer(player, FoxRank.getInstance());
                         if (rankedPlayer.getPowerLevel() >= FoxRank.getInstance().getConfig().getInt("LogsCommandPermissions")) {
                             if (args.length < 2) {
-                                FoxRank.getInstance().sendMissingArgsMessage("/logs", "<player> [logtype]", new RankedPlayer(player));
+                                FoxRank.getInstance().sendMissingArgsMessage("/logs", "<player> [logtype]", new RankedPlayer(player, FoxRank.getInstance()));
                             } else if (args.length >= 2) {
                                 if (Bukkit.getOfflinePlayer(FoxRank.instance.getUUID(args[0])) != null) {
                                     OfflineRankedPlayer rp = new OfflineRankedPlayer(Bukkit.getOfflinePlayer(FoxRank.instance.getUUID(args[0])));
@@ -49,7 +49,7 @@ public class Logs implements CommandExecutor, TabExecutor, Listener {
                                         if (args[1].equalsIgnoreCase("MUTE")) {
                                             entries.removeIf(e -> e.getType() != EntryType.MUTE);
                                             if (entries.isEmpty()) {
-                                                rankedPlayer.sendMessage(ChatColor.translateAlternateColorCodes('§', FoxRank.getInstance().getConfig().getString("LogsNoData").replace("$PLAYER", ChatColor.YELLOW + "" + ChatColor.ITALIC + rp.getName()).replace("$LOGTYPE", "mute")));
+                                                rankedPlayer.sendMessage(ChatColor.translateAlternateColorCodes('§', FoxRank.getInstance().getConfig().getString("LogsNoData").replace("$PLAYER", ChatColor.YELLOW + String.valueOf(ChatColor.ITALIC) + rp.getName()).replace("$LOGTYPE", "mute")));
                                             }
 
                                             for (Entry e : entries) {
@@ -73,7 +73,7 @@ public class Logs implements CommandExecutor, TabExecutor, Listener {
                                         } else if (args[1].equalsIgnoreCase("UNMUTE")) {
                                             entries.removeIf(e -> e.getType() != EntryType.UNMUTE);
                                             if (entries.isEmpty()) {
-                                                rankedPlayer.sendMessage(ChatColor.translateAlternateColorCodes('§', FoxRank.getInstance().getConfig().getString("LogsNoData").replace("$PLAYER", ChatColor.YELLOW + "" + ChatColor.ITALIC + rp.getName()).replace("$LOGTYPE", "unmute")));
+                                                rankedPlayer.sendMessage(ChatColor.translateAlternateColorCodes('§', FoxRank.getInstance().getConfig().getString("LogsNoData").replace("$PLAYER", ChatColor.YELLOW + String.valueOf(ChatColor.ITALIC) + rp.getName()).replace("$LOGTYPE", "unmute")));
                                             }
                                             for (Entry e : entries) {
                                                 ItemStack item = new ItemStack(Material.FILLED_MAP);
@@ -94,7 +94,7 @@ public class Logs implements CommandExecutor, TabExecutor, Listener {
                                             rankedPlayer.sendMessage("entries size: " + entries.size());
                                             entries.removeIf(e -> e.getType() != EntryType.NICKNAME);
                                             if (entries.isEmpty()) {
-                                                rankedPlayer.sendMessage(ChatColor.translateAlternateColorCodes('§', FoxRank.getInstance().getConfig().getString("LogsNoData").replace("$PLAYER", ChatColor.YELLOW + "" + ChatColor.ITALIC + rp.getName()).replace("$LOGTYPE", "nickname")));
+                                                rankedPlayer.sendMessage(ChatColor.translateAlternateColorCodes('§', FoxRank.getInstance().getConfig().getString("LogsNoData").replace("$PLAYER", ChatColor.YELLOW + String.valueOf(ChatColor.ITALIC) + rp.getName()).replace("$LOGTYPE", "nickname")));
                                             }
                                             for (Entry e : entries) {
                                                 ItemStack item = new ItemStack(Material.NAME_TAG);
@@ -116,7 +116,7 @@ public class Logs implements CommandExecutor, TabExecutor, Listener {
                                         } else if (args[1].equalsIgnoreCase("BAN")) {
                                             entries.removeIf(e -> e.getType() != EntryType.BAN);
                                             if (entries.isEmpty()) {
-                                                rankedPlayer.sendMessage(ChatColor.translateAlternateColorCodes('§', FoxRank.getInstance().getConfig().getString("LogsNoData").replace("$PLAYER", ChatColor.YELLOW + "" + ChatColor.ITALIC + rp.getName()).replace("$LOGTYPE", "ban")));
+                                                rankedPlayer.sendMessage(ChatColor.translateAlternateColorCodes('§', FoxRank.getInstance().getConfig().getString("LogsNoData").replace("$PLAYER", ChatColor.YELLOW + String.valueOf(ChatColor.ITALIC) + rp.getName()).replace("$LOGTYPE", "ban")));
                                             }
                                             for (Entry e : entries) {
                                                 ItemStack item = new ItemStack(Material.FILLED_MAP);
