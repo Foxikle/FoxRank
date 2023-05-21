@@ -30,12 +30,12 @@ public class Ban implements CommandExecutor, TabExecutor {
     public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
         if (label.equalsIgnoreCase("ban")) {
             if (sender instanceof Player banner) {
-                RankedPlayer staff = new RankedPlayer(banner);
+                RankedPlayer staff = new RankedPlayer(banner, FoxRank.getInstance());
                 if (staff.getPowerLevel() >= yml.getInt("BanPermissions")) {
                     if (args.length >= 4) {
                         if (Bukkit.getServer().getPlayer(args[0]) != null) {
                             Player banee = Bukkit.getServer().getPlayer(args[0]);
-                            RankedPlayer baneeRp = new RankedPlayer(banee);
+                            RankedPlayer baneeRp = new RankedPlayer(banee, FoxRank.getInstance());
                             if (baneeRp.getPowerLevel() >= staff.getPowerLevel()) {
                                 staff.sendMessage(ChatColor.translateAlternateColorCodes('§', yml.getString("BanPlayerWithHigherPowerLevelMessage")));
                             } else {

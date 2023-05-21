@@ -27,3 +27,4 @@ commands:
     description: A command to ban a player from the server.
   unban:
     description: A command to unban a player from the server.
+load: POSTWORLD

@@ -118,7 +118,7 @@ public class Nick implements CommandExecutor {
         TextComponent textCompnent = new TextComponent("Nicknames allow you to play with a different username to not get recognized. \n\nAll rules still apply. You can still be reported and all name history is stored.");
         textCompnent.setColor(ChatColor.BLACK);
 
-        TextComponent continueComponent = new TextComponent(ChatColor.BOLD + "\n\n » " + ChatColor.RESET + "" + ChatColor.BLACK + "I understand, setup my nickname.");
+        TextComponent continueComponent = new TextComponent(ChatColor.BOLD + "\n\n » " + ChatColor.RESET + ChatColor.BLACK + "I understand, setup my nickname.");
         continueComponent.setColor(ChatColor.BLACK);
         continueComponent.setColor(ChatColor.UNDERLINE);
         continueComponent.setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/nick agree"));
@@ -171,19 +171,19 @@ public class Nick implements CommandExecutor {
         TextComponent textCompnent = new TextComponent("Awesome! Now, which SKIN would you like to have while nicked?");
         textCompnent.setColor(ChatColor.BLACK);
 
-        TextComponent normalSkinComponent = new TextComponent(ChatColor.BOLD + "\n» " + ChatColor.RESET + "" + ChatColor.BLACK + "My normal Skin");
+        TextComponent normalSkinComponent = new TextComponent(ChatColor.BOLD + "\n» " + ChatColor.RESET + ChatColor.BLACK + "My normal Skin");
         normalSkinComponent.setColor(ChatColor.BLACK);
         normalSkinComponent.setColor(ChatColor.UNDERLINE);
         normalSkinComponent.setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/nick skin real"));
         normalSkinComponent.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new ComponentBuilder("Your normal Skin").color(ChatColor.GREEN).create()));
 
-        TextComponent SteveAlexComponent = new TextComponent(ChatColor.BOLD + "\n» " + ChatColor.RESET + "" + ChatColor.BLACK + "Steve/Alex skin");
+        TextComponent SteveAlexComponent = new TextComponent(ChatColor.BOLD + "\n» " + ChatColor.RESET + ChatColor.BLACK + "Steve/Alex skin");
         SteveAlexComponent.setColor(ChatColor.BLACK);
         SteveAlexComponent.setColor(ChatColor.UNDERLINE);
         SteveAlexComponent.setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/nick skin default"));
         SteveAlexComponent.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new ComponentBuilder("Click to select Steve/Alex").color(ChatColor.GREEN).create()));
 
-        TextComponent randomSkinComponent = new TextComponent(ChatColor.BOLD + "\n» " + ChatColor.RESET + "" + ChatColor.BLACK + "Random Skin");
+        TextComponent randomSkinComponent = new TextComponent(ChatColor.BOLD + "\n» " + ChatColor.RESET + ChatColor.BLACK + "Random Skin");
         randomSkinComponent.setColor(ChatColor.BLACK);
         randomSkinComponent.setColor(ChatColor.UNDERLINE);
         randomSkinComponent.setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/nick skin random"));
@@ -316,7 +316,7 @@ public class Nick implements CommandExecutor {
         if (label.equalsIgnoreCase("nick")) {
             if (!FoxRank.getInstance().getConfig().getBoolean("DisableNicknames")) {
                 if (sender instanceof Player player) {
-                    RankedPlayer rp = new RankedPlayer(player);
+                    RankedPlayer rp = new RankedPlayer(player, FoxRank.getInstance());
                     if (rp.getPowerLevel() >= FoxRank.getInstance().getConfig().getInt("NicknamePermissions")) {
                         if (args.length == 0) {
                             openWarningBook(player);
