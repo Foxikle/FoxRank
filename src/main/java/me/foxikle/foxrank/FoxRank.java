@@ -8,6 +8,7 @@ import org.bukkit.OfflinePlayer;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Listener;
+import org.bukkit.plugin.ServicePriority;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scoreboard.Scoreboard;
 import org.bukkit.scoreboard.Team;
@@ -47,7 +48,7 @@ public class FoxRank extends JavaPlugin implements Listener {
     private static Team VipTeam = null;
     protected List<String> playerNames = new ArrayList<>();
 
-    protected static FoxRank getInstance() {
+    public static FoxRank getInstance() {
         return instance;
     }
 
@@ -70,11 +71,11 @@ public class FoxRank extends JavaPlugin implements Listener {
         }
     }
 
-    protected static Rank getRank(Player player) {
+    protected Rank getRank(Player player) {
         return ranks.get(player);
     }
 
-    protected static Rank getOfflineRank(OfflinePlayer player) {
+    protected Rank getOfflineRank(OfflinePlayer player) {
         if (getInstance().useDb) {
             return getInstance().db.getStoredRank(player.getUniqueId());
         } else {
@@ -84,20 +85,24 @@ public class FoxRank extends JavaPlugin implements Listener {
         }
     }
 
-    protected static PluginChannelListener getPluginChannelListener() {
+    protected PluginChannelListener getPluginChannelListener() {
         return pcl;
     }
 
     @Override
     public void onEnable() {
+        instance = this;
         if (!new File("plugins/FoxRank/config.yml").exists()) {
             this.saveResource("config.yml", false);
         }
-        instance = this;
         pcl = new PluginChannelListener();
         bungeecord = this.getConfig().getBoolean("bungeecord");
-        this.getServer().getMessenger().registerOutgoingPluginChannel(this, "BungeeCord");
-        this.getServer().getMessenger().registerIncomingPluginChannel(this, "BungeeCord", pcl);
+        if (bungeecord) {
+            this.getServer().getMessenger().registerOutgoingPluginChannel(this, "BungeeCord");
+            this.getServer().getMessenger().registerIncomingPluginChannel(this, "BungeeCord", pcl);
+        }
+
+        Bukkit.getServicesManager().register(FoxRank.class, this, this, ServicePriority.Normal);
 
         if (useDb) {
             getInstance().db = new Database();
@@ -129,11 +134,14 @@ public class FoxRank extends JavaPlugin implements Listener {
         getServer().getPluginManager().registerEvents(new Logs(), this);
         getServer().getPluginManager().registerEvents(new Listeners(), this);
         reloadConfig();
-        for (Player p : this.getServer().getOnlinePlayers()) {
-            db.addPlayerData(new RankedPlayer(p));
-            loadRank(p);
-            ActionBar.setupActionBar(p);
+        if (useDb) {
+            for (Player p : this.getServer().getOnlinePlayers()) {
+                db.addPlayerData(new RankedPlayer(p, this));
+                loadRank(p);
+                ActionBar.setupActionBar(p);
+            }
         }
+
         getCommand("nick").setExecutor(new Nick());
         getCommand("vanish").setExecutor(new Vanish());
         getCommand("setrank").setExecutor(new SetRank());
@@ -152,19 +160,24 @@ public class FoxRank extends JavaPlugin implements Listener {
         for (Player p : this.getServer().getOnlinePlayers()) {
             saveRank(p);
         }
-        DefualtTeam.unregister();
-        OwnerTeam.unregister();
-        AdminTeam.unregister();
-        ModeratorTeam.unregister();
-        YoutubeTeam.unregister();
-        TwitchTeam.unregister();
-        MvppTeam.unregister();
-        MvpTeam.unregister();
-        VippTeam.unregister();
-        VipTeam.unregister();
-        db.disconnect();
+        try {
+            DefualtTeam.unregister();
+
+            OwnerTeam.unregister();
+            AdminTeam.unregister();
+            ModeratorTeam.unregister();
+            YoutubeTeam.unregister();
+            TwitchTeam.unregister();
+            MvppTeam.unregister();
+            MvpTeam.unregister();
+            VippTeam.unregister();
+            VipTeam.unregister();
+        } catch (NullPointerException | IllegalStateException ignored) {
+        }
+        if (useDb) db.disconnect();
         this.getServer().getMessenger().unregisterOutgoingPluginChannel(this);
         this.getServer().getMessenger().unregisterIncomingPluginChannel(this);
+        Bukkit.getServicesManager().unregister(this);
     }
 
     void setupTeams() {
