@@ -9,9 +9,15 @@ import org.bukkit.event.player.PlayerQuitEvent;
 
 public class JoinLeaveMsgs implements Listener {
 
+    private final FoxRank plugin;
+
+    public JoinLeaveMsgs(FoxRank plugin) {
+        this.plugin = plugin;
+    }
+
     @EventHandler(priority = EventPriority.MONITOR)
     public void onPlayerLogin(PlayerJoinEvent event) {
-        if (FoxRank.getInstance().getConfig().getBoolean("DisableJoinMessages")) {
+        if (plugin.getConfig().getBoolean("DisableJoinMessages")) {
             event.setJoinMessage("");
         } else {
             event.setJoinMessage(ChatColor.YELLOW + event.getPlayer().getName() + " joined the game.");
@@ -20,7 +26,7 @@ public class JoinLeaveMsgs implements Listener {
 
     @EventHandler(priority = EventPriority.MONITOR)
     public void onPlayerQuit(PlayerQuitEvent event) {
-        if (FoxRank.getInstance().getConfig().getBoolean("DisableLeaveMessages")) {
+        if (plugin.getConfig().getBoolean("DisableLeaveMessages")) {
             event.setQuitMessage("");
         } else {
             event.setQuitMessage(ChatColor.YELLOW + event.getPlayer().getName() + " left the game.");

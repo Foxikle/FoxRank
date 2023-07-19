@@ -6,7 +6,8 @@ import org.bukkit.OfflinePlayer;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
-import org.bukkit.command.TabExecutor;
+import org.bukkit.command.TabCompleter;
+import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
 
@@ -20,48 +21,45 @@ import static java.util.Objects.hash;
 import static me.foxikle.foxrank.ModerationAction.banOfflinePlayer;
 import static me.foxikle.foxrank.ModerationAction.banPlayer;
 
-public class Ban implements CommandExecutor, TabExecutor {
-    private final FileConfiguration yml = FoxRank.getInstance().getConfig();
+
+public class Ban implements CommandExecutor, TabCompleter {
+    private final FoxRank plugin;
+    private final FileConfiguration yml;
     private String reason = "No reason specified.";
     private Instant expires;
     private boolean silent = false;
     private String banID = null;
 
+    public Ban(FoxRank plugin) {
+        this.plugin = plugin;
+        this.yml = plugin.getConfig();
+    }
+
     public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
         if (label.equalsIgnoreCase("ban")) {
             if (sender instanceof Player banner) {
-                RankedPlayer staff = new RankedPlayer(banner, FoxRank.getInstance());
+                RankedPlayer staff = new RankedPlayer(banner, plugin);
                 if (staff.getPowerLevel() >= yml.getInt("BanPermissions")) {
                     if (args.length >= 4) {
                         if (Bukkit.getServer().getPlayer(args[0]) != null) {
                             Player banee = Bukkit.getServer().getPlayer(args[0]);
-                            RankedPlayer baneeRp = new RankedPlayer(banee, FoxRank.getInstance());
+                            RankedPlayer baneeRp = new RankedPlayer(banee, plugin);
                             if (baneeRp.getPowerLevel() >= staff.getPowerLevel()) {
                                 staff.sendMessage(ChatColor.translateAlternateColorCodes('§', yml.getString("BanPlayerWithHigherPowerLevelMessage")));
                             } else {
-                                if (args[1].equalsIgnoreCase("SECURITY")) {
-                                    reason = yml.getConfigurationSection("BanReasons").getString(args[1]);
-                                } else if (args[1].equalsIgnoreCase("HACKING")) {
-                                    reason = yml.getConfigurationSection("BanReasons").getString(args[1]);
-                                } else if (args[1].equalsIgnoreCase("DUPING")) {
-                                    reason = yml.getConfigurationSection("BanReasons").getString(args[1]);
-                                } else if (args[1].equalsIgnoreCase("BUG_ABUSE")) {
-                                    reason = yml.getConfigurationSection("BanReasons").getString(args[1]);
-                                } else if (args[1].equalsIgnoreCase("INAPPROPRIATE_COSMETICS")) {
-                                    reason = yml.getConfigurationSection("BanReasons").getString(args[1]);
-                                } else if (args[1].equalsIgnoreCase("INAPPROPRIATE_BUILD")) {
-                                    reason = yml.getConfigurationSection("BanReasons").getString(args[1]);
-                                } else if (args[1].equalsIgnoreCase("BOOSTING")) {
-                                    reason = yml.getConfigurationSection("BanReasons").getString(args[1]);
-                                } else if (args[1].equalsIgnoreCase("CUSTOM")) {
+                                ConfigurationSection section = yml.getConfigurationSection("BanReasons");
+                                if (args[1].equalsIgnoreCase("CUSTOM")) {
                                     ArrayList<String> list = new ArrayList<>(Arrays.asList(args));
                                     list.remove(0);
                                     list.remove(0);
                                     list.remove(0);
                                     list.remove(0);
                                     reason = String.join(" ", list);
+                                } else if (section.contains(args[1])) {
+                                    reason = section.getString(args[1]);
                                 } else {
-                                    reason = args[1];
+                                    staff.sendMessage(ChatColor.translateAlternateColorCodes('§', yml.getString("NoPresetBanReason")));
+                                    return true;
                                 }
                                 if (args[2].contains("d") || args[2].contains("h") || args[2].contains("m") || args[2].equalsIgnoreCase("-1")) {
                                     expires = Instant.now();
@@ -82,7 +80,7 @@ public class Ban implements CommandExecutor, TabExecutor {
                                         expires = Instant.now().plusSeconds((long) durInt * 60);
                                     }
                                 } else {
-                                    FoxRank.getInstance().sendInvalidArgsMessage(args[2] + " Ex. `30d`, `24h`, `30m`", staff);
+                                    plugin.sendInvalidArgsMessage(args[2] + " Ex. `30d`, `24h`, `30m`", staff);
                                     return false;
 
                                 }
@@ -91,7 +89,7 @@ public class Ban implements CommandExecutor, TabExecutor {
                                 } else if (args[3].equalsIgnoreCase("PUBLIC")) {
                                     silent = false;
                                 } else {
-                                    FoxRank.getInstance().sendInvalidArgsMessage("<SILENT/PUBLIC>", staff);
+                                    plugin.sendInvalidArgsMessage("<SILENT/PUBLIC>", staff);
                                 }
                                 reason = removeUnderScore(reason);
                                 banID = getBanID(banee);
@@ -99,29 +97,19 @@ public class Ban implements CommandExecutor, TabExecutor {
 
                             }
                         } else {
-                            if (FoxRank.getInstance().db.getNames().contains(args[0])) {
-                                OfflinePlayer banee = Bukkit.getServer().getOfflinePlayer(FoxRank.getInstance().getUUID(args[0]));
+                            if (plugin.dm.getPlayers().contains(args[0])) {
+                                OfflinePlayer banee = Bukkit.getServer().getOfflinePlayer(plugin.dm.getUUID(args[0]));
                                 if (banee != null) {
                                     OfflineRankedPlayer baneeRp = new OfflineRankedPlayer(banee);
                                     if (baneeRp.getPowerLevel() >= staff.getPowerLevel()) {
                                         staff.sendMessage(ChatColor.translateAlternateColorCodes('§', yml.getString("BanPlayerWithHigherPowerLevelMessage")));
                                     } else {
-                                        if (args[1].equalsIgnoreCase("SECURITY")) {
-                                            reason = yml.getConfigurationSection("BanReasons").getString(args[1]);
-                                        } else if (args[1].equalsIgnoreCase("HACKING")) {
-                                            reason = yml.getConfigurationSection("BanReasons").getString(args[1]);
-                                        } else if (args[1].equalsIgnoreCase("DUPING")) {
-                                            reason = yml.getConfigurationSection("BanReasons").getString(args[1]);
-                                        } else if (args[1].equalsIgnoreCase("BUG_ABUSE")) {
-                                            reason = yml.getConfigurationSection("BanReasons").getString(args[1]);
-                                        } else if (args[1].equalsIgnoreCase("INAPPROPRIATE_COSMETICS")) {
-                                            reason = yml.getConfigurationSection("BanReasons").getString(args[1]);
-                                        } else if (args[1].equalsIgnoreCase("INAPPROPRIATE_BUILD")) {
-                                            reason = yml.getConfigurationSection("BanReasons").getString(args[1]);
-                                        } else if (args[1].equalsIgnoreCase("BOOSTING")) {
-                                            reason = yml.getConfigurationSection("BanReasons").getString(args[1]);
+                                        ConfigurationSection section = yml.getConfigurationSection("BanReasons");
+                                        if (section.contains(args[1])) {
+                                            reason = section.getString(args[1]);
                                         } else {
-                                            reason = args[1];
+                                            staff.sendMessage(ChatColor.translateAlternateColorCodes('§', yml.getString("NoPresetBanReason")));
+                                            return true;
                                         }
                                         if (args[2].contains("d") || args[2].contains("h") || args[2].contains("m") || args[2].equalsIgnoreCase("-1")) {
                                             expires = Instant.now();
@@ -142,7 +130,7 @@ public class Ban implements CommandExecutor, TabExecutor {
                                                 expires = Instant.now().plusSeconds((long) durInt * 60);
                                             }
                                         } else {
-                                            FoxRank.getInstance().sendInvalidArgsMessage(args[2] + " Ex. `30d`, `24h`, `30m`", staff);
+                                            plugin.sendInvalidArgsMessage(args[2] + " Ex. `30d`, `24h`, `30m`", staff);
                                             return false;
 
                                         }
@@ -151,7 +139,7 @@ public class Ban implements CommandExecutor, TabExecutor {
                                         } else if (args[3].equalsIgnoreCase("PUBLIC")) {
                                             silent = false;
                                         } else {
-                                            FoxRank.getInstance().sendInvalidArgsMessage("<SILENT/PUBLIC>", staff);
+                                            plugin.sendInvalidArgsMessage("<SILENT/PUBLIC>", staff);
                                         }
                                         reason = removeUnderScore(reason);
                                         banID = getBanID(banee);
@@ -160,14 +148,14 @@ public class Ban implements CommandExecutor, TabExecutor {
                                     }
                                 }
                             } else {
-                                FoxRank.getInstance().sendInvalidArgsMessage("Player", staff);
+                                plugin.sendInvalidArgsMessage("Player", staff);
                             }
                         }
                     } else {
-                        FoxRank.getInstance().sendMissingArgsMessage("/ban", "<PLAYER> <REASON> <DURATION> <SILENT/PUBLIC>", staff);
+                        plugin.sendMissingArgsMessage("/ban", "<PLAYER> <REASON> <DURATION> <SILENT/PUBLIC>", staff);
                     }
                 } else {
-                    FoxRank.getInstance().sendNoPermissionMessage(FoxRank.getInstance().getConfig().getInt("BanPermissions"), staff);
+                    plugin.sendNoPermissionMessage(plugin.getConfig().getInt("BanPermissions"), staff);
                 }
                 return true;
             }
@@ -184,14 +172,14 @@ public class Ban implements CommandExecutor, TabExecutor {
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
         if (args.length == 1) {
-            return FoxRank.getInstance().db.getNames();
+            return plugin.dm.getPlayers();
         } else if (args.length == 2) {
             List<String> arguments = new ArrayList<>();
-            arguments.addAll(FoxRank.getInstance().getConfig().getConfigurationSection("BanReasons").getKeys(false));
+            arguments.addAll(plugin.getConfig().getConfigurationSection("BanReasons").getKeys(false));
             return arguments;
         } else if (args.length == 3) {
             List<String> arguments = new ArrayList<>();
-            arguments.addAll(FoxRank.getInstance().getConfig().getConfigurationSection("BanDurations").getKeys(false));
+            arguments.addAll(plugin.getConfig().getConfigurationSection("BanDurations").getKeys(false));
             return arguments;
         } else if (args.length == 4) {
             List<String> arguments = new ArrayList<>();

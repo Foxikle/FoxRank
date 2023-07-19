@@ -1,0 +1,94 @@
+#              _____             _                              _
+#             |  __ \           | |                            | |
+#             | |__) |__ _ _ __ | | _____       _   _ _ __ ___ | |
+#             |  _  // _` | '_ \| |/ / __|     | | | | '_ ` _ \| |
+#             | | \ \ (_| | | | |   <\__ \  _  | |_| | | | | | | |
+#             |_|  \_\__,_|_| |_|_|\_\___/ (_)  \__, |_| |_| |_|_|
+#                                                __/ |
+#                                               |___/
+#
+# Welcome to the FoxRank Rnank Config file. There are a few rules when editing YML files.
+# 1. NEVER, EVER use tabs. Always use 2 spaces.
+# 2. A '#' means the line is commented out. The server will ignore the line.
+# 3. If you delete a portion of the config, you can delete the 'ranks.yml' and a new one
+#    will be automatically generated on the next server restart. This file is ignored
+#    if 'UseSQLStorage' is true. This file can be directly edited or using the `/rank`
+#    command in-game.
+#
+# Ranks follow the following format:
+#    <RANK_NAME>:
+#      prefix: '&cR&6A&eI&aN&1B&dO&5W '
+#      powerLevel: 1
+#      id: '<RANK_NAME>'
+#      color: 'c'
+#      ChatTextColor: 'f'
+# A few notes:
+#  - Having the same rank name as the id is generally useful.
+#  - The color should be JUST the letter/number. A complete
+#     list of colors can be found here https://htmlcolorcodes.com/minecraft-color-codes/
+#  - Put a space after the end of the rank prefix. If you don't
+#     in the tab list it will show up as 'PREFIXPLAYER_NAME' and
+#     not 'PREFIX PLAYER_NAME'
+#
+# ---------------------------------------------------------------------------------------
+Ranks:
+  OWNER:
+    prefix: '&c[OWNER] '
+    powerLevel: 100
+    id: 'OWNER'
+    color: 'c'
+    ChatTextColor: 'f'
+  ADMIN:
+    prefix: '&c[ADMIN] '
+    powerLevel: 90
+    id: 'ADMIN'
+    color: 'c'
+    ChatTextColor: 'f'
+  MODERATOR:
+    prefix: '&2[MOD] '
+    powerLevel: 80
+    id: 'MODERATOR'
+    color: '2'
+    ChatTextColor: 'f'
+  HELPER:
+    prefix: '&9[HELPER] '
+    powerLevel: 75
+    id: 'HELPER'
+    color: '9'
+    ChatTextColor: 'f'
+  YOUTUBE:
+    prefix: '&c[&fYOUTUBE&c] '
+    powerLevel: 70
+    id: 'YOUTUBE'
+    color: 'c'
+    ChatTextColor: 'f'
+  MVP_PLUS:
+    prefix: '&b[MVP&6+&b] '
+    powerLevel: 65
+    id: 'MVP_PLUS'
+    color: 'b'
+    ChatTextColor: 'f'
+  MVP:
+    prefix: '&b[MVP] '
+    powerLevel: 60
+    id: 'MVP'
+    color: 'b'
+    ChatTextColor: 'f'
+  VIP_PLUS:
+    prefix: '&a[VIP&6+&a] '
+    powerLevel: 35
+    id: 'VIP_PLUS'
+    color: 'a'
+    ChatTextColor: 'f'
+  VIP:
+    prefix: '&a[VIP] '
+    powerLevel: 30
+    id: 'VIP'
+    color: 'a'
+    ChatTextColor: 'f'
+  DEFAULT:
+    prefix: '&7'
+    powerLevel: 1
+    id: 'DEFAULT'
+    color: '7'
+    ChatTextColor: '7'

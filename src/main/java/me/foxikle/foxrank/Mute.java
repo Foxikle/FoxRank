@@ -8,13 +8,14 @@ import org.bukkit.OfflinePlayer;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
-import org.bukkit.command.TabExecutor;
+import org.bukkit.command.TabCompleter;
 import org.bukkit.entity.Player;
+import org.jetbrains.annotations.NotNull;
 
 import java.time.Instant;
 import java.util.*;
 
-public class Mute implements CommandExecutor, TabExecutor {
+public class Mute implements CommandExecutor, TabCompleter {
     public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
         if (label.equalsIgnoreCase("mute")) {
             Instant expires;
@@ -30,7 +31,7 @@ public class Mute implements CommandExecutor, TabExecutor {
                                 rp.sendMessage(ChatColor.translateAlternateColorCodes('§', FoxRank.getInstance().getConfig().getString("MutePlayerWithHigherPowerLevelMessage")));
                             } else {
                                 if (rp.getPowerLevel() >= FoxRank.getInstance().getConfig().getInt("MutePermissions")) {
-                                    if (!FoxRank.getInstance().isMuted(mutee.getUniqueId())) {
+                                    if (!FoxRank.getInstance().dm.isMuted(mutee.getUniqueId())) {
                                         expires = Instant.now();
                                         if (args[1].contains("d") || args[1].contains("h") || args[1].contains("m")) {
                                             String durStr = args[1];
@@ -66,8 +67,8 @@ public class Mute implements CommandExecutor, TabExecutor {
                                     FoxRank.getInstance().sendNoPermissionMessage(FoxRank.getInstance().getConfig().getInt("MutePermissions"), rp);
                                 }
                             }
-                        } else if (Bukkit.getOfflinePlayer(FoxRank.getInstance().getUUID(args[0])) != null) {
-                            OfflinePlayer mutee = Bukkit.getOfflinePlayer(FoxRank.getInstance().getUUID(args[0]));
+                        } else if (Bukkit.getOfflinePlayer(FoxRank.getInstance().dm.getUUID(args[0])) != null) {
+                            OfflinePlayer mutee = Bukkit.getOfflinePlayer(FoxRank.getInstance().dm.getUUID(args[0]));
 
                             RankedPlayer rp = new RankedPlayer(player, FoxRank.getInstance());
                             OfflineRankedPlayer mrp = new OfflineRankedPlayer(mutee);
@@ -75,7 +76,7 @@ public class Mute implements CommandExecutor, TabExecutor {
                                 rp.sendMessage(ChatColor.translateAlternateColorCodes('§', FoxRank.getInstance().getConfig().getString("MutePlayerWithHigherPowerLevelMessage")));
                             } else {
                                 if (rp.getPowerLevel() >= FoxRank.getInstance().getConfig().getInt("MutePermissions")) {
-                                    if (!FoxRank.getInstance().isMuted(mutee.getUniqueId())) {
+                                    if (!FoxRank.getInstance().dm.isMuted(mutee.getUniqueId())) {
                                         expires = Instant.now();
                                         if (args[1].contains("d") || args[1].contains("h") || args[1].contains("m")) {
                                             String durStr = args[1];
@@ -113,7 +114,7 @@ public class Mute implements CommandExecutor, TabExecutor {
                                 }
                             }
                         } else {
-                            FoxRank.getInstance().sendInvalidArgsMessage("You must specify a valid player.", new RankedPlayer(((Player) sender).getPlayer(), FoxRank.getInstance()));
+                            FoxRank.getInstance().sendInvalidArgsMessage("Player.", new RankedPlayer(((Player) sender).getPlayer(), FoxRank.getInstance()));
                         }
                     } else {
                         FoxRank.getInstance().sendMissingArgsMessage("/mute", "<player> <duration> [reason]", new RankedPlayer((Player) sender, FoxRank.getInstance()));
@@ -124,22 +125,22 @@ public class Mute implements CommandExecutor, TabExecutor {
             }
         } else if (label.equalsIgnoreCase("me")) {
             if (sender instanceof Player player) {
-                return FoxRank.getInstance().isMuted(player.getUniqueId());
+                return FoxRank.getInstance().dm.isMuted(player.getUniqueId());
             }
             return false;
         } else if (label.equalsIgnoreCase("say")) {
             if (sender instanceof Player player) {
-                return FoxRank.getInstance().isMuted(player.getUniqueId());
+                return FoxRank.getInstance().dm.isMuted(player.getUniqueId());
             }
             return false;
         }
         if (label.equalsIgnoreCase("immuted")) {
             if (!FoxRank.getInstance().getConfig().getBoolean("DisableImMuted")) {
                 if (sender instanceof Player player) {
-                    if (!FoxRank.getInstance().isMuted(player.getUniqueId())) {
+                    if (!FoxRank.getInstance().dm.isMuted(player.getUniqueId())) {
                         player.sendMessage(ChatColor.translateAlternateColorCodes('§', FoxRank.getInstance().getConfig().getString("ImmutedCommandNotMutedMessage")));
                     } else if (args.length >= 1) {
-                        if (FoxRank.instance.getPlayerNames((Player) sender).contains(args[0])) {
+                        if (FoxRank.getInstance().dm.getPlayerNames((Player) sender).contains(args[0])) {
 
                             String to = FoxRank.getInstance().getConfig().getString("IAmMutedCommandMessageToMuted");
                             String from = FoxRank.getInstance().getConfig().getString("IAmMutedCommandMessageFromMuted");
@@ -150,7 +151,7 @@ public class Mute implements CommandExecutor, TabExecutor {
                                     from = from.replace("$MUTEDUSERRANKPREFIX", "");
                                 } else {
                                     from = from.replace("$MUTEDUSERRANKPREFIX", FoxRank.getInstance().getRank(player).getPrefix());
-                                    to = to.replace("$RECEIVERRANKPREFIX", FoxRank.getInstance().db.getStoredRank(FoxRank.instance.getUUID(args[0])).getPrefix());
+                                    to = to.replace("$RECEIVERRANKPREFIX", FoxRank.getInstance().dm.getStoredRank(FoxRank.getInstance().dm.getUUID(args[0])).getPrefix());
                                 }
 
                                 to = to.replace("$RECIEVER", args[0]);
@@ -207,16 +208,16 @@ public class Mute implements CommandExecutor, TabExecutor {
                         if (args.length >= 1) {
                             if (Bukkit.getPlayerExact(args[0]) != null) {
                                 Player receiver = Bukkit.getPlayerExact(args[0]);
-                                if (!FoxRank.getInstance().isMuted(receiver.getUniqueId())) {
+                                if (!FoxRank.getInstance().dm.isMuted(receiver.getUniqueId())) {
                                     player.sendMessage(ChatColor.translateAlternateColorCodes('§', FoxRank.getInstance().getConfig().getString("UnmuteCommandPlayerNotMuted").replace("$PLAYER", receiver.getName())));
                                 } else {
                                     me.foxikle.foxrank.ModerationAction.unmutePlayer(new RankedPlayer(receiver, FoxRank.getInstance()), rp);
                                     FoxRank.getInstance().getServer().getPluginManager().callEvent(new ModerationActionEvent(((Player) sender).getPlayer(), receiver.getPlayer(), new OfflineRankedPlayer(receiver).getRank(), rp.getRank(), ModerationAction.UNMUTE, null, null, null));
                                     player.sendMessage(ChatColor.translateAlternateColorCodes('§', FoxRank.getInstance().getConfig().getString("UnmuteSenderMessage").replace("$PLAYER", receiver.getName())));
                                 }
-                            } else if (Bukkit.getOfflinePlayer(FoxRank.getInstance().getUUID(args[0])) != null) {
-                                OfflinePlayer receiver = Bukkit.getOfflinePlayer(FoxRank.getInstance().getUUID(args[0]));
-                                if (!FoxRank.getInstance().isMuted(receiver.getUniqueId())) {
+                            } else if (Bukkit.getOfflinePlayer(FoxRank.getInstance().dm.getUUID(args[0])) != null) {
+                                OfflinePlayer receiver = Bukkit.getOfflinePlayer(FoxRank.getInstance().dm.getUUID(args[0]));
+                                if (!FoxRank.getInstance().dm.isMuted(receiver.getUniqueId())) {
                                     player.sendMessage(ChatColor.translateAlternateColorCodes('§', FoxRank.getInstance().getConfig().getString("UnmuteCommandPlayerNotMuted").replace("$PLAYER", receiver.getName())));
                                 } else {
                                     me.foxikle.foxrank.ModerationAction.unmuteOfflinePlayer(receiver, rp);
@@ -240,7 +241,7 @@ public class Mute implements CommandExecutor, TabExecutor {
     }
 
     @Override
-    public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
+    public List<String> onTabComplete(@NotNull CommandSender sender, Command command, @NotNull String alias, String[] args) {
         if (command.getLabel().equalsIgnoreCase("mute")) {
             if (args.length == 2) {
                 List<String> arguments = new ArrayList<>();
@@ -250,7 +251,7 @@ public class Mute implements CommandExecutor, TabExecutor {
                 return arguments;
 
             } else if (args.length == 1) {
-                List<String> playerNames = new ArrayList<>(FoxRank.getInstance().getPlayerNames((Player) sender));
+                List<String> playerNames = new ArrayList<>(FoxRank.getInstance().dm.getPlayerNames((Player) sender));
                 for (OfflinePlayer player : Bukkit.getOfflinePlayers()) {
                     playerNames.add(player.getName());
                 }
@@ -259,20 +260,10 @@ public class Mute implements CommandExecutor, TabExecutor {
         } else if (command.getLabel().equalsIgnoreCase("unmute")) {
             if (args.length == 1) {
                 List<String> playerNames = new ArrayList<>();
-                if (FoxRank.getInstance().useDb) {
-                    for (UUID uuid : FoxRank.getInstance().db.getUUIDs()) {
-                        if (FoxRank.getInstance().isMuted(uuid)) {
-                            playerNames.add(FoxRank.getInstance().getTrueName(uuid));
-                        }
-                    }
-                } else {
-                    for (String player : FoxRank.getInstance().getPlayerNames((Player) sender)) {
-                        if (FoxRank.getInstance().isMuted(FoxRank.getInstance().getUUID(player))) {
-                            playerNames.add(player);
-                        }
-                    }
-                    for (OfflinePlayer player : Bukkit.getOfflinePlayers()) {
-                        if (FoxRank.instance.isMuted(player.getUniqueId())) playerNames.add(player.getName());
+                List<UUID> uuids = FoxRank.getInstance().dm.getUUIDs();
+                for (UUID uuid : uuids) {
+                    if (FoxRank.getInstance().dm.isMuted(uuid)) {
+                        playerNames.add(FoxRank.getInstance().getTrueName(uuid));
                     }
                 }
                 return playerNames;

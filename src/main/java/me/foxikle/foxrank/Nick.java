@@ -7,7 +7,8 @@ import com.mojang.authlib.properties.Property;
 import me.foxikle.foxrank.events.PlayerNicknameEvent;
 import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.api.chat.*;
-import net.minecraft.network.protocol.game.ClientboundPlayerInfoPacket;
+import net.minecraft.network.protocol.game.ClientboundPlayerInfoRemovePacket;
+import net.minecraft.network.protocol.game.ClientboundPlayerInfoUpdatePacket;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.network.ServerGamePacketListenerImpl;
 import net.wesjd.anvilgui.AnvilGUI;
@@ -16,17 +17,15 @@ import org.bukkit.Material;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
-import org.bukkit.configuration.file.YamlConfiguration;
-import org.bukkit.craftbukkit.v1_19_R1.entity.CraftPlayer;
+import org.bukkit.craftbukkit.v1_20_R1.entity.CraftPlayer;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.BookMeta;
 
-import java.io.File;
-import java.io.IOException;
 import java.io.InputStreamReader;
 import java.lang.reflect.Field;
 import java.net.URL;
+import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 import java.util.logging.Level;
@@ -69,34 +68,16 @@ public class Nick implements CommandExecutor {
         ItemStack book = new ItemStack(Material.WRITTEN_BOOK);
         BookMeta meta = (BookMeta) book.getItemMeta();
 
-        TextComponent textCompnent = new TextComponent("Let's get you set up  with your nickname! First, you'll need to choose which RANK you would like to be shown as when nicked.");
+        TextComponent textCompnent = new TextComponent("Let's get you set up  with your nickname! First, you'll need to choose which RANK you would like to be shown as when nicked.\n");
         textCompnent.setColor(ChatColor.BLACK);
 
-        TextComponent defaultComponent = new TextComponent("\n\n »" + ChatColor.GRAY + " DEFAULT");
-        defaultComponent.setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/nick rank DEFAULT"));
-        defaultComponent.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new ComponentBuilder("Click to chose DEFAULT").color(ChatColor.GREEN).create()));
+        for (Rank rank : FoxRank.getInstance().ranks.values()) {
+            TextComponent component = new TextComponent("\n\n »" + rank.getId());
+            component.setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/nick rank " + rank.getId()));
+            component.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new ComponentBuilder("Click to chose " + rank.getId()).color(ChatColor.GREEN).create()));
+            textCompnent.addExtra(textCompnent);
+        }
 
-        TextComponent VIPComment = new TextComponent(ChatColor.BLACK + "\n » " + ChatColor.GREEN + "VIP");
-        VIPComment.setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/nick rank VIP"));
-        VIPComment.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new ComponentBuilder("Click to chose VIP").color(ChatColor.GREEN).create()));
-
-        TextComponent VIPPlusComponent = new TextComponent(ChatColor.BLACK + "\n »" + ChatColor.GREEN + " VIP" + ChatColor.GOLD + "+");
-        VIPPlusComponent.setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/nick rank VIP_PLUS"));
-        VIPPlusComponent.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new ComponentBuilder("Click to chose VIP+").color(ChatColor.GREEN).create()));
-
-        TextComponent MVPComponent = new TextComponent(ChatColor.BLACK + "\n »" + ChatColor.AQUA + " MVP");
-        MVPComponent.setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/nick rank MVP"));
-        MVPComponent.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new ComponentBuilder("Click to chose MVP").color(ChatColor.GREEN).create()));
-
-        TextComponent MVPPlusComponent = new TextComponent(ChatColor.BLACK + "\n »" + ChatColor.AQUA + " MVP" + ChatColor.RED + "+");
-        MVPPlusComponent.setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/nick rank MVP_PLUS"));
-        MVPPlusComponent.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new ComponentBuilder("Click to chose MVP+").color(ChatColor.GREEN).create()));
-
-        textCompnent.addExtra(defaultComponent);
-        textCompnent.addExtra(VIPComment);
-        textCompnent.addExtra(VIPPlusComponent);
-        textCompnent.addExtra(MVPComponent);
-        textCompnent.addExtra(MVPPlusComponent);
         BaseComponent[] pages = new BaseComponent[]{textCompnent};
 
         meta.spigot().addPage(pages);
@@ -206,24 +187,13 @@ public class Nick implements CommandExecutor {
 
     private static void finalizeNick(Player player, String name){
         if(!FoxRank.getInstance().getConfig().getStringList("BlacklistedNicknames").contains(name.toLowerCase())) {
-            if (FoxRank.getInstance().useDb) {
-                FoxRank.getInstance().db.setStoredNicknameData(player.getUniqueId(), true, Rank.ofString(rankID), name, skinOption);
-            } else {
-                File file = new File("plugins/FoxRank/PlayerData/" + player.getUniqueId() + ".yml");
-                YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
-                yml.set("isNicked", true);
-                try {
-                    yml.save(file);
-                } catch (IOException error) {
-                    error.printStackTrace();
-                }
-            }
+            FoxRank.getInstance().dm.setNicknameData(player.getUniqueId(), true, Rank.of(rankID), name, skinOption);
             changeName(name, player);
-            FoxRank.setTeam(player, rankID);
-            Logging.addLogEntry(EntryType.NICKNAME, player.getUniqueId(), null, null, Rank.ofString(rankID).getPrefix() + name, skinOption, null);
-            FoxRank.getInstance().getServer().getPluginManager().callEvent(new PlayerNicknameEvent(player, name, Rank.ofString(rankID)));
+            FoxRank.getInstance().setTeam(player, rankID);
+            Logging.addLogEntry(EntryType.NICKNAME, player.getUniqueId(), null, null, Rank.of(rankID).getPrefix() + name, skinOption, null);
+            FoxRank.getInstance().getServer().getPluginManager().callEvent(new PlayerNicknameEvent(player, name, Rank.of(rankID)));
             ActionBar.setupActionBar(player);
-            if (FoxRank.getInstance().isVanished(player.getUniqueId())) {
+            if (FoxRank.getInstance().dm.isVanished(player.getUniqueId())) {
                 for (Player p : Bukkit.getOnlinePlayers()) {
                     p.hidePlayer(FoxRank.getInstance(), player);
                 }
@@ -245,36 +215,34 @@ public class Nick implements CommandExecutor {
     }
 
     protected static void loadSkin(Player player) {
-        if (FoxRank.getInstance().useDb) {
             GameProfile profile = ((CraftPlayer) player).getHandle().getGameProfile();
             profile.getProperties().removeAll("textures");
-            switch (FoxRank.getInstance().db.getStoredNicknameSkin(player.getUniqueId())) {
-                case "real":
-                    profile.getProperties().put("textures", getSkin(FoxRank.getInstance().getTrueName(player.getUniqueId())));
-                case "random":
-                    List<String> values = FoxRank.getInstance().getConfig().getStringList("RandomSkinValueList");
-                    List<String> signatures = FoxRank.getInstance().getConfig().getStringList("RandomSkinSignatureList");
-                    if (signatures.size() == values.size()) {
-                        int rnd = new Random().nextInt(values.size() - 1) + 1;
-                        String value = values.get(rnd);
-                        String signature = signatures.get(rnd);
-                        profile.getProperties().put("textures", new Property("textures", value, signature));
+        switch (FoxRank.getInstance().dm.getNicknameSkin(player.getUniqueId())) {
+            case "real":
+                profile.getProperties().put("textures", getSkin(FoxRank.getInstance().getTrueName(player.getUniqueId())));
+            case "random":
+                List<String> values = FoxRank.getInstance().getConfig().getStringList("RandomSkinValueList");
+                List<String> signatures = FoxRank.getInstance().getConfig().getStringList("RandomSkinSignatureList");
+                if (signatures.size() == values.size()) {
+                    int rnd = new Random().nextInt(values.size() - 1) + 1;
+                    String value = values.get(rnd);
+                    String signature = signatures.get(rnd);
+                    profile.getProperties().put("textures", new Property("textures", value, signature));
                     }
                 case "default":
                     profile.getProperties().put("textures", getSkin(null));
             }
             refreshPlayer(player);
-        }
     }
 
     protected static void refreshPlayer(Player player) {
         for (Player p : Bukkit.getOnlinePlayers()) {
             ServerPlayer sp = ((CraftPlayer) p).getHandle();
             ServerGamePacketListenerImpl connection = sp.connection;
-            connection.send(new ClientboundPlayerInfoPacket(ClientboundPlayerInfoPacket.Action.REMOVE_PLAYER, ((CraftPlayer) player).getHandle()));
+            connection.send(new ClientboundPlayerInfoRemovePacket(Collections.singletonList(((CraftPlayer) player).getHandle().getUUID())));
             p.hidePlayer(FoxRank.getInstance(), player);
             p.showPlayer(FoxRank.getInstance(), player);
-            connection.send(new ClientboundPlayerInfoPacket(ClientboundPlayerInfoPacket.Action.ADD_PLAYER, ((CraftPlayer) player).getHandle()));
+            connection.send(new ClientboundPlayerInfoUpdatePacket(ClientboundPlayerInfoUpdatePacket.Action.ADD_PLAYER, ((CraftPlayer) player).getHandle()));
         }
     }
 
@@ -298,16 +266,17 @@ public class Nick implements CommandExecutor {
 
     protected static void createAnvil(Player p) {
         new AnvilGUI.Builder()
-                .onClose(player -> {
-                })
-                .onComplete((player, text) -> {
-
-                    finalizeNick(player, text);
-                    return AnvilGUI.Response.close();
+                .onClick((slot, stateSnapshot) -> {
+                    if (slot != AnvilGUI.Slot.OUTPUT) {
+                        return Collections.emptyList();
+                    }
+                    finalizeNick(stateSnapshot.getPlayer(), stateSnapshot.getText());
+                    return Collections.singletonList(AnvilGUI.ResponseAction.close());
                 })
                 .text(p.getName())
                 .itemLeft(new ItemStack(Material.NAME_TAG))
                 .title("Enter your nickname.")
+                .preventClose()
                 .plugin(FoxRank.getInstance())
                 .open(p);
     }
@@ -324,9 +293,7 @@ public class Nick implements CommandExecutor {
                         } else if (args.length == 1) {
                             if (args[0].equalsIgnoreCase("random")) {
                                 List<String> names = FoxRank.getInstance().getConfig().getStringList("RandomNicknameList");
-
-                                String name = names.get(new Random().nextInt(names.size()-1) +1 );
-
+                                String name = names.get(new Random().nextInt(names.size() - 1) + 1);
                                 finalizeNick(player, name);
 
                             } else if (args[0].equalsIgnoreCase("set")) {
@@ -335,49 +302,22 @@ public class Nick implements CommandExecutor {
                                 String realName = FoxRank.getInstance().getTrueName(player.getUniqueId());
                                 changeSkin(player, realName);
                                 changeName(realName, player);
-                                if (!FoxRank.instance.isVanished(player.getUniqueId()))
+                                FoxRank.getInstance().dm.setNicknameState(player.getUniqueId(), false);
+                                if (!FoxRank.getInstance().dm.isVanished(player.getUniqueId()))
                                     refreshPlayer(player);
-                                if (FoxRank.getInstance().useDb) {
-                                    FoxRank.getInstance().db.setStoredNicknameState(player.getUniqueId(), false);
-                                } else {
-                                    File file = new File("plugins/FoxRank/PlayerData/" + player.getUniqueId() + ".yml");
-                                    YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
-                                    yml.set("isNicked", false);
-                                    try {
-                                        yml.save(file);
-                                    } catch (IOException error) {
-                                        error.printStackTrace();
-                                    }
-                                }
                             } else if (args[0].equals("agree")) {
                                 openRankBook(player);
                             }
                         } else if (args.length >= 2) {
                             if (args[0].equalsIgnoreCase("rank")) {
-                                if (args[1].equals("DEFAULT")) {
-                                    rankID = Rank.DEFAULT.getRankID();
-                                } else if (args[1].equals("VIP")) {
-                                    rankID = Rank.VIP.getRankID();
-                                } else if (args[1].equals("VIP_PLUS")) {
-                                    rankID = Rank.VIP_PLUS.getRankID();
-                                } else if (args[1].equals("MVP")) {
-                                    rankID = Rank.MVP.getRankID();
-                                } else if (args[1].equals("MVP_PLUS")) {
-                                    rankID = Rank.MVP_PLUS.getRankID();
+                                if (FoxRank.getInstance().ranks.containsKey(args[0])) {
+                                    rankID = args[0];
                                 }
                                 openSkinBook(player);
                             } else if (args[0].equalsIgnoreCase("skin")) {
                                 if(args[1].equalsIgnoreCase("real")){
-                                    File file = new File("plugins/FoxRank/PlayerData/" + player.getUniqueId() + ".yml");
-                                    YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
                                     changeSkin(player, player.getName());
-                                    yml.set("Nickname-Skin", getSkin(player.getName()));
                                     skinOption = "real";
-                                    try {
-                                        yml.save(file);
-                                    } catch (IOException error) {
-                                        error.printStackTrace();
-                                    }
                                 } else if (args[1].equalsIgnoreCase("default")) {
                                     changeSkin(player, null);
                                     skinOption = "default";
@@ -396,7 +336,7 @@ public class Nick implements CommandExecutor {
 
                                         skinOption = "random";
                                     } else {
-                                        Bukkit.getLogger().log(Level.SEVERE, "Values of RandomSkinSignatureList and RandomSkinValueList are not identical in size");
+                                        Bukkit.getLogger().log(Level.SEVERE, "Values of RandomSkinSignatureList and RandomSkinValueList are not identical in size. This is NOT a problem with the plugin. It is a configuration eror.");
                                         changeSkin(player, null);
                                     }
                                 }

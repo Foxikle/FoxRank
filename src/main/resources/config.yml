@@ -8,7 +8,7 @@
 #                                                                                               |___/
 #
 #
-# Welcome to the FoxRank Config file. There are a few rules when editing YML files.
+# Welcome to the FoxRank Config file. There are a few rules when editing YML or YAML files.
 # 1. NEVER, EVER use tabs. Always use 2 spaces.
 # 2. A '#' means the line is commented out. The server will ignore the line.
 # 3. If you delete a portion of the config, you can delete the 'config.yml' and a new one
@@ -234,13 +234,13 @@ PermBanMessageFormat: §cYou are permanantly banned from $SERVER_NAME!\n\n§7Rea
 # SilentBanSenderMessage: -> The message sent to the player who silently banned. (($PLAYER Player banned), ($REASON reason for ban), Supports § colors)
 SilentBanSenderMessage: §c$PLAYER was silently banned for $REASON
 
-# SecurityBanSenderMessage: -> The message sent to the player who banned. (($PLAYER Player banned), ($REASON reason for ban), Supports § colors)
-SecurityBanSenderMessage: §c$PLAYER was silently banned for SECURITY.
-
 # BanSenderMessage: -> The message sent to the player who banned. (($PLAYER Player banned), ($REASON reason for ban), Supports § colors)
 BanSenderMessage: §c$PLAYER was banned for $REASON
 
-# BanReasons -> These allow you to customize your ban reasons.
+# NoPresetBanReason: -> The message sent when there was no preset ban reason. ($PRESET Preset used)
+NoPresetBanReason: §c'$PRESET' is not a valid preset!
+
+# BanReasons -> These allow you to customize your preset ban reasons.
 BanReasons:
   SECURITY: Suspicious activity has been detected on your account.
   HACKING: Cheating through the use of unfair game mechanics. (Hacking)
@@ -317,6 +317,9 @@ RankIsNowMessage: §aYour rank is now $RANK
 
 # ServerName -> Name of server to put into the ban message
 ServerName: The FoxRank Server
+
+# DisableChatFormatting -> Should FoxRank format chat messages?
+DisableChatFormatting: true
 
 # -------------------------------------------------------------------------
 #   _____    ____    _          _____        _        _

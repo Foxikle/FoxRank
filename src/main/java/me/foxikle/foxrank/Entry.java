@@ -11,16 +11,10 @@ import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 
-public class Entry implements Serializable {
-    private final EntryType type;
-    private final UUID involved;
-    private final UUID staff;
-    private final Instant duration;
-    private final Instant time;
-    private final String option1;
-    private final String option2;
-    private final String id;
+import static me.foxikle.foxrank.EntryType.BAN;
 
+public record Entry(EntryType type, UUID involved, Instant time, Instant duration, String option1, String option2,
+                    UUID staff, String id) implements Serializable {
     public Entry(@Nonnull EntryType type, @Nonnull UUID involved, @Nonnull Instant time, @Nullable Instant duration, @Nullable String option1, @Nullable String option2, @Nullable UUID staff, @Nullable String id) {
         this.type = type;
         this.involved = involved;
@@ -32,13 +26,13 @@ public class Entry implements Serializable {
         this.id = id;
     }
 
-    protected static Entry deserialize(String s) throws IllegalArgumentException, SerializationException {
+    public static Entry deserialize(String s) throws IllegalArgumentException, SerializationException {
         List<String> list = Arrays.asList(s.split("%")); // WATCH OUT FOR ERRORS HERE !!!!!
         if (list.size() >= 5) {
-            switch (Objects.requireNonNull(EntryType.ofString(list.get(0)))) {
+            switch (Objects.requireNonNull(EntryType.valueOf(list.get(0)))) {
                 case BAN -> {
                     if (list.size() >= 8) {
-                        return new Entry(EntryType.BAN, UUID.fromString(list.get(1)), Instant.parse(list.get(4)), Instant.parse(list.get(5)), list.get(6), list.get(7), UUID.fromString(list.get(2)), list.get(3));
+                        return new Entry(BAN, UUID.fromString(list.get(1)), Instant.parse(list.get(4)), Instant.parse(list.get(5)), list.get(6), list.get(7), UUID.fromString(list.get(2)), list.get(3));
                     }
                     throw new IllegalArgumentException("Expected 8 arguments but found " + list.size());
                 }
@@ -66,44 +60,12 @@ public class Entry implements Serializable {
         throw new SerializationException("String \n" + s + "\n is not deserializable");
     }
 
-    public EntryType getType() {
-        return type;
-    }
-
-    public Instant getDuration() {
-        return duration;
-    }
-
-    public Instant getTime() {
-        return time;
-    }
-
-    public String getId() {
-        return id;
-    }
-
-    public String getOption1() {
-        return option1;
-    }
-
-    public String getOption2() {
-        return option2;
-    }
-
-    public UUID getInvolved() {
-        return involved;
-    }
-
-    public UUID getStaff() {
-        return staff;
-    }
-
     @Override
     public String toString() {
         return serialize();
     }
 
-    protected String serialize() {
+    public String serialize() {
         String s = "%";
         return switch (type) {
             case BAN ->

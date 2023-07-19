@@ -50,7 +50,7 @@ public class PluginChannelListener implements PluginMessageListener {
                 DataInputStream msgin = new DataInputStream(new ByteArrayInputStream(msgbytes));
                 String somedata = msgin.readUTF();
                 if (somedata.equals("updateData")) {
-                    FoxRank.getInstance().loadRank(player);
+                    FoxRank.getInstance().setRank(player, FoxRank.getInstance().dm.getStoredRank(player.getUniqueId()));
                 }
             } catch (IOException e) {
                 e.printStackTrace();

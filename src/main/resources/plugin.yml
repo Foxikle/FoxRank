@@ -1,8 +1,9 @@
 name: FoxRank
-version: ${project.version}
+version: 1.9.4
 main: me.foxikle.foxrank.FoxRank
-api-version: 1.19
-prefix: FoxRank
+api-version: '1.20'
+description: ''
+prefix: 'FoxRank'
 authors: [ Foxikle ]
 commands:
   setrank:

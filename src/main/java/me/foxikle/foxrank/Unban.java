@@ -2,17 +2,17 @@ package me.foxikle.foxrank;
 
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
-import org.bukkit.OfflinePlayer;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
-import org.bukkit.command.TabExecutor;
+import org.bukkit.command.TabCompleter;
 import org.bukkit.entity.Player;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
-public class Unban implements CommandExecutor, TabExecutor {
+public class Unban implements CommandExecutor, TabCompleter {
     public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
         if (label.equalsIgnoreCase("unban")) {
             if (sender instanceof Player player) {
@@ -45,10 +45,10 @@ public class Unban implements CommandExecutor, TabExecutor {
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String label, String[] args) {
         if (args.length == 1) {
-            List<OfflinePlayer> list = FoxRank.getInstance().getBannedPlayers();
+            List<UUID> list = FoxRank.getInstance().dm.getBannedPlayers();
             List<String> returnme = new ArrayList<>();
-            for (OfflinePlayer op : list) {
-                returnme.add(op.getName());
+            for (UUID uuid : list) {
+                returnme.add(Bukkit.getOfflinePlayer(uuid).getName());
             }
             return returnme;
         } else {

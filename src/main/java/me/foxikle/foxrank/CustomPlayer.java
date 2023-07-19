@@ -45,4 +45,6 @@ interface CustomPlayer {
     Instant getMuteDuration();
 
     String getFormattedMuteDuration();
+
+    void setRank(String rankID);
 }
