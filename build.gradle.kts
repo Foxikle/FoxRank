@@ -3,20 +3,23 @@ plugins {
     `maven-publish`
     id("io.papermc.paperweight.userdev") version "1.5.5"
     id("xyz.jpenilla.run-paper") version "2.1.0"
+    id("com.github.johnrengelman.shadow") version "8.1.1"
 }
 
 repositories {
     mavenLocal()
     maven("https://repo.maven.apache.org/maven2/")
+    maven("https://repo.codemc.io/repository/maven-snapshots/")
 }
 
 dependencies {
     paperweight.paperDevBundle("1.20-R0.1-SNAPSHOT")
-    api("net.wesjd:anvilgui:1.6.6-SNAPSHOT")
+    api("net.wesjd:anvilgui:1.7.0-SNAPSHOT")
+    implementation("org.bstats:bstats-bukkit:3.0.2")
 }
 
 group = "me.foxikle"
-version = "1.9.5"
+version = "1.9.6"
 description = "FoxRank"
 java.sourceCompatibility = JavaVersion.VERSION_16
 
@@ -25,10 +28,10 @@ publishing {
         from(components["java"])
     }
 }
-
 tasks {
     assemble {
         dependsOn(reobfJar)
+        dependsOn(shadowJar)
     }
 
     compileJava {
@@ -50,6 +53,11 @@ tasks {
         filesMatching("plugin.yml") {
             expand(props)
         }
+    }
+
+    shadowJar {
+        relocate("org.bstats", "dev.foxikle.dependencies.bstats")
+        relocate("net.wesjd.anvilgui", "dev.foxikle")
     }
 
     reobfJar {

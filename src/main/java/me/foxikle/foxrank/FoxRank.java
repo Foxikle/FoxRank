@@ -4,6 +4,7 @@ import com.google.common.collect.Iterables;
 import com.google.gson.JsonParser;
 import me.foxikle.foxrank.Data.DataManager;
 import me.foxikle.foxrank.events.RankChangeEvent;
+import org.bstats.bukkit.Metrics;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.configuration.file.FileConfiguration;
@@ -103,6 +104,7 @@ public class FoxRank extends JavaPlugin implements Listener {
         getCommand("unban").setExecutor(new Unban());
 
         Bukkit.getServicesManager().register(FoxRank.class, this, this, ServicePriority.Normal);
+        Metrics metrics = new Metrics(this, 19157);
     }
 
     @Override
