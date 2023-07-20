@@ -2,7 +2,6 @@ package me.foxikle.foxrank.Data;
 
 import com.google.gson.JsonParser;
 import me.foxikle.foxrank.*;
-import me.foxikle.foxrank.events.RankChangeEvent;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.OfflinePlayer;
@@ -105,23 +104,8 @@ public class DataManager {
     }
 
     public void setStoredRank(UUID uuid, Rank rank) {
-        Player player = Bukkit.getPlayer(uuid);
-        if (player != null) {
-            // setting the rank in memory
-            Bukkit.getScheduler().runTask(plugin, () -> plugin.getServer().getPluginManager().callEvent(new RankChangeEvent(player, rank, plugin.getRank(player))));
-            plugin.playerRanks.put(player, rank);
-            // dealing with visual things that requires a player to be online
-            if (plugin.disableRankVis) {
-                player.setDisplayName(player.getName());
-                player.setPlayerListName(player.getDisplayName());
-            } else {
-                player.setDisplayName(rank.getPrefix() + player.getName());
-                player.setPlayerListName(rank.getPrefix() + player.getName());
-            }
-        }
-        // actually storing the rank.
         if (useDatabase) {
-            db.setStoredRank(player.getUniqueId(), rank);
+            db.setStoredRank(uuid, rank);
         } else {
             File file = new File("plugins/FoxRank/PlayerData/" + uuid + ".yml");
             YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
@@ -144,7 +128,7 @@ public class DataManager {
         Map<Rank, Integer> rankMappy = new HashMap<>();
         for (String str : keys) {
             ConfigurationSection section = yml.getConfigurationSection(str);
-            Rank rank = new Rank(section.getInt("powerLevel"), ChatColor.translateAlternateColorCodes('&', section.getString("prefix")), section.getString("id"), ChatColor.getByChar(section.getString("color").charAt(0)), ChatColor.getByChar(section.getString("ChatTextColor")));
+            Rank rank = new Rank(section.getInt("powerLevel"), ChatColor.translateAlternateColorCodes('&', section.getString("prefix")), section.getString("id"), ChatColor.getByChar(section.getString("color").charAt(0)), ChatColor.getByChar(section.getString("ChatTextColor")), section.getBoolean("nicknamable"));
             powerlevelMappy.put(rank.getId(), rank.getPowerlevel());
             rankMappy.put(rank, rank.getPowerlevel());
         }
@@ -488,6 +472,7 @@ public class DataManager {
     }
 
     public void handleEventMessage(AsyncPlayerChatEvent e) {
+        e.setCancelled(true);
         String eventMessage = e.getMessage();
         Player player = e.getPlayer();
         UUID uuid = player.getUniqueId();
@@ -513,25 +498,22 @@ public class DataManager {
             if (db.getStoredNicknameStatus(uuid)) {
                 Rank rank = db.getStoredNicknameRank(uuid);
                 String nick = db.getStoredNickname(uuid);
-                if (!plugin.disableRankVis) {
-                    if (rank == plugin.getDefaultRank()) {
-                        e.setFormat(rank.getColor() + nick + ": " + rank.getTextColor() + eventMessage);
-                    } else {
-                        e.setFormat(rank.getPrefix() + e.getPlayer().getName() + ChatColor.RESET + ": " + rank.getTextColor() + eventMessage);
-                    }
+                if (plugin.disableRankVis) {
+                    Bukkit.broadcastMessage(nick + ": " + e.getMessage());
                 } else {
-                    e.setFormat(nick + ": " + e.getMessage());
+                    Bukkit.broadcastMessage(rank.getPrefix() + e.getPlayer().getName() + ChatColor.RESET + ": " + rank.getTextColor() + eventMessage);
                 }
             } else {
                 Rank rank = plugin.getRank(player);
                 if (!plugin.disableRankVis) {
+
                     if (plugin.getRank(player) != plugin.getDefaultRank()) {
-                        e.setFormat(rank.getPrefix() + player.getName() + ChatColor.RESET + ": " + rank.getTextColor() + eventMessage);
+                        Bukkit.broadcastMessage(rank.getPrefix() + player.getName() + ChatColor.RESET + ": " + rank.getTextColor() + eventMessage);
                     } else if (plugin.getRank(player) == plugin.getDefaultRank()) {
-                        e.setFormat(plugin.getRank(player).getPrefix() + player.getName() + ChatColor.RESET + plugin.getDefaultRank().getTextColor() + ": " + eventMessage);
+                        Bukkit.broadcastMessage(plugin.getRank(player).getPrefix() + player.getDisplayName() + ChatColor.RESET + plugin.getDefaultRank().getTextColor() + ": " + eventMessage);
                     }
                 } else {
-                    e.setFormat(player.getName() + ": " + e.getMessage());
+                    Bukkit.broadcastMessage(player.getName() + ": " + e.getMessage());
                 }
             }
         } else {
@@ -560,22 +542,22 @@ public class DataManager {
                 String nick = yml.getString("Nickname");
                 if (!plugin.disableRankVis) {
                     if (rank == plugin.getDefaultRank()) {
-                        e.setFormat(rank.getColor() + nick + ": " + rank.getTextColor() + eventMessage);
+                        Bukkit.broadcastMessage(rank.getColor() + nick + ": " + rank.getTextColor() + eventMessage);
                     } else {
-                        e.setFormat(rank.getPrefix() + e.getPlayer().getName() + ChatColor.RESET + ": " + rank.getTextColor() + eventMessage);
+                        Bukkit.broadcastMessage(rank.getPrefix() + e.getPlayer().getName() + ChatColor.RESET + ": " + rank.getTextColor() + eventMessage);
                     }
                 } else {
-                    e.setFormat(nick + ": " + e.getMessage());
+                    Bukkit.broadcastMessage(nick + ": " + e.getMessage());
                 }
             } else {
                 if (!plugin.disableRankVis) {
                     if (plugin.getRank(player) != plugin.getDefaultRank()) {
-                        e.setFormat(plugin.getRank(player).getPrefix() + player.getName() + ChatColor.RESET + ": " + e.getMessage());
+                        Bukkit.broadcastMessage(plugin.getRank(player).getPrefix() + player.getName() + ChatColor.RESET + ": " + e.getMessage());
                     } else if (plugin.getRank(player) == plugin.getDefaultRank()) {
-                        e.setFormat(plugin.getRank(player).getPrefix() + player.getName() + ChatColor.RESET + ": " + plugin.getDefaultRank().getTextColor() + e.getMessage());
+                        Bukkit.broadcastMessage(plugin.getRank(player).getPrefix() + player.getName() + ChatColor.RESET + ": " + plugin.getDefaultRank().getTextColor() + e.getMessage());
                     }
                 } else {
-                    e.setFormat(player.getName() + ": " + e.getMessage());
+                    Bukkit.broadcastMessage(player.getName() + ": " + e.getMessage());
                 }
             }
         }
