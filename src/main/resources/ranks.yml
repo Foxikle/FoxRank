@@ -17,11 +17,12 @@
 #
 # Ranks follow the following format:
 #    <RANK_NAME>:
-#      prefix: '&cR&6A&eI&aN&1B&dO&5W '
-#      powerLevel: 1
-#      id: '<RANK_NAME>'
-#      color: 'c'
-#      ChatTextColor: 'f'
+#      prefix: '&cR&6A&eI&aN&1B&dO&5W '    ~ The visible prefix of the rank
+#      powerLevel: 1                       ~ The powerlevel associated with the rank (internal permissions)
+#      id: '<RANK_NAME>'                   ~ The ID of the rank
+#      color: 'c'                          ~ The color to make the player's name
+#      ChatTextColor: 'f'                  ~ The color or their chat messages
+#      nicknamable: false                  ~ If the rank should be accessable to the /nick command
 # A few notes:
 #  - Having the same rank name as the id is generally useful.
 #  - The color should be JUST the letter/number. A complete
@@ -38,57 +39,67 @@ Ranks:
     id: 'OWNER'
     color: 'c'
     ChatTextColor: 'f'
+    nicknamable: false
   ADMIN:
     prefix: '&c[ADMIN] '
     powerLevel: 90
     id: 'ADMIN'
     color: 'c'
     ChatTextColor: 'f'
+    nicknamable: false
   MODERATOR:
     prefix: '&2[MOD] '
     powerLevel: 80
     id: 'MODERATOR'
     color: '2'
     ChatTextColor: 'f'
+    nicknamable: false
   HELPER:
     prefix: '&9[HELPER] '
     powerLevel: 75
     id: 'HELPER'
     color: '9'
     ChatTextColor: 'f'
+    nicknamable: false
   YOUTUBE:
     prefix: '&c[&fYOUTUBE&c] '
     powerLevel: 70
     id: 'YOUTUBE'
     color: 'c'
     ChatTextColor: 'f'
+    nicknamable: false
   MVP_PLUS:
     prefix: '&b[MVP&6+&b] '
     powerLevel: 65
     id: 'MVP_PLUS'
     color: 'b'
     ChatTextColor: 'f'
+    nicknamable: true
   MVP:
     prefix: '&b[MVP] '
     powerLevel: 60
     id: 'MVP'
     color: 'b'
     ChatTextColor: 'f'
+    nicknamable: true
   VIP_PLUS:
     prefix: '&a[VIP&6+&a] '
     powerLevel: 35
     id: 'VIP_PLUS'
     color: 'a'
     ChatTextColor: 'f'
+    nicknamable: true
   VIP:
     prefix: '&a[VIP] '
     powerLevel: 30
     id: 'VIP'
     color: 'a'
     ChatTextColor: 'f'
+    nicknamable: true
   DEFAULT:
-    prefix: '&7'
+    prefix: ''
     powerLevel: 1
     id: 'DEFAULT'
     color: '7'
     ChatTextColor: '7'
+    nicknamable: true
