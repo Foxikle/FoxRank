@@ -7,10 +7,7 @@ import com.mojang.authlib.properties.Property;
 import me.foxikle.foxrank.events.PlayerNicknameEvent;
 import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.api.chat.*;
-import net.minecraft.network.protocol.game.ClientboundPlayerInfoRemovePacket;
-import net.minecraft.network.protocol.game.ClientboundPlayerInfoUpdatePacket;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.server.network.ServerGamePacketListenerImpl;
 import net.wesjd.anvilgui.AnvilGUI;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -72,10 +69,12 @@ public class Nick implements CommandExecutor {
         textCompnent.setColor(ChatColor.BLACK);
 
         for (Rank rank : FoxRank.getInstance().ranks.values()) {
-            TextComponent component = new TextComponent("\n\n »" + rank.getId());
-            component.setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/nick rank " + rank.getId()));
-            component.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new ComponentBuilder("Click to chose " + rank.getId()).color(ChatColor.GREEN).create()));
-            textCompnent.addExtra(textCompnent);
+            if (rank.isNicknameable()) {
+                TextComponent component = new TextComponent(ChatColor.BLACK + "\n » " + (rank.getPrefix().isBlank() ? rank.getColor() + rank.getId() : rank.getPrefix()));
+                component.setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/nick rank " + rank.getId()));
+                component.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new ComponentBuilder("Click to choose " + rank.getId()).color(rank.getColor().asBungee()).create()));
+                textCompnent.addExtra(component);
+            }
         }
 
         BaseComponent[] pages = new BaseComponent[]{textCompnent};
@@ -117,7 +116,7 @@ public class Nick implements CommandExecutor {
         player.openBook(book);
     }
 
-    protected static void openNameBook(Player player) {
+    protected static void openNameBook(Player player) { //TODO: make this better
 
         ItemStack nickbook1 = new ItemStack(Material.WRITTEN_BOOK);
         BookMeta meta = (BookMeta) nickbook1.getItemMeta();
@@ -237,12 +236,8 @@ public class Nick implements CommandExecutor {
 
     protected static void refreshPlayer(Player player) {
         for (Player p : Bukkit.getOnlinePlayers()) {
-            ServerPlayer sp = ((CraftPlayer) p).getHandle();
-            ServerGamePacketListenerImpl connection = sp.connection;
-            connection.send(new ClientboundPlayerInfoRemovePacket(Collections.singletonList(((CraftPlayer) player).getHandle().getUUID())));
             p.hidePlayer(FoxRank.getInstance(), player);
             p.showPlayer(FoxRank.getInstance(), player);
-            connection.send(new ClientboundPlayerInfoUpdatePacket(ClientboundPlayerInfoUpdatePacket.Action.ADD_PLAYER, ((CraftPlayer) player).getHandle()));
         }
     }
 
@@ -260,6 +255,7 @@ public class Nick implements CommandExecutor {
             String signature = property.get("signature").getAsString();
             return new Property("textures", value, signature);
         } catch (Exception e) {
+            Bukkit.broadcastMessage("borangutan!");
             return new Property("textures", "ewogICJ0aW1lc3RhbXAiIDogMTYyMjAwNzA2NTgyNiwKICAicHJvZmlsZUlkIiA6ICJjOTAzOGQzZjRiMTg0M2JiYjUwNTU5ZGE3MWFjMTk2MiIsCiAgInByb2ZpbGVOYW1lIiA6ICJUQk5SY29vbGNhdCIsCiAgInNpZ25hdHVyZVJlcXVpcmVkIiA6IHRydWUsCiAgInRleHR1cmVzIiA6IHsKICAgICJTS0lOIiA6IHsKICAgICAgInVybCIgOiAiaHR0cDovL3RleHR1cmVzLm1pbmVjcmFmdC5uZXQvdGV4dHVyZS8zYjA1ZjJlYjM1MmY2YzJlNWM5MThjNzQ4MjU2ZDIzMWFjNzEyODE5NDhlNWFmNzRkMTQ2YTg4ZDc3NTBmNDkwIgogICAgfQogIH0KfQ==", "YpxtT6K8I3+nVvc2fr0m3CLyi2FcuMCIFNK7Z233P0LUWdTlmvQazHSXbpGe2LWBwGAF3snKry9UAuPSYHWWfJ1ygOWrqeyDeM3JT6Cv+QAmqFj3NJZbXF2NP9a1csH2v8hgQvvhJV1hLukGTu301zQnKBiZoYk8tKuFbfqwIXdKevyDoc0dTo9P91O7ZychEFOjKiEWbetQWhOpzwzGOnaynToeC8WkSvoQ3vzuhtEx3emjVzcGGGozkeGTygbeny9kDtBGXzBQJ7uEui8XtaXRwSoQj2cUMQ0KNsQNRNdo9I1BymYvxxqxJtc8AnW2ubccXMxWlABNIGgX5mrbKMOlRa/y1y/zDK1hbA9beQUm7ljP38O4eMUrFkAYkNNoOnFQrmAddofhpqDtJPwSk/rYlALl61qPqk3t9xKcR2b3Vi/gnV/r8pG0B3oo3KFZVJ6qzXVE/rmh/bfRL5HMJX5lZ+NCCvi3eo9ckJjQDdHOo8fgvAxvwBqNvdHCceioR7XgWOpAFr0Ns6MNsJIYFoiMscQQj0OI694MdtOnmQSTuozlm/oBxObiFfR4fsOW3oH2xS/HzrF3S6U3ydY0AmpBvEv7IJOJEwOoHFd2kNKnD7vOT0+jllk9D06dnB0euDiuIhRZgY6d2UXoeR/bFxD3XLndjuG7oBZcFxq0+18=");
         }
     }
@@ -308,14 +304,14 @@ public class Nick implements CommandExecutor {
                             } else if (args[0].equals("agree")) {
                                 openRankBook(player);
                             }
-                        } else if (args.length >= 2) {
+                        } else {
                             if (args[0].equalsIgnoreCase("rank")) {
-                                if (FoxRank.getInstance().ranks.containsKey(args[0])) {
-                                    rankID = args[0];
+                                if (FoxRank.getInstance().ranks.containsKey(args[1])) {
+                                    rankID = args[1];
                                 }
                                 openSkinBook(player);
                             } else if (args[0].equalsIgnoreCase("skin")) {
-                                if(args[1].equalsIgnoreCase("real")){
+                                if (args[1].equalsIgnoreCase("real")) {
                                     changeSkin(player, player.getName());
                                     skinOption = "real";
                                 } else if (args[1].equalsIgnoreCase("default")) {
