@@ -9,13 +9,15 @@ public class Rank {
     private final String id;
     private final ChatColor color;
     private final ChatColor textColor;
+    private final boolean nicknameable;
 
-    public Rank(int pwrlvl, String prefix, String id, ChatColor color, ChatColor textColor) {
+    public Rank(int pwrlvl, String prefix, String id, ChatColor color, ChatColor textColor, boolean nicknameable) {
         this.pwrlvl = pwrlvl;
         this.prefix = prefix;
         this.id = id;
         this.color = color;
         this.textColor = textColor;
+        this.nicknameable = nicknameable;
     }
 
     public static Rank of(String str) {
@@ -44,5 +46,9 @@ public class Rank {
 
     public ChatColor getTextColor() {
         return textColor;
+    }
+
+    public boolean isNicknameable() {
+        return nicknameable;
     }
 }
