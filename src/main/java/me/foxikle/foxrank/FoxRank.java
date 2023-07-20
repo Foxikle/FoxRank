@@ -3,6 +3,7 @@ package me.foxikle.foxrank;
 import com.google.common.collect.Iterables;
 import com.google.gson.JsonParser;
 import me.foxikle.foxrank.Data.DataManager;
+import me.foxikle.foxrank.events.RankChangeEvent;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.configuration.file.FileConfiguration;
@@ -56,6 +57,8 @@ public class FoxRank extends JavaPlugin implements Listener {
     }
 
     public void setRank(Player player, Rank rank) {
+        if (getRank(player) != null)
+            this.getServer().getPluginManager().callEvent(new RankChangeEvent(player, rank, getRank(player)));
         playerRanks.put(player, rank);
         dm.setStoredRank(player.getUniqueId(), rank);
         setTeam(player, rank.getId());
