@@ -1,5 +1,5 @@
 name: FoxRank
-version: 1.9.4
+version: ${version}
 main: me.foxikle.foxrank.FoxRank
 api-version: '1.20'
 description: ''
