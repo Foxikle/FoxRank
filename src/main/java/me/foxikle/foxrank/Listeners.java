@@ -44,11 +44,11 @@ public class Listeners implements Listener {
     public void OnPlayerLogin(PlayerJoinEvent e) {
         //TODO: This should probably be re-worked ._.
         Player p = e.getPlayer();
+        plugin.dm.setupPlayerInfoStorage(p);
         plugin.dm.updatePlayerName(e.getPlayer());
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
             plugin.setRank(p, plugin.dm.getStoredRank(p.getUniqueId()));
             ActionBar.setupActionBar(p);
-            plugin.setTeam(e.getPlayer(), plugin.getRank(e.getPlayer()).getId());
             if (plugin.dm.isMuted(p.getUniqueId())) {
                 if (plugin.dm.getMuteDuration(p.getUniqueId()).isBefore(Instant.now())) {
                     ModerationAction.unmutePlayer(new RankedPlayer(p, plugin), new RankedPlayer(p, plugin));
@@ -67,10 +67,9 @@ public class Listeners implements Listener {
                 plugin.setTeam(p, plugin.dm.getNicknameRank(p.getUniqueId()).getId());
             }
             if (plugin.dm.isVanished(p.getUniqueId())) {
-                plugin.vanishedPlayers.add(p);
-                for (Player player : plugin.vanishedPlayers) {
-                    player.hidePlayer(plugin, p);
-                }
+                Bukkit.getScheduler().runTask(plugin, () -> {
+                    Vanish.vanishPlayer(p);
+                });
             }
         });
         for (Player player : plugin.vanishedPlayers) {
