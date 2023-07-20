@@ -23,9 +23,9 @@ public class RankedPlayer implements CustomPlayer {
 
     public RankedPlayer(Player player, FoxRank instance) {
         this.player = player;
-        this.rankID = FoxRank.getInstance().getRank(player).getId();
+        this.rankID = instance.getRank(player) == null ? instance.getDefaultRank().getId() : instance.getRank(player).getId();
         this.instance = instance;
-        this.pwrlvl = FoxRank.getInstance().getRank(player).getPowerlevel();
+        this.pwrlvl = instance.getRank(player) == null ? instance.getDefaultRank().getPowerlevel() : instance.getRank(player).getPowerlevel();
     }
 
     /**
