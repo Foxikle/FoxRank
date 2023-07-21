@@ -39,13 +39,12 @@ public class Ban implements CommandExecutor, TabCompleter {
         if (label.equalsIgnoreCase("ban")) {
             if (sender instanceof Player banner) {
                 RankedPlayer staff = new RankedPlayer(banner, plugin);
-                if (staff.getPowerLevel() >= yml.getInt("BanPermissions")) {
                     if (args.length >= 4) {
                         if (Bukkit.getServer().getPlayer(args[0]) != null) {
                             Player banee = Bukkit.getServer().getPlayer(args[0]);
                             RankedPlayer baneeRp = new RankedPlayer(banee, plugin);
-                            if (baneeRp.getPowerLevel() >= staff.getPowerLevel()) {
-                                staff.sendMessage(ChatColor.translateAlternateColorCodes('§', yml.getString("BanPlayerWithHigherPowerLevelMessage")));
+                            if (banee.hasPermission("foxrank.moderation.ban.immune") || baneeRp.getPowerLevel() >= staff.getPowerLevel()) {
+                                staff.sendMessage(ChatColor.translateAlternateColorCodes('§', yml.getString("CannotBanPlayerMessage")));
                             } else {
                                 ConfigurationSection section = yml.getConfigurationSection("BanReasons");
                                 if (args[1].equalsIgnoreCase("CUSTOM")) {
@@ -65,16 +64,33 @@ public class Ban implements CommandExecutor, TabCompleter {
                                     expires = Instant.now();
                                     String durStr = args[2];
                                     if (args[2].equalsIgnoreCase("-1")) {
+                                        if (!banner.hasPermission("foxrank.moderation.ban.permanent")) {
+                                            banner.sendMessage(ChatColor.translateAlternateColorCodes('§', yml.getString("NoPermissionMessage")));
+                                            return true;
+                                        }
+
                                         expires = null;
                                     } else if (args[2].contains("d")) {
+                                        if (!banner.hasPermission("foxrank.moderation.ban.temporary")) {
+                                            banner.sendMessage(ChatColor.translateAlternateColorCodes('§', yml.getString("NoPermissionMessage")));
+                                            return true;
+                                        }
                                         durStr = durStr.replace("d", "");
                                         int durInt = Integer.parseInt(durStr);
                                         expires = Instant.now().plusSeconds((long) durInt * 24 * 60 * 60);
                                     } else if (args[2].contains("h")) {
+                                        if (!banner.hasPermission("foxrank.moderation.ban.temporary")) {
+                                            banner.sendMessage(ChatColor.translateAlternateColorCodes('§', yml.getString("NoPermissionMessage")));
+                                            return true;
+                                        }
                                         durStr = durStr.replace("h", "");
                                         int durInt = Integer.parseInt(durStr);
                                         expires = Instant.now().plusSeconds((long) durInt * 60 * 60);
                                     } else if (args[2].contains("m")) {
+                                        if (!banner.hasPermission("foxrank.moderation.ban.temporary")) {
+                                            banner.sendMessage(ChatColor.translateAlternateColorCodes('§', yml.getString("NoPermissionMessage")));
+                                            return true;
+                                        }
                                         durStr = durStr.replace("m", "");
                                         int durInt = Integer.parseInt(durStr);
                                         expires = Instant.now().plusSeconds((long) durInt * 60);
@@ -102,7 +118,7 @@ public class Ban implements CommandExecutor, TabCompleter {
                                 if (banee != null) {
                                     OfflineRankedPlayer baneeRp = new OfflineRankedPlayer(banee);
                                     if (baneeRp.getPowerLevel() >= staff.getPowerLevel()) {
-                                        staff.sendMessage(ChatColor.translateAlternateColorCodes('§', yml.getString("BanPlayerWithHigherPowerLevelMessage")));
+                                        staff.sendMessage(ChatColor.translateAlternateColorCodes('§', yml.getString("CannotBanPlayerMessage")));
                                     } else {
                                         ConfigurationSection section = yml.getConfigurationSection("BanReasons");
                                         if (section.contains(args[1])) {
@@ -115,16 +131,32 @@ public class Ban implements CommandExecutor, TabCompleter {
                                             expires = Instant.now();
                                             String durStr = args[2];
                                             if (args[1].equalsIgnoreCase("-1")) {
+                                                if (!banner.hasPermission("foxrank.moderation.ban.permanent")) {
+                                                    banner.sendMessage(ChatColor.translateAlternateColorCodes('§', yml.getString("NoPermissionMessage")));
+                                                    return true;
+                                                }
                                                 expires = null;
                                             } else if (args[2].contains("d")) {
+                                                if (!banner.hasPermission("foxrank.moderation.ban.temporary")) {
+                                                    banner.sendMessage(ChatColor.translateAlternateColorCodes('§', yml.getString("NoPermissionMessage")));
+                                                    return true;
+                                                }
                                                 durStr = durStr.replace("d", "");
                                                 int durInt = Integer.parseInt(durStr);
                                                 expires = Instant.now().plusSeconds((long) durInt * 24 * 60 * 60);
                                             } else if (args[2].contains("h")) {
+                                                if (!banner.hasPermission("foxrank.moderation.ban.temporary")) {
+                                                    banner.sendMessage(ChatColor.translateAlternateColorCodes('§', yml.getString("NoPermissionMessage")));
+                                                    return true;
+                                                }
                                                 durStr = durStr.replace("h", "");
                                                 int durInt = Integer.parseInt(durStr);
                                                 expires = Instant.now().plusSeconds((long) durInt * 60 * 60);
                                             } else if (args[2].contains("m")) {
+                                                if (!banner.hasPermission("foxrank.moderation.ban.temporary")) {
+                                                    banner.sendMessage(ChatColor.translateAlternateColorCodes('§', yml.getString("NoPermissionMessage")));
+                                                    return true;
+                                                }
                                                 durStr = durStr.replace("m", "");
                                                 int durInt = Integer.parseInt(durStr);
                                                 expires = Instant.now().plusSeconds((long) durInt * 60);
@@ -154,9 +186,6 @@ public class Ban implements CommandExecutor, TabCompleter {
                     } else {
                         plugin.sendMissingArgsMessage("/ban", "<PLAYER> <REASON> <DURATION> <SILENT/PUBLIC>", staff);
                     }
-                } else {
-                    plugin.sendNoPermissionMessage(plugin.getConfig().getInt("BanPermissions"), staff);
-                }
                 return true;
             }
         } else {
