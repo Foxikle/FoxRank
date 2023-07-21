@@ -23,7 +23,7 @@ public class SetRank implements CommandExecutor, TabCompleter {
         if (sender instanceof Player player) {
             RankedPlayer rankedPlayer = new RankedPlayer(player, FoxRank.getInstance());
             if (!FoxRank.getInstance().getConfig().getBoolean("DisableSetRank")) {
-                if (rankedPlayer.getPowerLevel() >= FoxRank.getInstance().getConfig().getInt("SetRankPermissions")) {
+                if (player.hasPermission("foxrank.ranks.setrank")) {
                     if (args.length < 1) {
                         FoxRank.getInstance().sendMissingArgsMessage("/setrank", "<rankID> [player]", new RankedPlayer(player, FoxRank.getInstance()));
                     } else if (args.length == 1) {

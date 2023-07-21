@@ -17,7 +17,7 @@ public class Unban implements CommandExecutor, TabCompleter {
         if (label.equalsIgnoreCase("unban")) {
             if (sender instanceof Player player) {
                 RankedPlayer staff = new RankedPlayer(player, FoxRank.getInstance());
-                if (staff.getPowerLevel() >= FoxRank.getInstance().getConfig().getInt("UnbanPermissions")) {
+                if (player.hasPermission("foxrank.moderation.unban")) {
                     if (args.length >= 1) {
                         Bukkit.getServer().getOfflinePlayer(args[0]);
                         OfflineRankedPlayer orp = new OfflineRankedPlayer(Bukkit.getServer().getOfflinePlayer(args[0]));

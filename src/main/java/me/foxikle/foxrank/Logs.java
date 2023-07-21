@@ -51,6 +51,10 @@ public class Logs implements CommandExecutor, TabCompleter, Listener {
                                         final DateFormat f = new SimpleDateFormat("MM/dd/yyyy hh:mm:ss a");
                                         entries = plugin.dm.getLogEntries(rp.getUniqueId());
                                         if (args[1].equalsIgnoreCase("MUTE")) {
+                                            if (!player.hasPermission("foxrank.logging.mute")) {
+                                                player.sendMessage(plugin.getConfig().getString("NoPermissionMessage"));
+                                                return;
+                                            }
                                             entries.removeIf(e -> e.type() != EntryType.MUTE);
                                             if (entries.isEmpty()) {
                                                 senderRp.sendMessage(ChatColor.translateAlternateColorCodes('§', plugin.getConfig().getString("LogsNoData").replace("$PLAYER", ChatColor.YELLOW + String.valueOf(ChatColor.ITALIC) + rp.getName()).replace("$LOGTYPE", "mute")));
@@ -75,6 +79,10 @@ public class Logs implements CommandExecutor, TabCompleter, Listener {
                                             }
                                             makeInventories("Mute", rp);
                                         } else if (args[1].equalsIgnoreCase("UNMUTE")) {
+                                            if (!player.hasPermission("foxrank.logging.unmute")) {
+                                                player.sendMessage(plugin.getConfig().getString("NoPermissionMessage"));
+                                                return;
+                                            }
                                             entries.removeIf(e -> e.type() != EntryType.UNMUTE);
                                             if (entries.isEmpty()) {
                                                 senderRp.sendMessage(ChatColor.translateAlternateColorCodes('§', plugin.getConfig().getString("LogsNoData").replace("$PLAYER", ChatColor.YELLOW + String.valueOf(ChatColor.ITALIC) + rp.getName()).replace("$LOGTYPE", "unmute")));
@@ -95,6 +103,10 @@ public class Logs implements CommandExecutor, TabCompleter, Listener {
                                             }
                                             makeInventories("Unmute", rp);
                                         } else if (args[1].equalsIgnoreCase("NICKNAME")) {
+                                            if (!player.hasPermission("foxrank.logging.nickname")) {
+                                                player.sendMessage(plugin.getConfig().getString("NoPermissionMessage"));
+                                                return;
+                                            }
                                             senderRp.sendMessage("entries size: " + entries.size());
                                             entries.removeIf(e -> e.type() != EntryType.NICKNAME);
                                             if (entries.isEmpty()) {
@@ -118,6 +130,10 @@ public class Logs implements CommandExecutor, TabCompleter, Listener {
                                             }
                                             makeInventories("Nickname", rp);
                                         } else if (args[1].equalsIgnoreCase("BAN")) {
+                                            if (!player.hasPermission("foxrank.logging.ban")) {
+                                                player.sendMessage(plugin.getConfig().getString("NoPermissionMessage"));
+                                                return;
+                                            }
                                             entries.removeIf(e -> e.type() != EntryType.BAN);
                                             if (entries.isEmpty()) {
                                                 senderRp.sendMessage(ChatColor.translateAlternateColorCodes('§', plugin.getConfig().getString("LogsNoData").replace("$PLAYER", ChatColor.YELLOW + String.valueOf(ChatColor.ITALIC) + rp.getName()).replace("$LOGTYPE", "ban")));
@@ -143,6 +159,10 @@ public class Logs implements CommandExecutor, TabCompleter, Listener {
                                             }
                                             makeInventories("Ban", rp);
                                         } else if (args[1].equalsIgnoreCase("UNBAN")) {
+                                            if (!player.hasPermission("foxrank.logging.unban")) {
+                                                player.sendMessage(plugin.getConfig().getString("NoPermissionMessage"));
+                                                return;
+                                            }
                                             entries.removeIf(e -> e.type() != EntryType.UNBAN);
                                             if (entries.isEmpty()) {
                                                 senderRp.sendMessage(ChatColor.translateAlternateColorCodes('§', plugin.getConfig().getString("LogsNoData").replace("$PLAYER", ChatColor.YELLOW + rp.getName()).replace("$LOGTYPE", "unban")));

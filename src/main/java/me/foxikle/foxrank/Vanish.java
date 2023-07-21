@@ -38,7 +38,7 @@ public class Vanish implements CommandExecutor {
             if (!FoxRank.getInstance().getConfig().getBoolean("DisableVanish")) {
                 if (sender instanceof Player player) {
                     RankedPlayer rp = new RankedPlayer(player, FoxRank.getInstance());
-                    if (rp.getPowerLevel() >= FoxRank.getInstance().dm.getConfig().getInt("VanishPermissions")) {
+                    if (player.hasPermission("foxrank.vanish")) {
                         vanishPlayer(player);
                     } else {
                         FoxRank.getInstance().sendNoPermissionMessage(FoxRank.getInstance().getConfig().getInt("VanishPermissions"), rp);
