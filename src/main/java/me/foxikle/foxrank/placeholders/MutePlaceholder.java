@@ -1,0 +1,63 @@
+package me.foxikle.foxrank.placeholders;
+
+import me.clip.placeholderapi.expansion.PlaceholderExpansion;
+import me.foxikle.foxrank.FoxRank;
+import org.bukkit.OfflinePlayer;
+import org.bukkit.entity.Player;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
+import java.time.Instant;
+
+public class MutePlaceholder extends PlaceholderExpansion {
+    private final FoxRank plugin;
+
+    public MutePlaceholder(FoxRank plugin) {
+        this.plugin = plugin;
+    }
+
+    @Override
+    public @NotNull String getIdentifier() {
+        return "mute"; // %playerrank%
+    }
+
+    @Override
+    public @NotNull String getName() {
+        return "mute";
+    }
+
+    @Override
+    public @NotNull String getAuthor() {
+        return "Foxikle";
+    }
+
+    @Override
+    public @NotNull String getVersion() {
+        return "v1.9.6";
+    }
+
+    @Override
+    public boolean persist() {
+        return false;
+    }
+
+    @Override
+    public @Nullable String onPlaceholderRequest(Player player, @NotNull String params) {
+        if (params.equalsIgnoreCase("duration")) {
+            return plugin.getFormattedExpiredString(plugin.dm.getMuteDuration(player.getUniqueId()), Instant.now());
+        } else if (params.equalsIgnoreCase("reason")) {
+            return plugin.dm.getMuteReason(player.getUniqueId());
+        }
+        return null;
+    }
+
+    @Override
+    public @Nullable String onRequest(OfflinePlayer player, @NotNull String params) {
+        if (params.equalsIgnoreCase("duration")) {
+            return plugin.getFormattedExpiredString(plugin.dm.getMuteDuration(player.getUniqueId()), Instant.now());
+        } else if (params.equalsIgnoreCase("reason")) {
+            return plugin.dm.getMuteReason(player.getUniqueId());
+        }
+        return null;
+    }
+}
