@@ -1,8 +1,9 @@
 name: FoxRank
-version: ${project.version}
+version: ${version}
 main: me.foxikle.foxrank.FoxRank
-api-version: 1.19
-prefix: FoxRank
+api-version: '1.20'
+description: ''
+prefix: 'FoxRank'
 authors: [ Foxikle ]
 commands:
   setrank:
@@ -27,4 +28,180 @@ commands:
     description: A command to ban a player from the server.
   unban:
     description: A command to unban a player from the server.
+  rank:
+    description: Poggers
 load: POSTWORLD
+depend:
+  - PlaceholderAPI
+permissions:
+  foxrank.*:
+    default: false
+    description: A generic wildcard for all permissions within the plugin
+    children:
+      - foxrank.vanish
+      - foxrank.moderation.*
+      - foxrank.logging.*
+      - foxrank.nicknames.*
+      - foxrank.ranks.*
+
+  foxrank.moderation.*:
+    default: false
+    description: A wildcard for all moderation commands
+    children:
+      - foxrank.moderation.ban.*
+      - foxrank.moderation.mute.*
+
+  foxrank.moderation.ban.*:
+    default: false
+    description: A wildcard permission for all ban related commands
+    children:
+      - foxrank.moderation.ban.immune
+      - foxrank.moderation.ban.permanent
+      - foxrank.moderation.ban.temporary
+      - foxrank.moderation.unban
+
+  foxrank.moderation.ban.immune:
+    default: false
+    description: grants immunity to bans
+  foxrank.moderation.ban.temporary:
+    default: false
+    description: grants the ability to temporarily ban a player
+  foxrank.moderation.ban.permanant:
+    default: false
+    description: grants the ability to permanently mute a player
+  foxrank.moderation.unban:
+    default: false
+    description: grants the ability to ban players
+
+
+  foxrank.moderation.mute.*:
+    default: false
+    description: A wildcard permission for all ban related commands
+    children:
+      - foxrank.moderation.mute.immune
+      - foxrank.moderation.mute.permanent #TODO: add permanant mutes
+      - foxrank.moderation.mute.temporary
+      - foxrank.moderation.mute.immuted
+      - foxrank.moderation.unmute
+
+  foxrank.moderation.mute.immune:
+    default: false
+    description: grants immunity to mutes
+  foxrank.moderation.mute.temporary:
+    default: false
+    description: grants the ability to temporarily mute a player
+  foxrank.moderation.mute.permant:
+    default: false
+    description: grants the ability to permanantly mute a player
+  foxrank.moderation.unmute:
+    default: false
+    description: grants permission to unmute a player
+
+  foxrank.logging.*:
+    default: false
+    description: A wildcard for the logging command
+    children:
+      - foxrank.logging.use
+      - foxrank.logging.ban
+      - foxrank.logging.unban
+      - foxrank.logging.mute
+      - foxrank.logging.unmute
+      - foxrank.logging.nickname
+
+  foxrank.logging.ban:
+    default: false
+    description: grants permission to view ban logs
+  foxrank.logging.unban:
+    default: false
+    description: grants permission to view unban logs
+  foxrank.logging.mute:
+    default: false
+    description: grants permission to view mute logs
+  foxrank.logging.unmute:
+    default: false
+    description: grants permission to view unmute logs
+  foxrank.logging.nickname:
+    default: false
+    description: grants permission to view nickname logs
+
+  foxrank.nicknames.*:
+    default: false
+    description: A wildcard for using nicknames
+    children:
+      - foxrank.nicknames.use
+      - foxrank.nicknames.skin.real
+      - foxrank.nicknames.skin.default
+      - foxrank.nicknames.skin.random
+      - foxrank.nicknames.name.custom
+      - foxrank.nicknames.name.random
+
+  foxrank.nicknames.use:
+    default: false
+    description: grants access to the nickname system
+  foxrank.nicknames.skin.real:
+    default: false
+    description: Grants permission to use the real skin for a nickname
+  foxrank.nicknames.skin.default:
+    default: false
+    description: Grants permission to use a default (steve, alex, zari, etc) skin for a nickname
+  foxrank.nicknames.skin.random:
+    default: false
+    description: Grants permission to use a random skin for a nickname
+  foxrank.nicknames.name.random:
+    default: false
+    description: Grants permission to use a random name
+  foxrank.nicknames.name.custom:
+    default: false
+    description: Grants permission to use a custom name
+
+  foxrank.ranks.*:
+    default: false
+    description: A wildcard permission to manage ranks
+    children:
+      - foxrank.ranks.setrank
+      - foxrank.ranks.create
+      - foxrank.ranks.remove
+      - foxrank.ranks.modify.*
+  foxrank.ranks.setrank:
+    default: false
+    description: Grants permission to set a users rank
+  foxrank.ranks.create:
+    default: false
+    description: Grants permission to create new ranks
+  foxrank.ranks.remove:
+    default: false
+    description: Grants permission to remove ranks
+
+  foxrank.ranks.modify.*:
+    default: false
+    description: A wildcard permission for rank modification
+    children:
+      - foxrank.ranks.modify.color
+      - foxrank.ranks.modify.textcolor
+      - foxrank.ranks.modify.powerlevel
+      - foxrank.ranks.modify.prefix
+      - foxrank.ranks.modify.addpermission
+      - foxrank.ranks.modify.removepermission
+
+  foxrank.ranks.modify.color:
+    default: false
+    description: the permission to modify rank colors
+  foxrank.ranks.modify.textcolor:
+    default: false
+    description: the permission to modify a rank's textcolor
+  foxrank.ranks.modify.powerlevel:
+    default: false
+    description: the permission to modify a rank's powerlevel
+  foxrank.ranks.modify.prefix:
+    default: false
+    description: the permission to modify a rank's prefix
+  foxrank.ranks.modify.addpermission:
+    default: false
+    description: the permission to modify rank colors
+  foxrank.ranks.modify.removepermission:
+    default: false
+    description: the permission to modify rank colors
+
+  foxrank.vanish:
+    default: false
+    description: A permission to use the /vanish command

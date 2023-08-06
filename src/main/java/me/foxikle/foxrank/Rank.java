@@ -2,65 +2,75 @@ package me.foxikle.foxrank;
 
 import org.bukkit.ChatColor;
 
-public enum Rank {
-    DUMMY(ChatColor.LIGHT_PURPLE + "", 0, "DUMMY"),
-    DEFAULT(ChatColor.GRAY + "", 1, "DEFAULT"),
-    OWNER(ChatColor.RED + "[OWNER] ", 100, "OWNER"),
-    ADMIN(ChatColor.RED + "[ADMIN] ", 90, "ADMIN"),
-    MODERATOR(ChatColor.DARK_GREEN + "[MOD] ", 80, "MODERATOR"),
-    YOUTUBE(ChatColor.RED + "[" + ChatColor.WHITE + "YOUTUBE" + ChatColor.RED + "] ", 70, "YOUTUBE"),
-    TWITCH(ChatColor.DARK_PURPLE + "[" + ChatColor.WHITE + "TWITCH" + ChatColor.DARK_PURPLE + "] ", 70, "TWITCH"),
-    MVP_PLUS(ChatColor.AQUA + "[MVP" + ChatColor.WHITE + "+" + ChatColor.AQUA + "] ", 65, "MVP_PLUS"),
-    MVP(ChatColor.AQUA + "[MVP] ", 60, "MVP"),
-    VIP_PLUS(ChatColor.GREEN + "[VIP" + ChatColor.GOLD + "+" + ChatColor.GREEN + "] ", 45, "VIP_PLUS"),
-    VIP(ChatColor.GREEN + "[VIP] ", 40, "VIP");
+import javax.annotation.Nullable;
+import java.util.List;
 
+public class Rank {
+
+    private final int pwrlvl;
     private final String prefix;
-    private final int powerLevel;
-    private final String rankID;
+    private final String id;
+    private final ChatColor color;
+    private final ChatColor textColor;
+    private final boolean nicknameable;
+    private final List<String> permissionNodes;
 
-    Rank(String prefix, int powerLevel, String rankID) {
+    public Rank(int pwrlvl, String prefix, String id, ChatColor color, ChatColor textColor, boolean nicknameable, List<String> permissionNodes) {
+        this.pwrlvl = pwrlvl;
         this.prefix = prefix;
-        this.powerLevel = powerLevel;
-        this.rankID = rankID;
+        this.id = id;
+        this.color = color;
+        this.textColor = textColor;
+        this.nicknameable = nicknameable;
+        this.permissionNodes = permissionNodes;
+    }
+
+    public static Rank of(String str) {
+        if (FoxRank.getInstance().ranks.containsKey(str)) {
+            return FoxRank.getInstance().ranks.get(str);
+        } else {
+            return FoxRank.getInstance().getDefaultRank();
+        }
+    }
+
+    @Nullable
+    public static Rank ofStrict(String str) {
+        return FoxRank.getInstance().ranks.getOrDefault(str, null);
     }
 
     public String getPrefix() {
         return prefix;
     }
 
-    public String getRankID() {
-        return rankID;
+    public int getPowerlevel() {
+        return pwrlvl;
     }
 
-    public static Rank ofString(String s) {
-        if (s == null) return DEFAULT;
-        if (s.equalsIgnoreCase("DEFAULT")) {
-            return Rank.DEFAULT;
-        } else if (s.equalsIgnoreCase("OWNER")) {
-            return Rank.OWNER;
-        } else if (s.equalsIgnoreCase("ADMIN")) {
-            return Rank.ADMIN;
-        } else if (s.equalsIgnoreCase("MODERATOR")) {
-            return Rank.MODERATOR;
-        } else if (s.equalsIgnoreCase("YOUTUBE")) {
-            return Rank.YOUTUBE;
-        } else if (s.equalsIgnoreCase("TWITCH")) {
-            return Rank.TWITCH;
-        } else if (s.equalsIgnoreCase("MVP_PLUS")) {
-            return Rank.MVP_PLUS;
-        } else if (s.equalsIgnoreCase("MVP")) {
-            return Rank.MVP;
-        } else if (s.equalsIgnoreCase("VIP_PLUS")) {
-            return Rank.VIP_PLUS;
-        } else if (s.equalsIgnoreCase("VIP")) {
-            return Rank.VIP;
-        } else {
-            return Rank.DEFAULT;
-        }
+    public String getId() {
+        return id;
     }
 
-    public int getPowerLevel() {
-        return powerLevel;
+    public ChatColor getColor() {
+        return color;
+    }
+
+    public ChatColor getTextColor() {
+        return textColor;
+    }
+
+    public boolean isNicknameable() {
+        return nicknameable;
+    }
+
+    public List<String> getPermissionNodes() {
+        return permissionNodes;
+    }
+
+    public boolean addPermissionNode(String node){
+        return permissionNodes.add(node);
+    }
+
+    public boolean removePermissionNode(String node) {
+        return permissionNodes.remove(node);
     }
 }

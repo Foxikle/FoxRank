@@ -47,7 +47,7 @@ public class ModerationActionEvent extends Event {
      * </p>
      *
      * @return the rank of player
-     * @see Rank Please see the {@link me.foxikle.foxrank.Rank}
+     * @see Rank Please see the {@link Rank}
      * @since 1.8.1
      */
     public Rank getExecutorRank() {
@@ -70,8 +70,8 @@ public class ModerationActionEvent extends Event {
      * </p>
      *
      * @return the rank of moderated player
-     * @see Rank Please see the {@link me.foxikle.foxrank.Rank}
-     * @since 1.8.1
+     * @see Rank Please see the {@link Rank}
+     * @since 1.9.5
      */
     public Rank getRank() {
         return this.rank;

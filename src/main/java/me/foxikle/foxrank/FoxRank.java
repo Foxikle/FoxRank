@@ -1,88 +1,103 @@
 package me.foxikle.foxrank;
 
+import com.google.common.collect.Iterables;
 import com.google.gson.JsonParser;
+import me.clip.placeholderapi.PlaceholderAPI;
+import me.foxikle.foxrank.Data.DataManager;
+import me.foxikle.foxrank.Data.PlayerData;
 import me.foxikle.foxrank.events.RankChangeEvent;
+import me.foxikle.foxrank.placeholders.*;
+import org.bstats.bukkit.Metrics;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.OfflinePlayer;
+import org.bukkit.command.CommandSender;
+import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Listener;
+import org.bukkit.permissions.PermissionAttachment;
 import org.bukkit.plugin.ServicePriority;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scoreboard.Scoreboard;
 import org.bukkit.scoreboard.Team;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URL;
-import java.sql.SQLException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.logging.Level;
 
-import static me.foxikle.foxrank.Rank.*;
-import static org.bukkit.ChatColor.RED;
-
 public class FoxRank extends JavaPlugin implements Listener {
 
-    protected static FoxRank instance;
-    protected final boolean disableRankVis = this.getConfig().getBoolean("DisableRankVisiblity");
-    protected List<Player> vanishedPlayers = new ArrayList<>();
-    protected static PluginChannelListener pcl;
-    protected boolean useDb = this.getConfig().getBoolean("UseSQLStorage");
-    protected boolean bungeecord = false;
-    protected Database db;
-    static Map<Player, Rank> ranks = new HashMap<>();
-    private static Team DefualtTeam = null;
-    private static Team OwnerTeam = null;
-    private static Team AdminTeam = null;
-    private static Team ModeratorTeam = null;
-    private static Team YoutubeTeam = null;
-    private static Team TwitchTeam = null;
-    private static Team MvppTeam = null;
-    private static Team MvpTeam = null;
-    private static Team VippTeam = null;
-    private static Team VipTeam = null;
+    public static PluginChannelListener pcl;
+    private static FoxRank instance;
+    public boolean disableRankVis;
+    public List<Player> vanishedPlayers = new ArrayList<>();
+    public boolean bungeecord = false;
+    public Map<String, Rank> ranks = new HashMap<>();
+    public Map<Player, Rank> playerRanks = new HashMap<>();
+    public List<Team> rankTeams = new ArrayList<>();
+    public Map<String, Team> teamMappings = new HashMap<>();
+    public Map<String, Integer> powerLevels = new HashMap<>();
+    public Map<UUID, Set<PermissionAttachment>> permissions = new HashMap<>();
+
+    // placeholders
+    public Map<UUID, String> logTypeMap = new HashMap<>();
+    public Map<UUID, String> attemptedBanPresetMap = new HashMap<>();
+    public Map<UUID, UUID> banMap = new HashMap<>();
+    public Map<UUID, UUID> muteMap = new HashMap<>();
+    public Map<UUID, String> syntaxMap = new HashMap<>();
+    public Map<UUID, UUID> targetMap = new HashMap<>();
+    public Map<UUID, String> attemptedNicknameMap = new HashMap<>();
+
+    // data cache
+    private Map<UUID, PlayerData> playerData = new HashMap<>();
+    public List<UUID> bannedPlayers = new ArrayList<>();
+    public List<String> players = new ArrayList<>();
+
+    private DataManager dm;
+
     protected List<String> playerNames = new ArrayList<>();
 
     public static FoxRank getInstance() {
         return instance;
     }
 
-    protected static void setTeam(Player player, String teamID) {
+    public void setTeam(Player player, String teamID) {
         if (!getInstance().disableRankVis) {
             Scoreboard board = Bukkit.getScoreboardManager().getMainScoreboard();
             player.setScoreboard(board);
-            switch (teamID) {
-                case "OWNER" -> OwnerTeam.addEntry(player.getName());
-                case "ADMIN" -> AdminTeam.addEntry(player.getName());
-                case "MODERATOR" -> ModeratorTeam.addEntry(player.getName());
-                case "YOUTUBE" -> YoutubeTeam.addEntry(player.getName());
-                case "TWITCH" -> TwitchTeam.addEntry(player.getName());
-                case "MVP_PLUS" -> MvppTeam.addEntry(player.getName());
-                case "MVP" -> MvpTeam.addEntry(player.getName());
-                case "VIP_PLUS" -> VippTeam.addEntry(player.getName());
-                case "VIP" -> VipTeam.addEntry(player.getName());
-                case "DEFAULT" -> DefualtTeam.addEntry(player.getName());
+            if (teamMappings.containsKey(teamID)) {
+                teamMappings.get(teamID).addEntry(player.getName());
             }
         }
     }
 
-    protected Rank getRank(Player player) {
-        return ranks.get(player);
+    public Rank getRank(Player player) {
+        return playerRanks.get(player) == null ? getDefaultRank() : playerRanks.get(player);
     }
 
-    protected Rank getOfflineRank(OfflinePlayer player) {
-        if (getInstance().useDb) {
-            return getInstance().db.getStoredRank(player.getUniqueId());
-        } else {
-            File file = new File("plugins/FoxRank/PlayerData/" + player.getUniqueId() + ".yml");
-            YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
-            return Rank.ofString(yml.getString("Rank"));
+    public void setRank(Player player, Rank rank) {
+        if (getRank(player) != null) {
+            this.getServer().getPluginManager().callEvent(new RankChangeEvent(player, rank, getRank(player)));
+            clearPermissions(player.getUniqueId());
         }
+
+        playerRanks.put(player, rank);
+        Bukkit.getScheduler().runTaskAsynchronously(this, () -> dm.setStoredRank(player.getUniqueId(), rank));
+        setTeam(player, rank.getId());
+    }
+
+    public void loadRank(Player player) {
+        Rank rank = getPlayerData(player.getUniqueId()).getRank();
+        rank.getPermissionNodes().forEach(s -> player.addAttachment(this, s, true));
+        playerRanks.put(player, rank);
+        setTeam(player, rank.getId());
     }
 
     protected PluginChannelListener getPluginChannelListener() {
@@ -92,340 +107,138 @@ public class FoxRank extends JavaPlugin implements Listener {
     @Override
     public void onEnable() {
         instance = this;
-        if (!new File("plugins/FoxRank/config.yml").exists()) {
-            this.saveResource("config.yml", false);
-        }
         pcl = new PluginChannelListener();
+        dm = new DataManager(this);
+        dm.init();
         bungeecord = this.getConfig().getBoolean("bungeecord");
         if (bungeecord) {
             this.getServer().getMessenger().registerOutgoingPluginChannel(this, "BungeeCord");
             this.getServer().getMessenger().registerIncomingPluginChannel(this, "BungeeCord", pcl);
         }
 
-        Bukkit.getServicesManager().register(FoxRank.class, this, this, ServicePriority.Normal);
-
-        if (useDb) {
-            getInstance().db = new Database();
-            try {
-                db.connect();
-            } catch (ClassNotFoundException | SQLException ignored) {
-                Bukkit.getLogger().log(Level.SEVERE, "Invalid database credentials. Disabling plugin.");
-                this.getPluginLoader().disablePlugin(this);
-                return;
-            }
-            Bukkit.getLogger().log(Level.INFO, "Database connected.");
-            db.createPlayerDataTable();
-            db.createBannedPlayersTable();
-            db.createAuditLogTable();
-
+        if (Bukkit.getPluginManager().getPlugin("PlaceholderAPI") != null) {
+            new BanPlaceholder(this).register();
+            new LinePlaceholder(this).register();
+            new LogTypePlaceholder(this).register();
+            new MutePlaceholder(this).register();
+            new NicknamePlaceholder(this).register();
+            new PlayerRankPlaceholder(this).register();
+            new ServerPlaceholder(this).register();
+            new SyntaxPlaceholder(this).register();
+            new TargetPlaceholder(this).register();
         } else {
-            if (!new File("plugins/FoxRank/auditlog.yml").exists()) {
-                this.saveResource("auditlog.yml", false);
-            } else if (!new File("plugins/FoxRank/bannedPlayers.yml").exists()) {
-                this.saveResource("bannedPlayers.yml", false);
-            }
+            getLogger().severe("Could not find PlaceholderAPI! This plugin is required.");
+            Bukkit.getPluginManager().disablePlugin(this);
+        }
+
+        if(!checkVersion()) {
+            getLogger().warning("Incompatible server version! This WILL break the nickname feature. Do not expect support.");
         }
 
         setupTeams();
-
-        getServer().getPluginManager().registerEvents(this, this);
-        getServer().getPluginManager().registerEvents(new Vanish(), this);
-        getServer().getPluginManager().registerEvents(new JoinLeaveMsgs(), this);
-        getServer().getPluginManager().registerEvents(new Logs(), this);
-        getServer().getPluginManager().registerEvents(new Listeners(), this);
+        Bukkit.getScheduler().runTaskLater(this, () -> {
+            getServer().getPluginManager().registerEvents(this, this);
+            getServer().getPluginManager().registerEvents(new JoinLeaveMsgs(this), this);
+            getServer().getPluginManager().registerEvents(new Logs(this), this);
+            getServer().getPluginManager().registerEvents(new Listeners(this), this);
+        }, 20);
         reloadConfig();
-        if (useDb) {
-            for (Player p : this.getServer().getOnlinePlayers()) {
-                db.addPlayerData(new RankedPlayer(p, this));
-                loadRank(p);
-                ActionBar.setupActionBar(p);
-            }
-        }
-
+        Mute m = new Mute(this);
         getCommand("nick").setExecutor(new Nick());
         getCommand("vanish").setExecutor(new Vanish());
-        getCommand("setrank").setExecutor(new SetRank());
-        getCommand("mute").setExecutor(new Mute());
-        getCommand("me").setExecutor(new Mute());
-        getCommand("say").setExecutor(new Mute());
-        getCommand("immuted").setExecutor(new Mute());
-        getCommand("unmute").setExecutor(new Mute());
-        getCommand("logs").setExecutor(new Logs());
-        getCommand("ban").setExecutor(new Ban());
+        getCommand("setrank").setExecutor(new SetRank(this));
+        getCommand("mute").setExecutor(new Mute(this));
+        getCommand("me").setExecutor(m);
+        getCommand("say").setExecutor(m);
+        getCommand("immuted").setExecutor(m);
+        getCommand("unmute").setExecutor(m);
+        getCommand("logs").setExecutor(new Logs(this));
+        getCommand("ban").setExecutor(new Ban(this));
         getCommand("unban").setExecutor(new Unban());
+        getCommand("rank").setExecutor(new RankCommand(this));
+
+        Bukkit.getServicesManager().register(FoxRank.class, this, this, ServicePriority.Normal);
+        Metrics metrics = new Metrics(this, 19157);
+        Bukkit.getScheduler().runTaskAsynchronously(this, () -> dm.setupRanks());
+        Bukkit.getScheduler().runTaskLater(this, () -> Bukkit.getOnlinePlayers().forEach(p -> Bukkit.getScheduler().runTaskAsynchronously(this, () -> {
+            this.loadRank(p);
+            ActionBar.setupActionBar(p);
+            if (getPlayerData(p.getUniqueId()).isMuted()) { //todo: make it support null durations
+                if (getPlayerData(p.getUniqueId()).getMuteDuration().isBefore(Instant.now())) {
+                    ModerationAction.unmutePlayer(new RankedPlayer(p, this), new RankedPlayer(p, this));
+                }
+            }
+            if (Bukkit.getOnlinePlayers().size() == 1) {
+                if (bungeecord) {
+                    Bukkit.getScheduler().runTaskLater(this, () -> FoxRank.pcl.getPlayers(Iterables.getFirst(Bukkit.getOnlinePlayers(), null)), 30);
+                }
+            }
+
+            if (getPlayerData(p.getUniqueId()).isNicked()) {
+                Nick.changeName(getPlayerData(p.getUniqueId()).getNickname(), p);
+                Bukkit.getScheduler().runTask(this, () -> Nick.loadSkin(p));
+                setTeam(p, getPlayerData(p.getUniqueId()).getNicknameRank().getId());
+            }
+            if (getPlayerData(p.getUniqueId()).isVanished()) {
+                Bukkit.getScheduler().runTask(this, () -> Vanish.vanishPlayer(p));
+            }
+        })), 20);
+    }
+
+    private boolean checkVersion(){
+        String sversion;
+        try{
+            sversion = Bukkit.getServer().getClass().getPackage().getName().split("\\.")[3];
+        } catch (ArrayIndexOutOfBoundsException ex){
+            return false;
+        }
+        return (sversion.equals("v1_20_R1") || sversion.equals("v1_20_1_R1"));
     }
 
     @Override
     public void onDisable() {
         for (Player p : this.getServer().getOnlinePlayers()) {
-            saveRank(p);
+            dm.saveRank(p);
+            clearPermissions(p.getUniqueId());
         }
-        try {
-            DefualtTeam.unregister();
 
-            OwnerTeam.unregister();
-            AdminTeam.unregister();
-            ModeratorTeam.unregister();
-            YoutubeTeam.unregister();
-            TwitchTeam.unregister();
-            MvppTeam.unregister();
-            MvpTeam.unregister();
-            VippTeam.unregister();
-            VipTeam.unregister();
-        } catch (NullPointerException | IllegalStateException ignored) {
+        for (Team team : rankTeams) {
+            try {
+                team.unregister();
+            } catch (NullPointerException | IllegalStateException ignored) {
+            }
         }
-        if (useDb) db.disconnect();
+
+        dm.shutDown();
         this.getServer().getMessenger().unregisterOutgoingPluginChannel(this);
         this.getServer().getMessenger().unregisterIncomingPluginChannel(this);
         Bukkit.getServicesManager().unregister(this);
     }
 
-    void setupTeams() {
+    public void setupTeams() {
         Scoreboard board = Bukkit.getScoreboardManager().getMainScoreboard();
-        if (!disableRankVis) {
+        for (int i = 0; i < ranks.size(); i++) {
+            Rank rank = (Rank) ranks.values().toArray()[i];
+            Team team;
             try {
-                Team dT = board.registerNewTeam(DEFAULT.getRankID());
-                dT.setColor(ChatColor.GRAY);
-                dT.setPrefix(DEFAULT.getPrefix());
-                Team oT = board.registerNewTeam(OWNER.getRankID());
-                oT.setColor(RED);
-                oT.setPrefix(OWNER.getPrefix());
-                Team aT = board.registerNewTeam(ADMIN.getRankID());
-                aT.setColor(RED);
-                aT.setPrefix(ADMIN.getPrefix());
-                Team moT = board.registerNewTeam(MODERATOR.getRankID());
-                moT.setColor(ChatColor.DARK_GREEN);
-                moT.setPrefix(MODERATOR.getPrefix());
-                Team yT = board.registerNewTeam(YOUTUBE.getRankID());
-                yT.setColor(RED);
-                yT.setPrefix(YOUTUBE.getPrefix());
-                Team tT = board.registerNewTeam(TWITCH.getRankID());
-                tT.setColor(ChatColor.DARK_PURPLE);
-                tT.setPrefix(TWITCH.getPrefix());
-                Team mpT = board.registerNewTeam(MVP_PLUS.getRankID());
-                mpT.setColor(ChatColor.AQUA);
-                mpT.setPrefix(MVP_PLUS.getPrefix());
-                Team mT = board.registerNewTeam(MVP.getRankID());
-                mT.setColor(ChatColor.AQUA);
-                mT.setPrefix(MVP.getPrefix());
-                Team vpT = board.registerNewTeam(VIP_PLUS.getRankID());
-                vpT.setColor(ChatColor.GREEN);
-                vpT.setPrefix(VIP_PLUS.getPrefix());
-                Team vT = board.registerNewTeam(VIP.getRankID());
-                vT.setColor(ChatColor.GREEN);
-                vT.setPrefix(VIP.getPrefix());
-                DefualtTeam = dT;
-                OwnerTeam = oT;
-                AdminTeam = aT;
-                ModeratorTeam = moT;
-                YoutubeTeam = yT;
-                TwitchTeam = tT;
-                MvppTeam = mpT;
-                MvpTeam = mT;
-                VippTeam = vpT;
-                VipTeam = vT;
+                team = board.registerNewTeam(i + rank.getId());
             } catch (IllegalArgumentException ignored) {
-                Team dT = board.getTeam(DEFAULT.getRankID());
-                Team oT = board.getTeam(OWNER.getRankID());
-                Team aT = board.getTeam(ADMIN.getRankID());
-                Team moT = board.getTeam(MODERATOR.getRankID());
-                Team yT = board.getTeam(YOUTUBE.getRankID());
-                Team tT = board.getTeam(TWITCH.getRankID());
-                Team mpT = board.getTeam(MVP_PLUS.getRankID());
-                Team mT = board.getTeam(MVP.getRankID());
-                Team vpT = board.getTeam(VIP_PLUS.getRankID());
-                Team vT = board.getTeam(VIP.getRankID());
-                dT.setColor(ChatColor.GRAY);
-                dT.setPrefix(DEFAULT.getPrefix());
-                oT.setColor(RED);
-                oT.setPrefix(OWNER.getPrefix());
-                aT.setColor(RED);
-                aT.setPrefix(ADMIN.getPrefix());
-                moT.setColor(ChatColor.DARK_GREEN);
-                moT.setPrefix(MODERATOR.getPrefix());
-                yT.setColor(RED);
-                yT.setPrefix(YOUTUBE.getPrefix());
-                tT.setColor(ChatColor.DARK_PURPLE);
-                tT.setPrefix(TWITCH.getPrefix());
-                mpT.setColor(ChatColor.AQUA);
-                mpT.setPrefix(MVP_PLUS.getPrefix());
-                mT.setColor(ChatColor.AQUA);
-                mT.setPrefix(MVP.getPrefix());
-                vpT.setColor(ChatColor.GREEN);
-                vpT.setPrefix(VIP_PLUS.getPrefix());
-                vT.setColor(ChatColor.GREEN);
-                vT.setPrefix(VIP.getPrefix());
-                DefualtTeam = dT;
-                OwnerTeam = oT;
-                AdminTeam = aT;
-                ModeratorTeam = moT;
-                YoutubeTeam = yT;
-                TwitchTeam = tT;
-                MvppTeam = mpT;
-                MvpTeam = mT;
-                VippTeam = vpT;
-                VipTeam = vT;
+                board.getTeam(i + rank.getId()).unregister();
+                team = board.registerNewTeam(i + rank.getId());
             }
-        } else {
-            try {
-                Team dT = board.registerNewTeam(DEFAULT.getRankID());
-                dT.setColor(ChatColor.WHITE);
-                dT.setPrefix(" ");
-                Team oT = board.registerNewTeam(OWNER.getRankID());
-                oT.setColor(ChatColor.WHITE);
-                oT.setPrefix(" ");
-                Team aT = board.registerNewTeam(ADMIN.getRankID());
-                aT.setColor(ChatColor.WHITE);
-                aT.setPrefix(" ");
-                Team moT = board.registerNewTeam(MODERATOR.getRankID());
-                moT.setColor(ChatColor.WHITE);
-                moT.setPrefix(" ");
-                Team yT = board.registerNewTeam(YOUTUBE.getRankID());
-                yT.setColor(ChatColor.WHITE);
-                yT.setPrefix(" ");
-                Team tT = board.registerNewTeam(TWITCH.getRankID());
-                tT.setColor(ChatColor.WHITE);
-                tT.setPrefix(" ");
-                Team mpT = board.registerNewTeam(MVP_PLUS.getRankID());
-                mpT.setColor(ChatColor.WHITE);
-                mpT.setPrefix(" ");
-                Team mT = board.registerNewTeam(MVP.getRankID());
-                mT.setColor(ChatColor.WHITE);
-                mT.setPrefix(" ");
-                Team vpT = board.registerNewTeam(VIP_PLUS.getRankID());
-                vpT.setColor(ChatColor.WHITE);
-                vpT.setPrefix(" ");
-                Team vT = board.registerNewTeam(VIP.getRankID());
-                vT.setColor(ChatColor.WHITE);
-                vT.setPrefix(" ");
-                DefualtTeam = dT;
-                OwnerTeam = oT;
-                AdminTeam = aT;
-                ModeratorTeam = moT;
-                YoutubeTeam = yT;
-                TwitchTeam = tT;
-                MvppTeam = mpT;
-                MvpTeam = mT;
-                VippTeam = vpT;
-                VipTeam = vT;
-            } catch (IllegalArgumentException ignored) {
-                Team dT = board.getTeam(DEFAULT.getRankID());
-                Team oT = board.getTeam(OWNER.getRankID());
-                Team aT = board.getTeam(ADMIN.getRankID());
-                Team moT = board.getTeam(MODERATOR.getRankID());
-                Team yT = board.getTeam(YOUTUBE.getRankID());
-                Team tT = board.getTeam(TWITCH.getRankID());
-                Team mpT = board.getTeam(MVP_PLUS.getRankID());
-                Team mT = board.getTeam(MVP.getRankID());
-                Team vpT = board.getTeam(VIP_PLUS.getRankID());
-                Team vT = board.getTeam(VIP.getRankID());
-                DefualtTeam = dT;
-                OwnerTeam = oT;
-                AdminTeam = aT;
-                ModeratorTeam = moT;
-                YoutubeTeam = yT;
-                TwitchTeam = tT;
-                MvppTeam = mpT;
-                MvpTeam = mT;
-                VippTeam = vpT;
-                VipTeam = vT;
-                dT.setColor(ChatColor.WHITE);
-                dT.setPrefix("");
-                oT.setColor(ChatColor.WHITE);
-                oT.setPrefix("");
-                aT.setColor(ChatColor.WHITE);
-                aT.setPrefix("");
-                moT.setColor(ChatColor.WHITE);
-                moT.setPrefix("");
-                yT.setColor(ChatColor.WHITE);
-                yT.setPrefix("");
-                tT.setColor(ChatColor.WHITE);
-                tT.setPrefix("");
-                mpT.setColor(ChatColor.WHITE);
-                mpT.setPrefix("");
-                mT.setColor(ChatColor.WHITE);
-                mT.setPrefix("");
-                vpT.setColor(ChatColor.WHITE);
-                vpT.setPrefix("");
-                vT.setColor(ChatColor.WHITE);
-                vT.setPrefix("");
+            if (disableRankVis) {
+                team.setPrefix("");
+                team.setColor(ChatColor.WHITE);
+            } else {
+                team.setColor(rank.getColor());
+                team.setPrefix(rank.getPrefix());
             }
+            teamMappings.put(rank.getId(), team);
+            rankTeams.add(team);
         }
     }
 
-    protected void setRank(Player player, Rank rank) {
-        this.getServer().getPluginManager().callEvent(new RankChangeEvent(player, rank, getRank(player)));
-        ranks.put(player, rank);
-        if (useDb) {
-            db.setStoredRank(player.getUniqueId(), rank);
-        } else {
-            File file = new File("plugins/FoxRank/PlayerData/" + player.getUniqueId() + ".yml");
-            YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
-            yml.set("Rank", rank.getRankID());
-            try {
-                yml.save(file);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-
-        if (disableRankVis) {
-            player.setDisplayName(player.getName());
-            player.setPlayerListName(player.getDisplayName());
-        } else {
-            player.setDisplayName(rank.getPrefix() + player.getName());
-            player.setPlayerListName(rank.getPrefix() + player.getName());
-        }
-
-    }
-
-    protected void setRankOfflinePlayer(OfflinePlayer player, Rank rank) {
-        if (useDb) {
-            db.setStoredRank(player.getUniqueId(), rank);
-        } else {
-            File file = new File("plugins/FoxRank/PlayerData/" + player.getUniqueId() + ".yml");
-            YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
-            yml.set("Rank", rank.getRankID());
-            try {
-                yml.save(file);
-            } catch (IOException error) {
-                error.printStackTrace();
-            }
-        }
-    }
-
-    protected void loadRank(Player player) {
-        String rankID;
-        if (useDb) {
-            rankID = db.getStoredRank(player.getUniqueId()).getRankID();
-        } else {
-            File file = new File("plugins/FoxRank/PlayerData/" + player.getUniqueId() + ".yml");
-            YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
-            rankID = yml.getString("Rank");
-        }
-        Rank rank = ofString(rankID);
-        setTeam(player, rank.getRankID());
-        setRank(player, rank);
-    }
-
-
-    protected void saveRank(Player player) {
-        if (useDb) {
-            db.setStoredRank(player.getUniqueId(), getRank(player));
-        } else {
-            File file = new File("plugins/FoxRank/PlayerData/" + player.getUniqueId() + ".yml");
-            YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
-            yml.set("Rank", getRank(player).getRankID());
-            try {
-                yml.save(file);
-            } catch (IOException error) {
-                error.printStackTrace();
-            }
-        }
-        ranks.remove(player);
-    }
-
-    protected String getFormattedExpiredString(Instant date, Instant now) {
+    public String getFormattedExpiredString(Instant date, Instant now) {
         if (date == null) {
             return "Permanant";
         } else {
@@ -454,137 +267,79 @@ public class FoxRank extends JavaPlugin implements Listener {
         }
     }
 
-    protected boolean isVanished(UUID uuid) {
-        if (useDb) {
-            return db.getStoredVanishStatus(uuid);
-        } else {
-            File file = new File("plugins/FoxRank/PlayerData/" + uuid + ".yml");
-            YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
-            return yml.getBoolean("isVanished");
-        }
-    }
-
-    protected boolean isNicked(UUID uuid) {
-        if (useDb) {
-            return db.getStoredNicknameStatus(uuid);
-        }
-        File file = new File("plugins/FoxRank/PlayerData/" + uuid + ".yml");
-        YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
-        return yml.getBoolean("isNicked");
-    }
-
-    protected boolean isBanned(UUID uuid) {
-        if (useDb) {
-            return db.getStoredBanStatus(uuid);
-        }
-        File file = new File("plugins/FoxRank/PlayerData/" + uuid + ".yml");
-        YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
-        return yml.getBoolean("isBanned");
-    }
-
-    protected boolean isMuted(UUID uuid) {
-        if (useDb) {
-            return db.getStoredMuteStatus(uuid);
-        }
-        File file = new File("plugins/FoxRank/PlayerData/" + uuid + ".yml");
-        YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
-        return yml.getBoolean("isMuted");
-    }
-
-    protected String getMuteReason(UUID uuid) {
-        if (useDb) {
-            return db.getStoredMuteReason(uuid);
-        }
-        File file = new File("plugins/FoxRank/PlayerData/" + uuid + ".yml");
-        YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
-        return yml.getString("MuteReason");
-    }
-
-    protected Instant getMuteDuration(UUID uuid) {
-        if (useDb) {
-            return Instant.parse(db.getStoredMuteDuration(uuid));
-        }
-        File file = new File("plugins/FoxRank/PlayerData/" + uuid + ".yml");
-        YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
-        return Instant.parse(yml.getString("MuteDuration"));
-    }
-
-    public void sendNoPermissionMessage(int powerLevel, RankedPlayer rp) {
-        rp.sendMessage(ChatColor.translateAlternateColorCodes('§', FoxRank.getInstance().getConfig().getString("NoPermissionMessage").replace("$POWERLEVEL", String.valueOf(powerLevel)).replace("\\n", "\n")));
-    }
-
-    public void sendMissingArgsMessage(String command, String args, RankedPlayer rp) {
-        rp.sendMessage(ChatColor.translateAlternateColorCodes('§', FoxRank.getInstance().getConfig().getString("MissingArgsMessage").replace("$COMMAND", command).replace("$ARGS", args)));
-    }
-
-    public void sendInvalidArgsMessage(String args, RankedPlayer rp) {
-        rp.sendMessage(ChatColor.translateAlternateColorCodes('§', FoxRank.getInstance().getConfig().getString("InvalidArgumentMessage").replace("$ARGTYPE", args)));
-    }
-
-    protected String getTrueName(UUID uuid) {
+    public String getTrueName(UUID uuid) {
         URL url;
         try {
             url = new URL("https://sessionserver.mojang.com/session/minecraft/profile/" + uuid + "?unsigned=false");
             InputStreamReader reader = new InputStreamReader(url.openStream());
             return new JsonParser().parse(reader).getAsJsonObject().get("name").getAsString();
         } catch (IOException e) {
-            Bukkit.getLogger().log(Level.SEVERE, "Could get a player's name from Mojang");
+            Bukkit.getLogger().log(Level.SEVERE, "Could get " + uuid + "'s name from Mojang");
         }
         return null;
     }
 
-    protected String getNickname(UUID uuid) {
-        if (isNicked(uuid)) {
-            if (useDb) {
-                return db.getStoredNickname(uuid);
-            } else {
-                File file = new File("plugins/FoxRank/PlayerData/" + uuid + ".yml");
-                YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
-                return yml.getString("Nickname");
+    /**
+     * @return Rank the rank with the LOWEST power level.
+     * This is configured in the `ranks.yml` file.
+     */
+    public Rank getDefaultRank() {
+        return Iterables.getLast(ranks.values());
+    }
+
+    @Override
+    public @NotNull FileConfiguration getConfig() {
+        return dm.getConfig();
+    }
+
+    public void clearPermissions(UUID uuid) {
+        OfflinePlayer op = Bukkit.getOfflinePlayer(uuid);
+        if(op.isOnline()) {
+            Player player = op.getPlayer();
+            if(permissions.get(uuid) == null || permissions.get(uuid).isEmpty()) return;
+            for (PermissionAttachment pa : permissions.get(uuid)) {
+                player.removeAttachment(pa);
             }
         } else {
-            return getTrueName(uuid);
+            permissions.remove(uuid);
         }
     }
 
-    protected UUID getUUID(String name) {
-        URL url;
-        InputStreamReader reader = null;
-        try {
-            url = new URL("https://api.mojang.com/users/profiles/minecraft/" + name);
-            reader = new InputStreamReader(url.openStream());
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        String raw = new JsonParser().parse(reader).getAsJsonObject().get("id").getAsString();
-        UUID uid = UUID.fromString(raw.substring(0, 8) + "-" + raw.substring(8, 12) + "-" + raw.substring(12, 16) + "-" + raw.substring(16, 20) + "-" + raw.substring(20, 32));
-        return uid;
-    }
-
-
-    public List<OfflinePlayer> getBannedPlayers() {
-        if (useDb) {
-            return db.getStoredBannedPlayers();
-        }
-        File file = new File("plugins/FoxRank/bannedPlayers.yml");
+    public String getMessage(String path, OfflinePlayer p){
+        File file = new File("plugins/FoxRank/messages.yml");
         YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
-        List<OfflinePlayer> players = List.of();
-        if (yml.getStringList("BannedPlayers").isEmpty()) {
-            return List.of();
-        }
-        for (String str : yml.getStringList("BannedPlayers")) {
-            players.add(Bukkit.getOfflinePlayer(UUID.fromString(str)));
-        }
-        return players;
+        return PlaceholderAPI.setPlaceholders(p, ChatColor.translateAlternateColorCodes('&', yml.getString(path))).replace("\\n", "\n");
+    }
+    public String getMessage(String path, Player p){
+        File file = new File("plugins/FoxRank/messages.yml");
+        YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
+        return PlaceholderAPI.setPlaceholders(p, ChatColor.translateAlternateColorCodes('&', yml.getString(path))).replace("\\n", "\n");
     }
 
-    protected List<String> getPlayerNames(Player player) {
-        if (bungeecord) {
-            return playerNames;
-        } else {
-            List<String> returnme = new ArrayList<>();
-            Bukkit.getOnlinePlayers().forEach(player1 -> returnme.add(player1.getName()));
-            return returnme;
+    public DataManager getDm(){
+        if(Bukkit.isPrimaryThread()) {
+            throw new IllegalThreadStateException("Database call on main thread");
         }
+        return dm;
+    }
+    public void sendCommandDisabled(CommandSender commandSender){
+        File file = new File("plugins/FoxRank/messages.yml");
+        YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
+        commandSender.sendMessage(ChatColor.translateAlternateColorCodes('&', yml.getString("CommandDisabledMessage")).replace("\\n", "\n"));
+    }
+    public String getSyntaxMessage(Player player) {
+        File file = new File("plugins/FoxRank/messages.yml");
+        YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
+        return PlaceholderAPI.setPlaceholders(player, ChatColor.translateAlternateColorCodes('&', yml.getString("BadSyntaxMessage"))).replace("\\n", "\n");
+    }
+
+    public PlayerData getPlayerData(UUID uuid){
+        return playerData.get(uuid);
+    }
+    public void clearPlayerData(){
+         playerData.clear();
+    }
+    public void addPlayerDataEntry(PlayerData pd, UUID key){
+        playerData.put(key, pd);
     }
 }

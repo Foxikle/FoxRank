@@ -8,44 +8,12 @@
 #                                                                                               |___/
 #
 #
-# Welcome to the FoxRank Config file. There are a few rules when editing YML files.
+# Welcome to the FoxRank Config file. There are a few rules when editing YML or YAML files.
 # 1. NEVER, EVER use tabs. Always use 2 spaces.
 # 2. A '#' means the line is commented out. The server will ignore the line.
 # 3. If you delete a portion of the config, you can delete the 'config.yml' and a new one
 #    will be automatically generated on the next server restart.
 # ---------------------------------------------------------------------------------------
-
-# -------------------------------------------------------------
-#  ___                       _             _
-# | _ \  ___   _ _   _ __   (_)  ___  ___ (_)  ___   _ _    ___
-# |  _/ / -_) | '_| | '  \  | | (_-< (_-< | | / _ \ | ' \  (_-<
-# |_|   \___| |_|   |_|_|_| |_| /__/ /__/ |_| \___/ |_||_| /__/
-# -------------------------------------------------------------
-# These set the required powerlevels to use commands.
-
-# LogsCommandPermissions: -> Sets the power level required to use the /logs command. (Defaults to 80)
-LogsCommandPermissions: 80
-
-# MutePermissions -> Sets the power level required to use the /mute command. (Defaults to 80)
-MutePermissions: 80
-
-# UnmutePermissions -> Sets the power level required to use the /unmute command. (Defaults to 80)
-UnmutePermissions: 80
-
-# BanPermissions: -> Sets the required power level required to use the /ban command. (Defaults to 80);
-BanPermissions: 80
-
-# SetRankPermissions: -> Sets the power level required to use the /setrank command. (Defaults to 90)
-SetRankPermissions: 90
-
-# VanishPermissions: -> Sets required power level to use the /vanish command. (Defaults to 80)
-VanishPermissions: 70
-
-# NicknamePermissions: -> Sets required power level to use the /nick command. (Defaults to 70)
-NicknamePermissions: 70
-
-# UnbanPermissions: -> Sets the required power level to use the /unban command. (Defaults to 90)
-UnbanPermissions: 90
 
 
 # ------------------------------------------------------------------------------------------------------
@@ -159,60 +127,6 @@ RandomSkinSignatureList:
   - yeOKDQNRWMbsMahrBNGVp6r6nh5ikvlY68J7swgMA3Q2Qx4l0zytRsY+tzVbkd8yCds8hns4HGElAnSqDA++0OReHLw8404J+HwlKcaL/y2bI+3XmCGJLhyl2tPk3gmW96yVbjnrXaHBGTczGc50OHkHahkaWxEUtB2DKaUszEy4REFNZTUNxBbSpBZZHPyJNTORYaoAl4/ywNiRw+ks0FMkmsn5qzWW0i9rUQRyFIslD+QvqekfQGhLcYOsmohgS0d9NoB+VA5KByJiK0SM/nPg7tak3wB+O90MjJGTfGej3BIprXC7QnsKYpkNaGP4VGcJdMuvbTIPcYTk9mGdwZbta2Y/PVSwKt0Nn9bj2M8Fsy3+9OROCgzkAf8O2Ai89iC0diTZuCTOm30XoXcumTLIwDme7+dIRiUqQuG0F3SPpfU1iYbUbE2Q0usWwzBpWGqr+Bwft/+wsx5B7ThBWf/F8CpIbD6r5hWFCDotBBEi5omzBDC2O22aJw26FiQ/3q5Wj/+pJ+M17agJtSUlRIDodR+b/F41q/9JbWgFlxhOaYhx7klFjOB1QsDqOnfVajUoHc0tYll5hgwIlwTSG/Ku2rnArCrQTJHqjO/D8/XZiEv2faK263OEVSjhj0yoENenhU8UqEM2fmK+RgDYz7MldRz0YORICgLU0mel7FU=
   - SGqzGdSkUJqucXr+HpE8uuZCNiFmL2CuPkk1T+3ROjCoZTrbojaloX8chucEwuft3mHHlK8owGry3Ft2YAp505sC6T/Hg57Mke9kTQCyeGjmduD4AQf45GvLuNxjg3xinNS3D7WIfFtXWC0gGB+j480rHq8dxgGkX/jwY0yIN/JYcOjeeGb953ZVvXfQFjg4ytv0lKoN3VD6MBEWIsYJYuJxMxM4a7vj/JxMm6BMXyqCnsY/YqciMh85G6K1wvFtuP6N5oxFPFd4HNt5r4s7J8ot9G0PuVyPgeaCHYL7GHB845RC+lH6OU8NWZhSkKnmnXOg6xcaVfnwc/4gcJMb22+wLBnP8SngmVwlV8sPwW6D5RMtGf/LY4M/mE7oxgOhURkub6MEyYS0L72TE54ivb5dKkNJpGhuWzM8o11FN7DLJ+DdevvYI7BO6zDHbeRmGKEGGvZOM764Kl9oOdbObQXTFnIoPM3nCKZR3qQKsxVjN4TzrXCDiwUIk2xocnGmm583V6NtzLC1FflDv1TqP31cOgmIwoun0nr1G2POaCFL/3VVBNtfT4/ybJVsg5Tl/v9lu3mfQC3INovUCYIy+G5HFKopeEb9tgj3JkPJ76lwRqC90h/AjbYQl0DEjngav9rTAhZHWp8MQ7fWlYASyYmG+mCtRbBapfA3KfOzmcA=
 
-# NickNameTooLongMessage: <String> The message displayed when a user's nickname is too long >16 chars. ($NICKNAME, supports § colors)
-NicknameTooLongMessage: §cYour nickname ($NICKNAME) is greater than 16 characters.
-
-# NickNameChangedMessage: -> The message displayed to a use when they change their nickname. ($NEWNICK, Supports § colors)
-NickNameChangedMessage: §aYour nickname is now §l§a$NEWNICK.
-
-# BlacklistedNicknameMessage: -> The message displayed to a user when they attempt to use a blacklisted nickname. (BLACKLISTEDNAME, supports § colors.)
-BlacklistedNicknameMessage: §cThe nickname §l§c'$BLACKLISTEDNAME' §r§c is blacklisted.
-
-
-# ---------------------------
-#   __  __          _
-# |  \/  |  _  _  | |_   ___
-# | |\/| | | || | |  _| / -_)
-# |_|  |_|  \_,_|  \__| \___|
-# --------------------------
-# Configuration for the mute system.
-
-
-# MuteMessage: -> The text displayed to a user when they get muted. ($LINE (Horizontal Line across the chat), $DURATION (Formatted duration '15d 23h 59m 59s'), $REASON (The reason the staff member added), \n for a new line, Supports § color codes.)
-MuteMessage: §c$LINE\n§cYou are now MUTED for $REASON\n§7Your mute will expire in $DURATION.\n$LINE
-
-# MuteCommandPlayerAlreadyMuted: -> The messaged displayed whilst attempting to mute a player that is already muted. ($PLAYER, Supports § colors).
-MuteCommandPlayerAlreadyMuted: §c$PLAYER is already muted!
-
-# UnmuteCommandPlayerNotMuted: -> The messaged displayed whilst attempting to unmute a player that is not muted. ($PLAYER, Supports § colors).
-UnmuteCommandPlayerNotMuted: §c$PLAYER is not muted!
-
-# ImmutedCommandNotMutedMessage: -> The messaged displayed whilst attempting to unmute a player that is not muted. (Supports § colors).
-ImmutedCommandNotMutedMessage: §cYou are not muted!
-
-# UnmuteSenderMessage: -> The message sent to the sender of the /unmute command. ($PLAYER,  Supports § colors)
-UnmuteSenderMessage: §a$PLAYER is now no longer muted.
-
-# muteSenderMessage: -> The message sent to the sender of the /mute command. ($PLAYER (player being muted), $REASON (Reason for mute),  Supports § colors.)
-muteSenderMessage: §c$PLAYER is now muted for $REASON
-
-# UnmuteRecieverMessage: -> The message send to the player being unmutted.($LINE (Horizontal Line across the chat), \n for a new line, Supports § color codes.)
-UnmuteRecieverMessage: $LINE\n§aYou are now UNMUTED.\n$LINE
-
-# MutePlayerWithHigherPowerLevelMessage: -> The message displayed whilst attempting to mute a player with a higher or equal PowerLevel. (Supports § colors)
-MutePlayerWithHigherPowerLevelMessage: §cYou cannot mute a player with a higher or equal power level!
-
-# ChatWhileMutedMessage: -> The text displayed to a user when they try to chat whilst muted. ($LINE (Horizontal $Line across the chat), $DURATION (Formatted duration '15d 23h 59m 59s'), $REASON (The reason the staff member specified), \n for a new line, Supports § color codes.)
-ChatWhileMutedMessage: §c$LINE\n§cYou are currently MUTED for $REASON\n§7Your mute will expire in $DURATION.\n$LINE
-
-# IAmMutedCommandMessageFromMuted: -> The text displayed to a use when they get muted. ($MUTEDUSERRANKPREFIX (The muted user's rank prefix),
-# $RECEIVERRANKPREFIX (The person who is being sent the message's rank prefix),
-# $MUTEDUSER (The user who is muted), $RECIEVER (The person who is being sent the 'I'm muted' message),
-#  \n for a new line, Supports § color codes.)
-IAmMutedCommandMessageToMuted: §dTo §f$RECEIVERRANKPREFIX$RECIEVER§7:§e Hey, I am currently muted and unable to chat right now.
-IAmMutedCommandMessageFromMuted: §dFrom §f$MUTEDUSERRANKPREFIX$MUTEDUSER§7:§e Hey, I am currently muted and unable to chat right now.
-
-
 # ------------------------
 #  ___
 # | _ )  __ _   _ _    ___
@@ -221,26 +135,7 @@ IAmMutedCommandMessageFromMuted: §dFrom §f$MUTEDUSERRANKPREFIX$MUTEDUSER§7:§
 # ------------------------
 # Configurations for the ban system.
 
-
-#BanPlayerWithHigherPowerLevelMessage: -> The message displayed whilst attempting to ban a player with a higher or equal power level. (Supports § colors)
-BanPlayerWithHigherPowerLevelMessage: §cYou cannot ban a player with a higher or equal power level!
-
-# TempBanMessageFormat: -> The formatting for ban messages. (($SERVER_NAME Name of the server),($REASON Reason for the ban), ($DURATION when your ban will expire), ($ID Ban ID), ($APPEAL_LINK, link to appeal the ban at) Supports § colors and \n).
-TempBanMessageFormat: §cYou are temporarily banned for §r$DURATION§c from $SERVER_NAME!\n\n§7Reason -> §f$REASON\n§bAppeal at -> $APPEAL_LINK\n\n§7Ban ID -> §r#$ID\n §7 Sharing your Ban ID may affect the processing of your appeal!
-
-# PermBanMessageFormat: -> The formatting for ban messages. (($SERVER_NAME Name of the server),($REASON Reason for the ban), ($ID Ban ID), ($APPEAL_LINK, link to appeal the ban at) Supports § colors and \n).
-PermBanMessageFormat: §cYou are permanantly banned from $SERVER_NAME!\n\n§7Reason -> §f$REASON\n§bAppeal at -> $APPEAL_LINK\n\n§7Ban ID -> §r#$ID\n §7 Sharing your Ban ID may affect the processing of your appeal!
-
-# SilentBanSenderMessage: -> The message sent to the player who silently banned. (($PLAYER Player banned), ($REASON reason for ban), Supports § colors)
-SilentBanSenderMessage: §c$PLAYER was silently banned for $REASON
-
-# SecurityBanSenderMessage: -> The message sent to the player who banned. (($PLAYER Player banned), ($REASON reason for ban), Supports § colors)
-SecurityBanSenderMessage: §c$PLAYER was silently banned for SECURITY.
-
-# BanSenderMessage: -> The message sent to the player who banned. (($PLAYER Player banned), ($REASON reason for ban), Supports § colors)
-BanSenderMessage: §c$PLAYER was banned for $REASON
-
-# BanReasons -> These allow you to customize your ban reasons.
+# BanReasons -> These allow you to customize your preset ban reasons.
 BanReasons:
   SECURITY: Suspicious activity has been detected on your account.
   HACKING: Cheating through the use of unfair game mechanics. (Hacking)
@@ -262,26 +157,6 @@ BanDurations:
 # BanAppealLink -> Link to appeal bans
 BanAppealLink: https://github.com/Foxikle/FoxRank (Not real, I just made the plugin!)
 
-# UnbanCommandNotBanned: -> The message displayed to a user whilst attempting to unban a player that is not banned. (($USER user), Supports § colors)
-UnbanCommandNotBanned: §c$USER is not banned!
-
-# UnbanCommandmessage: -> The message displayed after the user is unbanned (($USER user), Supports § colors)
-UnbanCommandMessage: §a$USER was unbanned.
-
-# -------------------------------------
-# __   __                _        _
-# \ \ / /  __ _   _ _   (_)  ___ | |_
-#  \ V /  / _` | | ' \  | | (_-< | ' \
-#   \_/   \__,_| |_||_| |_| /__/ |_||_|
-# -------------------------------------
-# Configurations for the vanish system.
-
-# UnvanishMessage: <String> The message displayed when a user comes out of vanish. (Supports § colors)
-UnvanishMessage: §eYou materialized out of the ether!
-
-# VanishMessage: <String> The message displayed when a user goes into vanish. (Supports § colors)
-VanishMessage: §eYou vanished into the shadows.
-
 # ------------------------------------------
 #   ___                                   _
 #  / __|  ___   _ _    ___   _ _   __ _  | |
@@ -294,29 +169,14 @@ VanishMessage: §eYou vanished into the shadows.
 # Bungeecord: -> Is this server using bungeecord?
 bungeecord: false
 
-# LogsMenuName: -> The name of the menu of /logs ($NAME (Player's logs you're viewing), $LOGTYPE (Type of logs you're viewing), Supports § Colors)
-LogsMenuName: $NAME's §r§0$LOGTYPE history
-
-# LogsNoData: -> The messages displayed when a player has no logs. ($LOGTYPE, $PLAYER Supports § Colors)
-LogsNoData: $PLAYER §cdoes not have $LOGTYPE logs.
-
-# NoPermissionMessage -> The message displayed when a user doesn't have the permissions. ($POWERLEVEL (The power level required) \n for a new line, Supports § color codes.)
-NoPermissionMessage: §cYou must have a powerlevel of $POWERLEVEL to execute this command.\n§cPlease contact a server administrator if you believe this is a mistake.
-
-# CommandDisabledMessage: -> The message displayed when a command is disabled. (Supports § color codes.)
-CommandDisabledMessage: §cThis command is currently disabled.
-
-# MissingArgsMessage: -> The message displayed when a user provides a command with missing arguments. ($COMMAND (The command in question), $ARGS (The arguments for the command), \n for a new line, Supports § color codes.)
-MissingArgsMessage: §cMissing Arguments! $COMMAND $ARGS
-
-# InvalidArgumentMessage:  -> The message displayed when a user provides an invalid argument. ($ARGTYPE (The required argument type in question), \n for a new line, Supports § color codes.)
-InvalidArgumentMessage: §cInvalid arguments! Required:§c $ARGTYPE
-
-# RankIsNowMessage: -> The message displayed when a user's rank is updated. ($RANK, supports § colors)
-RankIsNowMessage: §aYour rank is now $RANK
+# LogsMenuName: -> The name of the menu of /logs ($NAME (Player's logs you're viewing), $LOGTYPE (Type of logs you're viewing), Supports  Colors)
+LogsMenuName: "%target_name%\'s &r&0%log_type% history"
 
 # ServerName -> Name of server to put into the ban message
 ServerName: The FoxRank Server
+
+# DisableChatFormatting -> Should FoxRank format chat messages?
+DisableChatFormatting: true
 
 # -------------------------------------------------------------------------
 #   _____    ____    _          _____        _        _

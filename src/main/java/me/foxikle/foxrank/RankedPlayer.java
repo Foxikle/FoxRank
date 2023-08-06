@@ -9,15 +9,23 @@ import java.util.UUID;
 
 public class RankedPlayer implements CustomPlayer {
     private final Player player;
-    private final Rank rank;
+    private final String rankID;
+    private final int pwrlvl;
     private final FoxRank instance;
+
+
+    public RankedPlayer(Player player, String rankID, FoxRank instance) {
+        this.player = player;
+        this.rankID = rankID;
+        this.instance = instance;
+        this.pwrlvl = FoxRank.getInstance().powerLevels.get(rankID);
+    }
 
     public RankedPlayer(Player player, FoxRank instance) {
         this.player = player;
-        this.rank = instance.getRank(player);
+        this.rankID = instance.getRank(player) == null ? instance.getDefaultRank().getId() : instance.getRank(player).getId();
         this.instance = instance;
-
-        Bukkit.broadcastMessage("initalized");
+        this.pwrlvl = instance.getRank(player) == null ? instance.getDefaultRank().getPowerlevel() : instance.getRank(player).getPowerlevel();
     }
 
     /**
@@ -49,47 +57,23 @@ public class RankedPlayer implements CustomPlayer {
     }
 
     /**
-     Get the Player object
-
-     @return Player the player instance
+     * Get the Player object
+     *
+     * @return Player the player instance
      **/
 
     public Player getPlayer() {
         return Bukkit.getPlayerExact(this.getName());
     }
-    /**
-     Get the player's rank
-
-     @return rank get the player's rank
-     **/
-
-    @Override
-    public Rank getRank() {
-        if (instance != FoxRank.getInstance()) {
-            Bukkit.broadcastMessage("Instances do not match");
-        }
-        Rank returnme = instance.getRank(getPlayer());
-        Bukkit.broadcastMessage("returnme = " + returnme);
-        return returnme;
-    }
-    /**
-     Sets the player's rank
-     @param rank Rank to set the player's rank
-     **/
-
-    @Override
-    public void setRank(Rank rank) {
-        instance.setRank(this.getPlayer(), rank);
-    }
 
     /**
-     Gets the player's rank's prefix.
-
-     @return String the player's rank's prefix.
+     * Gets the player's rank's prefix.
+     *
+     * @return String the player's rank's prefix.
      **/
     @Override
     public String getPrefix() {
-        return this.rank.getPrefix();
+        return Rank.of(rankID).getPrefix();
     }
 
     /**
@@ -99,7 +83,7 @@ public class RankedPlayer implements CustomPlayer {
      **/
     @Override
     public int getPowerLevel() {
-        return this.rank.getPowerLevel();
+        return this.pwrlvl;
     }
 
     /**
@@ -109,7 +93,7 @@ public class RankedPlayer implements CustomPlayer {
      **/
     @Override
     public boolean isNicked() {
-        return instance.isNicked(getPlayer().getUniqueId());
+        return instance.dm.isNicked(getPlayer().getUniqueId());
     }
 
     /**
@@ -119,7 +103,7 @@ public class RankedPlayer implements CustomPlayer {
      **/
     @Override
     public boolean isVanished() {
-        return instance.isVanished(getPlayer().getUniqueId());
+        return instance.dm.isVanished(getPlayer().getUniqueId());
     }
 
     /**
@@ -129,7 +113,25 @@ public class RankedPlayer implements CustomPlayer {
      **/
     @Override
     public boolean isMuted() {
-        return instance.isMuted(getPlayer().getUniqueId());
+        return instance.dm.isMuted(getPlayer().getUniqueId());
+    }
+
+    /**
+     *
+     */
+    @Override
+    public String getNickname() {
+        return instance.dm.getNickname(player.getUniqueId());
+    }
+
+    /**
+     * Get the player's RankID.
+     *
+     * @return String the player's current RankID
+     **/
+    @Override
+    public String getRankId() {
+        return instance.getRank(this.player).getId();
     }
 
     /**
@@ -165,21 +167,23 @@ public class RankedPlayer implements CustomPlayer {
     }
 
     /**
-     *
-     */
+     * Gets the player's last mute reason.
+     * NOTE: This is LAST mute reason, even if the player is NOT muted.
+     * @return String last mute reason
+     **/
     @Override
-    public String getNickname() {
-        return instance.getNickname(player.getUniqueId());
+    public String getMuteReason() {
+        return instance.dm.getMuteReason(player.getUniqueId());
     }
 
     /**
-     * Get the player's RankID.
-     *
-     * @return String the player's current RankID
+     * Gets the player's last mute duration.
+     * NOTE: This is LAST mute duration, even if the player is NOT muted.
+     * @return Instant last mute duration
      **/
     @Override
-    public String getRankId() {
-        return instance.getRank(this.player).getRankID();
+    public Instant getMuteDuration() {
+        return instance.dm.getMuteDuration(player.getUniqueId());
     }
 
 
@@ -193,27 +197,9 @@ public class RankedPlayer implements CustomPlayer {
     }
 
     /**
-     * Gets the player's last mute reason.
-     * NOTE: This is LAST mute reason, even if the player is NOT muted.
-     * @return String last mute reason
-     **/
-    @Override
-    public String getMuteReason() {
-        return instance.getMuteReason(player.getUniqueId());
-    }
-
-    /**
-     * Gets the player's last mute duration.
-     * NOTE: This is LAST mute duration, even if the player is NOT muted.
-     * @return Instant last mute duration
-     **/
-    @Override
-    public Instant getMuteDuration() {
-        return instance.getMuteDuration(player.getUniqueId());
-    }
-
-    /**Gets a formatted string of when the player's mute will expire.
+     * Gets a formatted string of when the player's mute will expire.
      * If the player is not muted will return `0s`.
+     *
      * @return String Formatted until mute expires.
      */
     @Override
@@ -222,11 +208,35 @@ public class RankedPlayer implements CustomPlayer {
     }
 
     /**
+     * @return
+     */
+    @Override
+    public Rank getRank() {
+        return Rank.of(this.rankID);
+    }
+
+    /**
+     * @param rankID
+     */
+    @Override
+    public void setRank(String rankID) {
+
+    }
+
+    /**
+     * @param rank
+     */
+    @Override
+    public void setRank(Rank rank) {
+
+    }
+
+    /**
      * Sends the player a message of the provided content
      *
      * @param content String to send to the player.
      **/
-    public void sendMessage(String content){
+    public void sendMessage(String content) {
         this.player.sendMessage(content);
     }
 }

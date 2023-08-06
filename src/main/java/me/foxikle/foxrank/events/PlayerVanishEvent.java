@@ -30,7 +30,7 @@ public class PlayerVanishEvent extends Event {
      * </p>
      *
      * @return the rank of player
-     * @see Rank Please see the {@link me.foxikle.foxrank.Rank}
+     * @see Rank Please see the {@link Rank}
      * @since 1.8.1
      */
     public Rank getRank() {

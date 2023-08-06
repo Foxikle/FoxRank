@@ -1,7 +1,8 @@
-package me.foxikle.foxrank;
+package me.foxikle.foxrank.Data;
 
-import org.bukkit.Bukkit;
-import org.bukkit.OfflinePlayer;
+import me.foxikle.foxrank.Entry;
+import me.foxikle.foxrank.FoxRank;
+import me.foxikle.foxrank.Rank;
 
 import javax.annotation.Nullable;
 import java.sql.*;
@@ -11,12 +12,22 @@ import java.util.List;
 import java.util.UUID;
 
 public class Database {
-    private final String host = FoxRank.getInstance().getConfig().getString("sqlHost");
-    private final String port = FoxRank.getInstance().getConfig().getString("sqlPort");
-    private final String database = FoxRank.getInstance().getConfig().getString("sqlName");
-    private final String username = FoxRank.getInstance().getConfig().getString("sqlUsername");
-    private final String password = FoxRank.getInstance().getConfig().getString("sqlPassword");
+    private final FoxRank plugin;
+    private final String host;
+    private final String port;
+    private final String database;
+    private final String username;
+    private final String password;
     private Connection connection;
+
+    public Database(FoxRank plugin) {
+        this.plugin = plugin;
+        this.host = plugin.getConfig().getString("sqlHost");
+        this.port = plugin.getConfig().getString("sqlPort");
+        this.database = plugin.getConfig().getString("sqlName");
+        this.username = plugin.getConfig().getString("sqlUsername");
+        this.password = plugin.getConfig().getString("sqlPassword");
+    }
 
     protected boolean isConnected() {
         return (connection != null);
@@ -120,8 +131,8 @@ public class Database {
         return returnme;
     }
 
-    protected List<OfflinePlayer> getStoredBannedPlayers() {
-        List<OfflinePlayer> returnme = new ArrayList<>();
+    protected List<UUID> getStoredBannedPlayers() {
+        List<UUID> returnme = new ArrayList<>();
         try {
             PreparedStatement ps = getConnection().prepareStatement("SELECT uuids FROM foxrankbannedplayers WHERE id=?");
             ps.setString(1, "bannedPlayers");
@@ -133,7 +144,7 @@ public class Database {
                     List<String> list1 = List.of(str.split(":"));
 
                     for (String s : list1) {
-                        returnme.add(Bukkit.getOfflinePlayer(UUID.fromString(s)));
+                        returnme.add(UUID.fromString(s));
                     }
                 }
             }
@@ -143,14 +154,13 @@ public class Database {
         return returnme;
     }
 
-    protected void setStoredBannedPlayers(List<OfflinePlayer> players) {
+    protected void setStoredBannedPlayers(List<UUID> players) {
         List<String> uuids = new ArrayList<>();
         try {
-            for (OfflinePlayer p : players) {
-                uuids.add(p.getUniqueId().toString());
+            for (UUID u : players) {
+                uuids.add(u.toString());
             }
             String str = String.join(":", uuids);
-            Bukkit.broadcastMessage(str);
             PreparedStatement ps = getConnection().prepareStatement("UPDATE foxrankbannedplayers SET uuids = ? WHERE id = ?");
             ps.setString(1, str);
             ps.setString(2, "bannedPlayers");
@@ -160,8 +170,7 @@ public class Database {
         }
     }
 
-    protected void addPlayerData(RankedPlayer rp) {
-        UUID uuid = rp.getUniqueId();
+    protected void addPlayerData(UUID uuid) {
         boolean exists = false;
         try {
             try {
@@ -208,7 +217,7 @@ public class Database {
     protected void setStoredRank(UUID uuid, Rank rank) {
         try {
             PreparedStatement ps = getConnection().prepareStatement("UPDATE foxrankplayerdata SET rankid = ? WHERE uuid=?");
-            ps.setString(1, rank.getRankID());
+            ps.setString(1, rank.getId());
             ps.setString(2, uuid.toString());
             ps.executeUpdate();
         } catch (SQLException e) {
@@ -293,7 +302,7 @@ public class Database {
             PreparedStatement ps = getConnection().prepareStatement("UPDATE foxrankplayerdata SET isnicked = ?, nickname = ?, nicknamerank = ?, nicknameskin = ? WHERE uuid = ?");
             ps.setBoolean(1, isNicked);
             ps.setString(2, newNick);
-            ps.setString(3, rank.getRankID());
+            ps.setString(3, rank.getId());
             ps.setString(4, skin);
             ps.setString(5, uuid.toString());
             ps.executeUpdate();
@@ -308,12 +317,12 @@ public class Database {
             ps.setString(1, uuid.toString());
             ResultSet rs = ps.executeQuery();
             if (rs.next()) {
-                return Rank.ofString(rs.getString("rankid"));
+                return Rank.of(rs.getString("rankid"));
             }
         } catch (SQLException e) {
             e.printStackTrace();
         }
-        return Rank.DEFAULT;
+        return plugin.getDefaultRank();
     }
 
     protected boolean getStoredMuteStatus(UUID uuid) {
@@ -406,12 +415,12 @@ public class Database {
             ps.setString(1, uuid.toString());
             ResultSet rs = ps.executeQuery();
             if (rs.next()) {
-                return Rank.ofString(rs.getString("nicknamerank"));
+                return Rank.of(rs.getString("nicknamerank"));
             }
         } catch (SQLException e) {
             e.printStackTrace();
         }
-        return Rank.DEFAULT;
+        return plugin.getDefaultRank();
     }
 
     protected String getStoredMuteDuration(UUID uuid) {
@@ -425,7 +434,7 @@ public class Database {
         } catch (SQLException e) {
             e.printStackTrace();
         }
-        return Rank.DEFAULT.getRankID();
+        return null;
     }
 
     protected String getStoredMuteReason(UUID uuid) {
@@ -439,7 +448,7 @@ public class Database {
         } catch (SQLException e) {
             e.printStackTrace();
         }
-        return Rank.DEFAULT.getRankID();
+        return null;
     }
 
     protected String getStoredBanID(UUID uuid) {
@@ -453,7 +462,7 @@ public class Database {
         } catch (SQLException e) {
             e.printStackTrace();
         }
-        return Rank.DEFAULT.getRankID();
+        return null;
     }
 
     protected String getStoredBanDuration(UUID uuid) {
@@ -467,7 +476,7 @@ public class Database {
         } catch (SQLException e) {
             e.printStackTrace();
         }
-        return Rank.DEFAULT.getRankID();
+        return null;
     }
 
     protected String getStoredBanReason(UUID uuid) {
@@ -481,7 +490,7 @@ public class Database {
         } catch (SQLException e) {
             e.printStackTrace();
         }
-        return Rank.DEFAULT.getRankID();
+        return null;
     }
 
     protected List<String> getNames() {
@@ -490,8 +499,7 @@ public class Database {
             PreparedStatement ps = getConnection().prepareStatement("SELECT * FROM foxrankplayerdata");
             ResultSet rs = ps.executeQuery();
             while (rs.next()) {
-                if (rs.getString("name") == null) {
-                } else {
+                if (rs.getString("name") != null) {
                     returnme.add(rs.getString("name"));
                 }
             }
@@ -508,8 +516,7 @@ public class Database {
             PreparedStatement ps = getConnection().prepareStatement("SELECT * FROM foxrankplayerdata");
             ResultSet rs = ps.executeQuery();
             while (rs.next()) {
-                if (rs.getString("uuid") == null) {
-                } else {
+                if (rs.getString("uuid") != null) {
                     returnme.add(UUID.fromString(rs.getString("uuid")));
                 }
             }

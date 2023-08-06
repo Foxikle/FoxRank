@@ -15,8 +15,8 @@ public class OfflineRankedPlayer implements OfflineCustomPlayer{
         if (player == null || !player.hasPlayedBefore()) {
             throw new NullPointerException();
         }
-        this.offlinePlayer = player;
-        this.rank = FoxRank.getInstance().getOfflineRank(player);
+        this.offlinePlayer = player; // todo:
+        this.rank = FoxRank.getInstance().dm.getStoredRank(player.getUniqueId());
         File file = new File("plugins/FoxRank/PlayerData/" + offlinePlayer.getUniqueId() + ".yml");
         yml = YamlConfiguration.loadConfiguration(file);
     }
@@ -36,7 +36,7 @@ public class OfflineRankedPlayer implements OfflineCustomPlayer{
      */
     @Override
     public String getNickname() {
-        return FoxRank.getInstance().getNickname(offlinePlayer.getUniqueId());
+        return FoxRank.getInstance().dm.getNickname(offlinePlayer.getUniqueId());
     }
 
     /**
@@ -55,7 +55,7 @@ public class OfflineRankedPlayer implements OfflineCustomPlayer{
 
     @Override
     public Rank getRank() {
-        return Rank.ofString(yml.getString("Rank"));
+        return Rank.of(yml.getString("Rank"));
     }
 
     /**
@@ -65,7 +65,7 @@ public class OfflineRankedPlayer implements OfflineCustomPlayer{
 
     @Override
     public void setRank(Rank rank) {
-        FoxRank.getInstance().setRankOfflinePlayer(offlinePlayer, rank);
+        FoxRank.getInstance().dm.setStoredRank(offlinePlayer.getUniqueId(), rank);
     }
 
     /**
@@ -85,7 +85,7 @@ public class OfflineRankedPlayer implements OfflineCustomPlayer{
      **/
     @Override
     public int getPowerLevel() {
-        return this.rank.getPowerLevel();
+        return this.rank.getPowerlevel();
     }
 
     /**
@@ -95,7 +95,7 @@ public class OfflineRankedPlayer implements OfflineCustomPlayer{
      **/
     @Override
     public boolean isNicked() {
-        return FoxRank.getInstance().isNicked(getOfflinePlayer().getUniqueId());
+        return FoxRank.getInstance().dm.isNicked(getOfflinePlayer().getUniqueId());
     }
 
     /**
@@ -105,7 +105,7 @@ public class OfflineRankedPlayer implements OfflineCustomPlayer{
      **/
     @Override
     public boolean isVanished() {
-        return FoxRank.instance.isVanished(getOfflinePlayer().getUniqueId());
+        return FoxRank.getInstance().dm.isVanished(getOfflinePlayer().getUniqueId());
     }
 
     /**
@@ -115,7 +115,7 @@ public class OfflineRankedPlayer implements OfflineCustomPlayer{
      **/
     @Override
     public boolean isMuted() {
-        return FoxRank.instance.isMuted(getOfflinePlayer().getUniqueId());
+        return FoxRank.getInstance().dm.isMuted(getOfflinePlayer().getUniqueId());
     }
 
     /**
@@ -155,7 +155,7 @@ public class OfflineRankedPlayer implements OfflineCustomPlayer{
      **/
     @Override
     public String getRankId() {
-        return rank.getRankID();
+        return rank.getId();
     }
 
     /**
@@ -165,7 +165,7 @@ public class OfflineRankedPlayer implements OfflineCustomPlayer{
      **/
     @Override
     public String getMuteReason() {
-        return FoxRank.getInstance().getMuteReason(offlinePlayer.getUniqueId());
+        return FoxRank.getInstance().dm.getMuteReason(offlinePlayer.getUniqueId());
     }
 
     /**
@@ -175,7 +175,7 @@ public class OfflineRankedPlayer implements OfflineCustomPlayer{
      **/
     @Override
     public Instant getMuteDuration() {
-        return FoxRank.instance.getMuteDuration(offlinePlayer.getUniqueId());
+        return FoxRank.getInstance().dm.getMuteDuration(offlinePlayer.getUniqueId());
     }
 
     /**Gets a formatted string of when the player's mute will expire.
@@ -192,6 +192,6 @@ public class OfflineRankedPlayer implements OfflineCustomPlayer{
      */
     @Override
     public boolean isBanned() {
-        return FoxRank.getInstance().isBanned(this.offlinePlayer.getUniqueId());
+        return FoxRank.getInstance().dm.isBanned(this.offlinePlayer.getUniqueId());
     }
 }

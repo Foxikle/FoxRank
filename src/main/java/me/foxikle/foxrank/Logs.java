@@ -1,10 +1,12 @@
 package me.foxikle.foxrank;
 
+import com.google.gson.JsonParser;
+import me.clip.placeholderapi.PlaceholderAPI;
 import org.bukkit.*;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
-import org.bukkit.command.TabExecutor;
+import org.bukkit.command.TabCompleter;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -15,146 +17,174 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.tags.CustomItemTagContainer;
 import org.bukkit.inventory.meta.tags.ItemTagType;
 
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.URL;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
-public class Logs implements CommandExecutor, TabExecutor, Listener {
+public class Logs implements CommandExecutor, TabCompleter, Listener {
     private static final List<Inventory> invs = new ArrayList<>();
     private static final Map<Player, Integer> playerPages = new HashMap<>();
-    private final FoxRank foxRank = FoxRank.getInstance();
+    private final FoxRank plugin;
     private final List<String> options = Arrays.asList("MUTE", "UNMUTE", "NICKNAME", "BAN", "UNBAN");
     private final List<ItemStack> items = new ArrayList<>();
     private List<Entry> entries = new ArrayList<>();
 
+    public Logs(FoxRank plugin) {
+        this.plugin = plugin;
+    }
+
     public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
-        Bukkit.getScheduler().runTaskAsynchronously(FoxRank.getInstance(), () -> {
+        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
             if (label.equalsIgnoreCase("logs")) {
                 invs.clear();
                 items.clear();
-                if (!FoxRank.getInstance().getConfig().getBoolean("DisableLogsCommand")) {
+                if (!plugin.getConfig().getBoolean("DisableLogsCommand")) {
                     if (sender instanceof Player player) {
                         playerPages.remove(player);
-                        RankedPlayer rankedPlayer = new RankedPlayer(player, FoxRank.getInstance());
-                        if (rankedPlayer.getPowerLevel() >= FoxRank.getInstance().getConfig().getInt("LogsCommandPermissions")) {
+                        if (player.hasPermission("foxrank.logging.use")) {
                             if (args.length < 2) {
-                                FoxRank.getInstance().sendMissingArgsMessage("/logs", "<player> [logtype]", new RankedPlayer(player, FoxRank.getInstance()));
+                                plugin.syntaxMap.put(player.getUniqueId(), "/logs <player> <logtype>");
+                               player.sendMessage(plugin.getSyntaxMessage(player));
                             } else if (args.length >= 2) {
-                                if (Bukkit.getOfflinePlayer(FoxRank.instance.getUUID(args[0])) != null) {
-                                    OfflineRankedPlayer rp = new OfflineRankedPlayer(Bukkit.getOfflinePlayer(FoxRank.instance.getUUID(args[0])));
+                                if (Bukkit.getOfflinePlayer(getUUID(args[0])) != null) {
+                                    OfflineRankedPlayer rp = new OfflineRankedPlayer(Bukkit.getOfflinePlayer(getUUID(args[0])));
                                     if (options.contains(args[1])) {
                                         final DateFormat f = new SimpleDateFormat("MM/dd/yyyy hh:mm:ss a");
-                                        entries = Logging.getLogEntries(rp.getUniqueId());
+                                        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+                                        entries = plugin.getDm().getLogEntries(rp.getUniqueId());
                                         if (args[1].equalsIgnoreCase("MUTE")) {
-                                            entries.removeIf(e -> e.getType() != EntryType.MUTE);
+                                            if (!player.hasPermission("foxrank.logging.mute")) {
+                                                player.sendMessage(plugin.getMessage("NoPermissionMessage", player));
+                                                return;
+                                            }
+                                            entries.removeIf(e -> e.type() != EntryType.MUTE);
                                             if (entries.isEmpty()) {
-                                                rankedPlayer.sendMessage(ChatColor.translateAlternateColorCodes('§', FoxRank.getInstance().getConfig().getString("LogsNoData").replace("$PLAYER", ChatColor.YELLOW + String.valueOf(ChatColor.ITALIC) + rp.getName()).replace("$LOGTYPE", "mute")));
+                                                player.sendMessage(plugin.getMessage("LogsNoData", player));
                                             }
 
                                             for (Entry e : entries) {
                                                 ItemStack item = new ItemStack(Material.MAP);
                                                 ItemMeta meta = item.getItemMeta();
-                                                Date date = Date.from(e.getTime());
+                                                Date date = Date.from(e.time());
                                                 meta.setDisplayName(f.format(date));
                                                 List<String> lore = new ArrayList<>();
-                                                OfflineRankedPlayer orp = new OfflineRankedPlayer(Bukkit.getOfflinePlayer(e.getStaff()));
-                                                lore.add(ChatColor.translateAlternateColorCodes('§', "§eMute ID: §b" + e.getId()));
+                                                OfflineRankedPlayer orp = new OfflineRankedPlayer(Bukkit.getOfflinePlayer(e.staff()));
+                                                lore.add(ChatColor.translateAlternateColorCodes('§', "§eMute ID: §b" + e.id()));
                                                 lore.add(ChatColor.translateAlternateColorCodes('§', "§eIssued by: " + orp.getPrefix() + orp.getName()));
-                                                lore.add(ChatColor.translateAlternateColorCodes('§', "§eIssued for: §6" + e.getOption1()));
-                                                lore.add(ChatColor.translateAlternateColorCodes('§', "§eDuration: §6" + FoxRank.getInstance().getFormattedExpiredString(e.getDuration(), e.getTime())));
+                                                lore.add(ChatColor.translateAlternateColorCodes('§', "§eIssued for: §6" + e.option1()));
+                                                lore.add(ChatColor.translateAlternateColorCodes('§', "§eDuration: §6" + plugin.getFormattedExpiredString(e.duration(), e.time())));
                                                 meta.setLore(lore);
-                                                NamespacedKey key = new NamespacedKey(foxRank, "NoClickey");
+                                                NamespacedKey key = new NamespacedKey(plugin, "NoClickey");
                                                 meta.getCustomTagContainer().setCustomTag(key, ItemTagType.STRING, "CARD");
                                                 item.setItemMeta(meta);
                                                 items.add(item);
                                             }
                                             makeInventories("Mute", rp);
                                         } else if (args[1].equalsIgnoreCase("UNMUTE")) {
-                                            entries.removeIf(e -> e.getType() != EntryType.UNMUTE);
+                                            if (!player.hasPermission("foxrank.logging.unmute")) {
+                                                player.sendMessage(plugin.getMessage("NoPermissionMessage", player));
+                                                return;
+                                            }
+                                            entries.removeIf(e -> e.type() != EntryType.UNMUTE);
                                             if (entries.isEmpty()) {
-                                                rankedPlayer.sendMessage(ChatColor.translateAlternateColorCodes('§', FoxRank.getInstance().getConfig().getString("LogsNoData").replace("$PLAYER", ChatColor.YELLOW + String.valueOf(ChatColor.ITALIC) + rp.getName()).replace("$LOGTYPE", "unmute")));
+                                                player.sendMessage(plugin.getMessage("LogsNoData", player));
                                             }
                                             for (Entry e : entries) {
                                                 ItemStack item = new ItemStack(Material.FILLED_MAP);
                                                 ItemMeta meta = item.getItemMeta();
-                                                Date date = Date.from(e.getTime());
+                                                Date date = Date.from(e.time());
                                                 meta.setDisplayName(f.format(date));
                                                 List<String> lore = new ArrayList<>();
-                                                lore.add(ChatColor.translateAlternateColorCodes('§', "§eUnmute ID: §b" + e.getId()));
-                                                lore.add(ChatColor.translateAlternateColorCodes('§', "§eUnmuted by: " + new OfflineRankedPlayer(Bukkit.getOfflinePlayer(e.getStaff())).getPrefix() + new OfflineRankedPlayer(Bukkit.getOfflinePlayer(e.getStaff())).getName()));
+                                                lore.add(ChatColor.translateAlternateColorCodes('§', "§eUnmute ID: §b" + e.id()));
+                                                lore.add(ChatColor.translateAlternateColorCodes('§', "§eUnmuted by: " + new OfflineRankedPlayer(Bukkit.getOfflinePlayer(e.staff())).getPrefix() + new OfflineRankedPlayer(Bukkit.getOfflinePlayer(e.staff())).getName()));
                                                 meta.setLore(lore);
-                                                NamespacedKey key = new NamespacedKey(foxRank, "NoClickey");
+                                                NamespacedKey key = new NamespacedKey(plugin, "NoClickey");
                                                 meta.getCustomTagContainer().setCustomTag(key, ItemTagType.STRING, "CARD");
                                                 item.setItemMeta(meta);
                                                 items.add(item);
                                             }
                                             makeInventories("Unmute", rp);
                                         } else if (args[1].equalsIgnoreCase("NICKNAME")) {
-                                            rankedPlayer.sendMessage("entries size: " + entries.size());
-                                            entries.removeIf(e -> e.getType() != EntryType.NICKNAME);
+                                            if (!player.hasPermission("foxrank.logging.nickname")) {
+                                                player.sendMessage(plugin.getMessage("NoPermissionMessage", player));
+                                                return;
+                                            }
+                                            player.sendMessage("entries size: " + entries.size());
+                                            entries.removeIf(e -> e.type() != EntryType.NICKNAME);
                                             if (entries.isEmpty()) {
-                                                rankedPlayer.sendMessage(ChatColor.translateAlternateColorCodes('§', FoxRank.getInstance().getConfig().getString("LogsNoData").replace("$PLAYER", ChatColor.YELLOW + String.valueOf(ChatColor.ITALIC) + rp.getName()).replace("$LOGTYPE", "nickname")));
+                                                player.sendMessage(plugin.getMessage("LogsNoData", player));
                                             }
                                             for (Entry e : entries) {
                                                 ItemStack item = new ItemStack(Material.NAME_TAG);
                                                 ItemMeta meta = item.getItemMeta();
-                                                Date date = Date.from(e.getTime());
+                                                Date date = Date.from(e.time());
                                                 meta.setDisplayName(f.format(date));
                                                 List<String> lore = new ArrayList<>();
 
-                                                lore.add(ChatColor.translateAlternateColorCodes('§', "§eNickName: §b" + e.getOption1()));
+                                                lore.add(ChatColor.translateAlternateColorCodes('§', "§eNickName: §b" + e.option1()));
                                                 lore.add(ChatColor.translateAlternateColorCodes('§', rp.getPrefix() + rp.getName()));
-                                                lore.add(ChatColor.translateAlternateColorCodes('§', "§eSkin: §6" + e.getOption2()));
+                                                lore.add(ChatColor.translateAlternateColorCodes('§', "§eSkin: §6" + e.option2()));
                                                 meta.setLore(lore);
-                                                NamespacedKey key = new NamespacedKey(foxRank, "NoClickey");
+                                                NamespacedKey key = new NamespacedKey(plugin, "NoClickey");
                                                 meta.getCustomTagContainer().setCustomTag(key, ItemTagType.STRING, "CARD");
                                                 item.setItemMeta(meta);
                                                 items.add(item);
                                             }
                                             makeInventories("Nickname", rp);
                                         } else if (args[1].equalsIgnoreCase("BAN")) {
-                                            entries.removeIf(e -> e.getType() != EntryType.BAN);
+                                            if (!player.hasPermission("foxrank.logging.ban")) {
+                                                player.sendMessage(plugin.getMessage("NoPermissionMessage", player));
+                                                return;
+                                            }
+                                            entries.removeIf(e -> e.type() != EntryType.BAN);
                                             if (entries.isEmpty()) {
-                                                rankedPlayer.sendMessage(ChatColor.translateAlternateColorCodes('§', FoxRank.getInstance().getConfig().getString("LogsNoData").replace("$PLAYER", ChatColor.YELLOW + String.valueOf(ChatColor.ITALIC) + rp.getName()).replace("$LOGTYPE", "ban")));
+                                                player.sendMessage(plugin.getMessage("LogsNoData", player));
                                             }
                                             for (Entry e : entries) {
                                                 ItemStack item = new ItemStack(Material.FILLED_MAP);
                                                 ItemMeta meta = item.getItemMeta();
-                                                Date date = Date.from(e.getTime());
+                                                Date date = Date.from(e.time());
                                                 meta.setDisplayName(f.format(date));
                                                 List<String> lore = new ArrayList<>();
 
                                                 lore.add(ChatColor.translateAlternateColorCodes('§', "§ePlayer: §b" + rp.getPrefix() + rp.getName()));
-                                                lore.add(ChatColor.translateAlternateColorCodes('§', "§eStaff: " + new OfflineRankedPlayer(Bukkit.getOfflinePlayer(e.getStaff())).getPrefix() + new OfflineRankedPlayer(Bukkit.getOfflinePlayer(e.getStaff())).getName()));
-                                                lore.add(ChatColor.translateAlternateColorCodes('§', "§eReason: §b" + e.getOption1()));
-                                                lore.add(ChatColor.translateAlternateColorCodes('§', "§eDuration: §b" + FoxRank.getInstance().getFormattedExpiredString(e.getDuration(), e.getTime())));
-                                                lore.add(ChatColor.translateAlternateColorCodes('§', "§eSilent: §b" + e.getOption2()));
-                                                lore.add(ChatColor.translateAlternateColorCodes('§', "§eBan ID: §b" + e.getId()));
+                                                lore.add(ChatColor.translateAlternateColorCodes('§', "§eStaff: " + new OfflineRankedPlayer(Bukkit.getOfflinePlayer(e.staff())).getPrefix() + new OfflineRankedPlayer(Bukkit.getOfflinePlayer(e.staff())).getName()));
+                                                lore.add(ChatColor.translateAlternateColorCodes('§', "§eReason: §b" + e.option1()));
+                                                lore.add(ChatColor.translateAlternateColorCodes('§', "§eDuration: §b" + plugin.getFormattedExpiredString(e.duration(), e.time())));
+                                                lore.add(ChatColor.translateAlternateColorCodes('§', "§eSilent: §b" + e.option2()));
+                                                lore.add(ChatColor.translateAlternateColorCodes('§', "§eBan ID: §b" + e.id()));
                                                 meta.setLore(lore);
-                                                NamespacedKey key = new NamespacedKey(foxRank, "NoClickey");
+                                                NamespacedKey key = new NamespacedKey(plugin, "NoClickey");
                                                 meta.getCustomTagContainer().setCustomTag(key, ItemTagType.STRING, "CARD");
                                                 item.setItemMeta(meta);
                                                 items.add(item);
                                             }
                                             makeInventories("Ban", rp);
                                         } else if (args[1].equalsIgnoreCase("UNBAN")) {
-                                            entries.removeIf(e -> e.getType() != EntryType.UNBAN);
+                                            if (!player.hasPermission("foxrank.logging.unban")) {
+                                                player.sendMessage(plugin.getMessage("NoPermissionMessage", player));
+                                                return;
+                                            }
+                                            entries.removeIf(e -> e.type() != EntryType.UNBAN);
                                             if (entries.isEmpty()) {
-                                                rankedPlayer.sendMessage(ChatColor.translateAlternateColorCodes('§', FoxRank.getInstance().getConfig().getString("LogsNoData").replace("$PLAYER", ChatColor.YELLOW + rp.getName()).replace("$LOGTYPE", "unban")));
+                                                player.sendMessage(plugin.getMessage("LogsNoData", player));
                                             }
                                             for (Entry e : entries) {
                                                 ItemStack item = new ItemStack(Material.WRITTEN_BOOK);
                                                 ItemMeta meta = item.getItemMeta();
-                                                Date date = Date.from(e.getTime());
+                                                Date date = Date.from(e.time());
                                                 meta.setDisplayName(f.format(date));
                                                 List<String> lore = new ArrayList<>();
 
                                                 lore.add(ChatColor.translateAlternateColorCodes('§', "§ePlayer: §b" + rp.getPrefix() + rp.getName()));
-                                                lore.add(ChatColor.translateAlternateColorCodes('§', "§eStaff: §b" + new OfflineRankedPlayer(Bukkit.getOfflinePlayer(e.getStaff())).getPrefix() + new OfflineRankedPlayer(Bukkit.getOfflinePlayer(e.getStaff())).getName()));
-                                                lore.add(ChatColor.translateAlternateColorCodes('§', "§eBan ID: §b" + e.getId()));
+                                                lore.add(ChatColor.translateAlternateColorCodes('§', "§eStaff: §b" + new OfflineRankedPlayer(Bukkit.getOfflinePlayer(e.staff())).getPrefix() + new OfflineRankedPlayer(Bukkit.getOfflinePlayer(e.staff())).getName()));
+                                                lore.add(ChatColor.translateAlternateColorCodes('§', "§eBan ID: §b" + e.id()));
                                                 meta.setLore(lore);
-                                                NamespacedKey key = new NamespacedKey(foxRank, "NoClickey");
+                                                NamespacedKey key = new NamespacedKey(plugin, "NoClickey");
                                                 meta.getCustomTagContainer().setCustomTag(key, ItemTagType.STRING, "CARD");
                                                 item.setItemMeta(meta);
                                                 items.add(item);
@@ -162,24 +192,26 @@ public class Logs implements CommandExecutor, TabExecutor, Listener {
                                             makeInventories("Unban", rp);
                                         }
                                         playerPages.put(player, 0);
-                                        openInv(player, invs.get(playerPages.get(player)));
-
+                                        Bukkit.getScheduler().runTask(plugin, () -> openInv(player, invs.get(playerPages.get(player))));
+                                        });
                                     } else {
-                                        FoxRank.getInstance().sendInvalidArgsMessage("LogType", rankedPlayer);
+                                        plugin.syntaxMap.put(player.getUniqueId(), "/logs <player> <logtype>");
+                                        player.sendMessage(plugin.getSyntaxMessage(player));
                                     }
-
                                 } else {
-                                    FoxRank.getInstance().sendInvalidArgsMessage("Player", rankedPlayer);
+                                    plugin.syntaxMap.put(player.getUniqueId(), "/logs <player> <logtype>");
+                                    player.sendMessage(plugin.getSyntaxMessage(player));
                                 }
                             } else {
-                                FoxRank.getInstance().sendMissingArgsMessage("/logs", "<player/logtype>", rankedPlayer);
+                                plugin.syntaxMap.put(player.getUniqueId(), "/logs <player> <logtype>");
+                                player.sendMessage(plugin.getSyntaxMessage(player));
                             }
                         } else {
-                            FoxRank.getInstance().sendNoPermissionMessage(FoxRank.getInstance().getConfig().getInt("LogsCommandPermissions"), rankedPlayer);
+                            player.sendMessage(plugin.getMessage("NoPermissionMessage", player));
                         }
                     }
                 } else {
-                    sender.sendMessage(ChatColor.translateAlternateColorCodes('§', FoxRank.getInstance().getConfig().getString("CommandDisabledMessage")));
+                    sender.sendMessage(plugin.getMessage("CommandDisabledMessage", (Player) sender));
                 }
             }
 
@@ -188,7 +220,7 @@ public class Logs implements CommandExecutor, TabExecutor, Listener {
     }
 
     private void openInv(Player player, Inventory inv) {
-        Bukkit.getScheduler().runTask(FoxRank.getInstance(), () -> player.openInventory(inv));
+        Bukkit.getScheduler().runTask(plugin, () -> player.openInventory(inv));
     }
 
 
@@ -205,7 +237,7 @@ public class Logs implements CommandExecutor, TabExecutor, Listener {
 
         } else if (args.length == 1) {
             List<String> playerNames = new ArrayList<>();
-            playerNames.addAll(FoxRank.getInstance().getPlayerNames((Player) sender));
+            playerNames.addAll(plugin.playerNames);
             for (OfflinePlayer player : Bukkit.getOfflinePlayers()) {
                 playerNames.add(player.getName());
             }
@@ -218,7 +250,7 @@ public class Logs implements CommandExecutor, TabExecutor, Listener {
         ItemStack item = new ItemStack(Material.GRAY_STAINED_GLASS_PANE);
         ItemMeta meta = item.getItemMeta();
         List<String> lore = new ArrayList<>();
-        NamespacedKey key = new NamespacedKey(foxRank, "NoClickey");
+        NamespacedKey key = new NamespacedKey(plugin, "NoClickey");
         meta.getCustomTagContainer().setCustomTag(key, ItemTagType.STRING, "PANE");
         meta.setDisplayName(" ");
         lore.add("");
@@ -238,7 +270,7 @@ public class Logs implements CommandExecutor, TabExecutor, Listener {
         ItemStack next = new ItemStack(Material.ARROW);
         ItemMeta nextMeta = next.getItemMeta();
         nextMeta.setDisplayName(ChatColor.translateAlternateColorCodes('§', "§eNext Page"));
-        NamespacedKey key = new NamespacedKey(foxRank, "NoClickey");
+        NamespacedKey key = new NamespacedKey(plugin, "NoClickey");
         nextMeta.getCustomTagContainer().setCustomTag(key, ItemTagType.STRING, "next");
         next.setItemMeta(nextMeta);
 
@@ -256,7 +288,7 @@ public class Logs implements CommandExecutor, TabExecutor, Listener {
         sortItems();
         int pagesint = (int) Math.ceil(items.size() / 28.0);
         for (int i = 0; i < pagesint; i++) {
-            Inventory inv = addBorder(Bukkit.createInventory(null, 54, ChatColor.translateAlternateColorCodes('§', foxRank.getConfig().getString("LogsMenuName").replace("$NAME", ChatColor.YELLOW + rp.getName()).replace("$LOGTYPE", type) + "   (" + (i + 1) + "/" + pagesint + ")")));
+            Inventory inv = addBorder(Bukkit.createInventory(null, 54, ChatColor.translateAlternateColorCodes('&', PlaceholderAPI.setPlaceholders(rp.getOfflinePlayer(), plugin.getConfig().getString("LogsMenuName") + "   (" + (i + 1) + "/" + pagesint + ")"))));
             if (i < pagesint - 1) {
                 inv.setItem(53, next);
             }
@@ -313,8 +345,9 @@ public class Logs implements CommandExecutor, TabExecutor, Listener {
         if (e.getCurrentItem() == null) return;
         if (e.getCurrentItem().getItemMeta() == null) return;
         ItemMeta meta = e.getCurrentItem().getItemMeta();
-        NamespacedKey key = new NamespacedKey(foxRank, "NoClickey");
+        NamespacedKey key = new NamespacedKey(plugin, "NoClickey");
         CustomItemTagContainer tagContainer = meta.getCustomTagContainer();
+        //TODO: change to use persistent data container
         Player player = (Player) e.getWhoClicked();
         if (meta.getPersistentDataContainer().getKeys().contains(key)) {
             playerPages.putIfAbsent(player, 0);
@@ -336,6 +369,18 @@ public class Logs implements CommandExecutor, TabExecutor, Listener {
                 }
             }
         }
+    }
+    private UUID getUUID(String name) {
+        URL url;
+        InputStreamReader reader = null;
+        try {
+            url = new URL("https://api.mojang.com/users/profiles/minecraft/" + name);
+            reader = new InputStreamReader(url.openStream());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        String raw = JsonParser.parseReader(reader).getAsJsonObject().get("id").getAsString();
+        return UUID.fromString(raw.substring(0, 8) + "-" + raw.substring(8, 12) + "-" + raw.substring(12, 16) + "-" + raw.substring(16, 20) + "-" + raw.substring(20, 32));
     }
 }
 

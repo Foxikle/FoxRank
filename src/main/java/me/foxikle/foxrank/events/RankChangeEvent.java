@@ -32,7 +32,7 @@ public class RankChangeEvent extends Event {
      * </p>
      *
      * @return the new rank of player
-     * @see Rank Please see the {@link me.foxikle.foxrank.Rank}
+     * @see Rank Please see the {@link Rank}
      * @since 1.8.1
      */
     public Rank getNewRank() {
@@ -44,7 +44,7 @@ public class RankChangeEvent extends Event {
      * </p>
      *
      * @return the old rank of player
-     * @see Rank Please see the {@link me.foxikle.foxrank.Rank}
+     * @see Rank Please see the {@link Rank}
      * @since 1.9.3
      */
     public Rank getOldRank() {
