@@ -1,5 +1,6 @@
 package me.foxikle.foxrank;
 
+import com.google.common.collect.Iterables;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
@@ -21,23 +22,32 @@ public class SetRank implements CommandExecutor, TabCompleter {
 
     public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
         if (sender instanceof Player player) {
-            RankedPlayer rankedPlayer = new RankedPlayer(player, FoxRank.getInstance());
             if (!FoxRank.getInstance().getConfig().getBoolean("DisableSetRank")) {
                 if (player.hasPermission("foxrank.ranks.setrank")) {
                     if (args.length < 1) {
-                        FoxRank.getInstance().sendMissingArgsMessage("/setrank", "<rankID> [player]", new RankedPlayer(player, FoxRank.getInstance()));
+                        FoxRank.getInstance().syntaxMap.put(player.getUniqueId(), "/setrank <RankID> [Player]");
+                        player.sendMessage(FoxRank.getInstance().getSyntaxMessage(player));
                     } else if (args.length == 1) {
+                        Rank rank = plugin.getRank(player);
                         if (FoxRank.getInstance().ranks.containsKey(args[0])) {
+                            if (Rank.of(args[0]).getPowerlevel() > rank.getPowerlevel()) {
+                                player.sendMessage(plugin.getMessage("PromoteSelfMessage", player));
+                                return true;
+                            } else if (Rank.of(args[0]).getPowerlevel() == rank.getPowerlevel()) {
+                                player.sendMessage(plugin.getMessage("AlreadyRankMessage", player));
+                                return true;
+                            }
                             plugin.setRank(player, Rank.of(args[0]));
-                            rankedPlayer.sendMessage(ChatColor.translateAlternateColorCodes('§', FoxRank.getInstance().dm.getConfig().getString("RankIsNowMessage").replace("$RANK", Rank.of(args[0]).getPrefix())));
+                            player.sendMessage(plugin.getMessage("RankIsNowMessage", player));
                         } else {
-                            FoxRank.getInstance().sendInvalidArgsMessage("Rank", new RankedPlayer(player, FoxRank.getInstance()));
+                            plugin.syntaxMap.put(player.getUniqueId(), "/setrank <RankID> [Player]");
+                            player.sendMessage(FoxRank.getInstance().getSyntaxMessage(player));
                         }
                     } else {
                         if (plugin.bungeecord) {
-                            plugin.dm.setStoredRank(Bukkit.getOfflinePlayer(args[1]).getUniqueId(), Rank.of(args[0]));
+                            Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> plugin.getDm().setStoredRank(Bukkit.getOfflinePlayer(args[1]).getUniqueId(), Rank.of(args[0])));
                             plugin.getPluginChannelListener().sendUpdateDataMessage(args[1]);
-                            plugin.getPluginChannelListener().sendMessage(player, args[1], ChatColor.translateAlternateColorCodes('§', FoxRank.getInstance().getConfig().getString("RankIsNowMessage").replace("$RANK", Rank.of(args[0]).getPrefix())));
+                            plugin.getPluginChannelListener().sendMessage(player, args[1], plugin.getMessage("RankIsNowMessage", player));
                             return true;
                         }
                         Player p = Bukkit.getServer().getPlayer(args[1]);
@@ -45,19 +55,45 @@ public class SetRank implements CommandExecutor, TabCompleter {
                             if (FoxRank.getInstance().ranks.containsKey(args[0])) {
                                 Rank rank = Rank.of(args[0]);
                                 plugin.setRank(p, rank);
-                                p.sendMessage(ChatColor.translateAlternateColorCodes('§', FoxRank.getInstance().getConfig().getString("RankIsNowMessage").replace("$RANK", Rank.of(args[0]).getPrefix())));
+                                p.sendMessage(plugin.getMessage("RankIsNowMessage", p));
                             } else {
-                                FoxRank.getInstance().sendInvalidArgsMessage("Rank", new RankedPlayer(player, FoxRank.getInstance()));
+                                plugin.syntaxMap.put(player.getUniqueId(), "/setrank <RankID> [Player]");
+                                player.sendMessage(FoxRank.getInstance().getSyntaxMessage(player));
                             }
                         } else {
-                            player.sendMessage(ChatColor.RED + "Your rank must be higher than " + new RankedPlayer(p, FoxRank.getInstance()).getPrefix() + new RankedPlayer(p, FoxRank.getInstance()).getName() + " to change their rank!");
+                            player.sendMessage(ChatColor.RED + "Your rank must be higher than " + plugin.getRank(p).getPrefix() + p.getName() + " to change their rank!");
                         }
                     }
                 } else {
-                    FoxRank.getInstance().sendNoPermissionMessage(FoxRank.getInstance().getConfig().getInt("SetRankPermissions"), rankedPlayer);
+                    player.sendMessage(FoxRank.getInstance().getMessage("NoPermissionMessage", player));
                 }
             } else {
-                sender.sendMessage(ChatColor.translateAlternateColorCodes('§', FoxRank.getInstance().getConfig().getString("CommandDisabledMessage")));
+                sender.sendMessage(plugin.getMessage("CommandDisabledMessage", player));
+            }
+        } else {
+            if (!FoxRank.getInstance().getConfig().getBoolean("DisableSetRank")) {
+                if (args.length < 2) {
+                    sender.sendMessage(ChatColor.RED + "Invalid Arguments: /setrank <rankID> <player>");
+                } else {
+                    if (plugin.bungeecord) {
+                        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> plugin.getDm().setStoredRank(Bukkit.getOfflinePlayer(args[1]).getUniqueId(), Rank.of(args[0])));
+                        plugin.getPluginChannelListener().sendUpdateDataMessage(args[1]);
+                        //todo: fix this probably VV
+                        plugin.getPluginChannelListener().sendMessage(Iterables.getLast(Bukkit.getOnlinePlayers()), args[1], plugin.getMessage("RankIsNowMessage", Bukkit.getOfflinePlayer(args[1])));
+                        return true;
+                    }
+                    Player p = Bukkit.getServer().getPlayer(args[1]);
+
+                    if (FoxRank.getInstance().ranks.containsKey(args[0])) {
+                        Rank rank = Rank.of(args[0]);
+                        plugin.setRank(p, rank);
+                        p.sendMessage(plugin.getMessage("RankIsNowMessage", p));
+                    } else {
+                        sender.sendMessage(ChatColor.RED + "Invalid Rank provided");
+                    }
+                }
+            } else {
+                sender.sendMessage(plugin.getMessage("CommandDisabledMessage", Bukkit.getOfflinePlayer(args[1])));
             }
         }
         return false;
