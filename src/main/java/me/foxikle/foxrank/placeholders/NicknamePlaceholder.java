@@ -41,7 +41,7 @@ public class NicknamePlaceholder extends PlaceholderExpansion {
     @Override
     public @Nullable String onPlaceholderRequest(Player player, @NotNull String params) {
         if (params.isEmpty() || params.isBlank()) {
-            return plugin.dm.getNickname(player.getUniqueId());
+            return plugin.getPlayerData(player.getUniqueId()).getNickname();
         } else if (params.equalsIgnoreCase("attempt")) {
             return plugin.attemptedNicknameMap.get(player.getUniqueId());
         }

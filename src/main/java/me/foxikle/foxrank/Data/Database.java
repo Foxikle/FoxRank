@@ -3,7 +3,6 @@ package me.foxikle.foxrank.Data;
 import me.foxikle.foxrank.Entry;
 import me.foxikle.foxrank.FoxRank;
 import me.foxikle.foxrank.Rank;
-import me.foxikle.foxrank.RankedPlayer;
 
 import javax.annotation.Nullable;
 import java.sql.*;
@@ -171,8 +170,7 @@ public class Database {
         }
     }
 
-    protected void addPlayerData(RankedPlayer rp) {
-        UUID uuid = rp.getUniqueId();
+    protected void addPlayerData(UUID uuid) {
         boolean exists = false;
         try {
             try {

@@ -1,5 +1,7 @@
 package me.foxikle.foxrank;
 
+import com.google.gson.JsonParser;
+import me.clip.placeholderapi.PlaceholderAPI;
 import org.bukkit.*;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -15,6 +17,9 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.tags.CustomItemTagContainer;
 import org.bukkit.inventory.meta.tags.ItemTagType;
 
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.URL;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -40,24 +45,25 @@ public class Logs implements CommandExecutor, TabCompleter, Listener {
                 if (!plugin.getConfig().getBoolean("DisableLogsCommand")) {
                     if (sender instanceof Player player) {
                         playerPages.remove(player);
-                        RankedPlayer senderRp = new RankedPlayer(player, plugin);
-                        if (senderRp.getPowerLevel() >= plugin.getConfig().getInt("LogsCommandPermissions")) {
+                        if (player.hasPermission("foxrank.logging.use")) {
                             if (args.length < 2) {
-                                plugin.sendMissingArgsMessage("/logs", "<player> [logtype]", senderRp);
+                                plugin.syntaxMap.put(player.getUniqueId(), "/logs <player> <logtype>");
+                               player.sendMessage(plugin.getSyntaxMessage(player));
                             } else if (args.length >= 2) {
-                                if (Bukkit.getOfflinePlayer(plugin.dm.getUUID(args[0])) != null) {
-                                    OfflineRankedPlayer rp = new OfflineRankedPlayer(Bukkit.getOfflinePlayer(plugin.dm.getUUID(args[0])));
+                                if (Bukkit.getOfflinePlayer(getUUID(args[0])) != null) {
+                                    OfflineRankedPlayer rp = new OfflineRankedPlayer(Bukkit.getOfflinePlayer(getUUID(args[0])));
                                     if (options.contains(args[1])) {
                                         final DateFormat f = new SimpleDateFormat("MM/dd/yyyy hh:mm:ss a");
-                                        entries = plugin.dm.getLogEntries(rp.getUniqueId());
+                                        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+                                        entries = plugin.getDm().getLogEntries(rp.getUniqueId());
                                         if (args[1].equalsIgnoreCase("MUTE")) {
                                             if (!player.hasPermission("foxrank.logging.mute")) {
-                                                player.sendMessage(plugin.getConfig().getString("NoPermissionMessage"));
+                                                player.sendMessage(plugin.getMessage("NoPermissionMessage", player));
                                                 return;
                                             }
                                             entries.removeIf(e -> e.type() != EntryType.MUTE);
                                             if (entries.isEmpty()) {
-                                                senderRp.sendMessage(ChatColor.translateAlternateColorCodes('§', plugin.getConfig().getString("LogsNoData").replace("$PLAYER", ChatColor.YELLOW + String.valueOf(ChatColor.ITALIC) + rp.getName()).replace("$LOGTYPE", "mute")));
+                                                player.sendMessage(plugin.getMessage("LogsNoData", player));
                                             }
 
                                             for (Entry e : entries) {
@@ -80,12 +86,12 @@ public class Logs implements CommandExecutor, TabCompleter, Listener {
                                             makeInventories("Mute", rp);
                                         } else if (args[1].equalsIgnoreCase("UNMUTE")) {
                                             if (!player.hasPermission("foxrank.logging.unmute")) {
-                                                player.sendMessage(plugin.getConfig().getString("NoPermissionMessage"));
+                                                player.sendMessage(plugin.getMessage("NoPermissionMessage", player));
                                                 return;
                                             }
                                             entries.removeIf(e -> e.type() != EntryType.UNMUTE);
                                             if (entries.isEmpty()) {
-                                                senderRp.sendMessage(ChatColor.translateAlternateColorCodes('§', plugin.getConfig().getString("LogsNoData").replace("$PLAYER", ChatColor.YELLOW + String.valueOf(ChatColor.ITALIC) + rp.getName()).replace("$LOGTYPE", "unmute")));
+                                                player.sendMessage(plugin.getMessage("LogsNoData", player));
                                             }
                                             for (Entry e : entries) {
                                                 ItemStack item = new ItemStack(Material.FILLED_MAP);
@@ -104,13 +110,13 @@ public class Logs implements CommandExecutor, TabCompleter, Listener {
                                             makeInventories("Unmute", rp);
                                         } else if (args[1].equalsIgnoreCase("NICKNAME")) {
                                             if (!player.hasPermission("foxrank.logging.nickname")) {
-                                                player.sendMessage(plugin.getConfig().getString("NoPermissionMessage"));
+                                                player.sendMessage(plugin.getMessage("NoPermissionMessage", player));
                                                 return;
                                             }
-                                            senderRp.sendMessage("entries size: " + entries.size());
+                                            player.sendMessage("entries size: " + entries.size());
                                             entries.removeIf(e -> e.type() != EntryType.NICKNAME);
                                             if (entries.isEmpty()) {
-                                                senderRp.sendMessage(ChatColor.translateAlternateColorCodes('§', plugin.getConfig().getString("LogsNoData").replace("$PLAYER", ChatColor.YELLOW + String.valueOf(ChatColor.ITALIC) + rp.getName()).replace("$LOGTYPE", "nickname")));
+                                                player.sendMessage(plugin.getMessage("LogsNoData", player));
                                             }
                                             for (Entry e : entries) {
                                                 ItemStack item = new ItemStack(Material.NAME_TAG);
@@ -131,12 +137,12 @@ public class Logs implements CommandExecutor, TabCompleter, Listener {
                                             makeInventories("Nickname", rp);
                                         } else if (args[1].equalsIgnoreCase("BAN")) {
                                             if (!player.hasPermission("foxrank.logging.ban")) {
-                                                player.sendMessage(plugin.getConfig().getString("NoPermissionMessage"));
+                                                player.sendMessage(plugin.getMessage("NoPermissionMessage", player));
                                                 return;
                                             }
                                             entries.removeIf(e -> e.type() != EntryType.BAN);
                                             if (entries.isEmpty()) {
-                                                senderRp.sendMessage(ChatColor.translateAlternateColorCodes('§', plugin.getConfig().getString("LogsNoData").replace("$PLAYER", ChatColor.YELLOW + String.valueOf(ChatColor.ITALIC) + rp.getName()).replace("$LOGTYPE", "ban")));
+                                                player.sendMessage(plugin.getMessage("LogsNoData", player));
                                             }
                                             for (Entry e : entries) {
                                                 ItemStack item = new ItemStack(Material.FILLED_MAP);
@@ -160,12 +166,12 @@ public class Logs implements CommandExecutor, TabCompleter, Listener {
                                             makeInventories("Ban", rp);
                                         } else if (args[1].equalsIgnoreCase("UNBAN")) {
                                             if (!player.hasPermission("foxrank.logging.unban")) {
-                                                player.sendMessage(plugin.getConfig().getString("NoPermissionMessage"));
+                                                player.sendMessage(plugin.getMessage("NoPermissionMessage", player));
                                                 return;
                                             }
                                             entries.removeIf(e -> e.type() != EntryType.UNBAN);
                                             if (entries.isEmpty()) {
-                                                senderRp.sendMessage(ChatColor.translateAlternateColorCodes('§', plugin.getConfig().getString("LogsNoData").replace("$PLAYER", ChatColor.YELLOW + rp.getName()).replace("$LOGTYPE", "unban")));
+                                                player.sendMessage(plugin.getMessage("LogsNoData", player));
                                             }
                                             for (Entry e : entries) {
                                                 ItemStack item = new ItemStack(Material.WRITTEN_BOOK);
@@ -186,24 +192,26 @@ public class Logs implements CommandExecutor, TabCompleter, Listener {
                                             makeInventories("Unban", rp);
                                         }
                                         playerPages.put(player, 0);
-                                        openInv(player, invs.get(playerPages.get(player)));
-
+                                        Bukkit.getScheduler().runTask(plugin, () -> openInv(player, invs.get(playerPages.get(player))));
+                                        });
                                     } else {
-                                        plugin.sendInvalidArgsMessage("LogType", senderRp);
+                                        plugin.syntaxMap.put(player.getUniqueId(), "/logs <player> <logtype>");
+                                        player.sendMessage(plugin.getSyntaxMessage(player));
                                     }
-
                                 } else {
-                                    plugin.sendInvalidArgsMessage("Player", senderRp);
+                                    plugin.syntaxMap.put(player.getUniqueId(), "/logs <player> <logtype>");
+                                    player.sendMessage(plugin.getSyntaxMessage(player));
                                 }
                             } else {
-                                plugin.sendMissingArgsMessage("/logs", "<player/logtype>", senderRp);
+                                plugin.syntaxMap.put(player.getUniqueId(), "/logs <player> <logtype>");
+                                player.sendMessage(plugin.getSyntaxMessage(player));
                             }
                         } else {
-                            plugin.sendNoPermissionMessage(plugin.getConfig().getInt("LogsCommandPermissions"), senderRp);
+                            player.sendMessage(plugin.getMessage("NoPermissionMessage", player));
                         }
                     }
                 } else {
-                    sender.sendMessage(ChatColor.translateAlternateColorCodes('§', plugin.getConfig().getString("CommandDisabledMessage")));
+                    sender.sendMessage(plugin.getMessage("CommandDisabledMessage", (Player) sender));
                 }
             }
 
@@ -229,7 +237,7 @@ public class Logs implements CommandExecutor, TabCompleter, Listener {
 
         } else if (args.length == 1) {
             List<String> playerNames = new ArrayList<>();
-            playerNames.addAll(plugin.dm.getPlayerNames((Player) sender));
+            playerNames.addAll(plugin.playerNames);
             for (OfflinePlayer player : Bukkit.getOfflinePlayers()) {
                 playerNames.add(player.getName());
             }
@@ -280,7 +288,7 @@ public class Logs implements CommandExecutor, TabCompleter, Listener {
         sortItems();
         int pagesint = (int) Math.ceil(items.size() / 28.0);
         for (int i = 0; i < pagesint; i++) {
-            Inventory inv = addBorder(Bukkit.createInventory(null, 54, ChatColor.translateAlternateColorCodes('§', plugin.getConfig().getString("LogsMenuName").replace("$NAME", ChatColor.YELLOW + rp.getName()).replace("$LOGTYPE", type) + "   (" + (i + 1) + "/" + pagesint + ")")));
+            Inventory inv = addBorder(Bukkit.createInventory(null, 54, ChatColor.translateAlternateColorCodes('&', PlaceholderAPI.setPlaceholders(rp.getOfflinePlayer(), plugin.getConfig().getString("LogsMenuName") + "   (" + (i + 1) + "/" + pagesint + ")"))));
             if (i < pagesint - 1) {
                 inv.setItem(53, next);
             }
@@ -361,6 +369,18 @@ public class Logs implements CommandExecutor, TabCompleter, Listener {
                 }
             }
         }
+    }
+    private UUID getUUID(String name) {
+        URL url;
+        InputStreamReader reader = null;
+        try {
+            url = new URL("https://api.mojang.com/users/profiles/minecraft/" + name);
+            reader = new InputStreamReader(url.openStream());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        String raw = JsonParser.parseReader(reader).getAsJsonObject().get("id").getAsString();
+        return UUID.fromString(raw.substring(0, 8) + "-" + raw.substring(8, 12) + "-" + raw.substring(12, 16) + "-" + raw.substring(16, 20) + "-" + raw.substring(20, 32));
     }
 }
 

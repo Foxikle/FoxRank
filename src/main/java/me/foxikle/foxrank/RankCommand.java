@@ -60,20 +60,21 @@ public class RankCommand implements CommandExecutor, TabExecutor {
                             plugin.teamMappings.values().forEach(Team::unregister);
                             plugin.teamMappings.clear();
                             plugin.ranks.clear();
+                            plugin.clearPlayerData();
                             plugin.playerRanks.clear();
                             plugin.rankTeams.clear();
-                            plugin.dm.setupRanks();
+                            Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> plugin.getDm().setupRanks());
                             plugin.setupTeams();
 
 
-                            Bukkit.getOnlinePlayers().forEach(p -> Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+                            Bukkit.getOnlinePlayers().forEach(p -> Bukkit.getScheduler().runTaskLaterAsynchronously(plugin, () -> {
                                 plugin.loadRank(p);
-                                if (plugin.dm.isNicked(p.getUniqueId())) {
-                                    Nick.changeName(plugin.dm.getNickname(p.getUniqueId()), p);
+                                if (plugin.getPlayerData(p.getUniqueId()).isNicked()) {
+                                    Nick.changeName(plugin.getPlayerData(p.getUniqueId()).getNickname(), p);
                                     Bukkit.getScheduler().runTask(plugin, () -> Nick.loadSkin(p));
-                                    plugin.setTeam(p, plugin.dm.getNicknameRank(p.getUniqueId()).getId());
+                                    plugin.setTeam(p, plugin.getPlayerData(p.getUniqueId()).getNicknameRank().getId());
                                 }
-                            }));
+                            }, 10));
                         }
                     }
                 } else { // `/rank modify ADMIN prefix <prefix>`
@@ -87,7 +88,7 @@ public class RankCommand implements CommandExecutor, TabExecutor {
                         FileConfiguration yml = YamlConfiguration.loadConfiguration(file);
                         if (args.length >= 4) {
                             Rank rank = Rank.ofStrict(args[1]);
-                            if (rank == null) {
+                            if (rank == null) { // todo: syntax
                                 player.sendMessage(ChatColor.RED + "Could not find the rank '" + args[1] + "'!");
                                 return true;
                             }
@@ -114,7 +115,8 @@ public class RankCommand implements CommandExecutor, TabExecutor {
                                             rank.removePermissionNode(node);
                                         }
                                     } else {
-                                        plugin.sendMissingArgsMessage("rank", "modify " + rank.getId() + " permission <add/remove> <permission.node>", new RankedPlayer(player, plugin));
+                                        plugin.syntaxMap.put(player.getUniqueId(), "/rank modify <Rank> permission <add/remove> <permission.node>");
+                                        player.sendMessage(plugin.getSyntaxMessage(player));
                                     }
                                 }
                             }
@@ -124,7 +126,8 @@ public class RankCommand implements CommandExecutor, TabExecutor {
                                 e.printStackTrace();
                             }
                         } else {
-                            plugin.sendMissingArgsMessage("rank", "", new RankedPlayer(player, plugin));
+                            plugin.syntaxMap.put(player.getUniqueId(), "/rank modify <RankID> <prefix/powerlevel/color/textcolor/nicknameable/permission>");
+                            player.sendMessage(plugin.getSyntaxMessage(player));
                         }
                     } else if (subCommand.equalsIgnoreCase("create")) { // `/rank create ADMIN `
                         if (!player.hasPermission("foxrank.ranks.create")) {

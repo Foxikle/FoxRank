@@ -2,7 +2,6 @@ plugins {
     `java-library`
     `maven-publish`
     id("io.papermc.paperweight.userdev") version "1.5.5"
-    id("xyz.jpenilla.run-paper") version "2.1.0"
     id("com.github.johnrengelman.shadow") version "8.1.1"
 }
 
@@ -10,12 +9,15 @@ repositories {
     mavenLocal()
     maven("https://repo.maven.apache.org/maven2/")
     maven("https://repo.codemc.io/repository/maven-snapshots/")
+    maven("https://repo.extendedclip.com/content/repositories/placeholderapi/")
+    mavenCentral()
 }
 
 dependencies {
     paperweight.paperDevBundle("1.20-R0.1-SNAPSHOT")
     api("net.wesjd:anvilgui:1.7.0-SNAPSHOT")
     implementation("org.bstats:bstats-bukkit:3.0.2")
+    compileOnly ("me.clip:placeholderapi:2.11.3")
 }
 
 group = "me.foxikle"
@@ -55,12 +57,11 @@ tasks {
         }
     }
 
-    shadowJar {
-        relocate("org.bstats", "dev.foxikle.dependencies.bstats")
-        relocate("net.wesjd.anvilgui", "dev.foxikle")
-    }
-
     reobfJar {
         outputJar.set(layout.buildDirectory.file("C:/Users/tscal/Desktop/testserver/plugins/FoxRank-${project.version}.jar"))
+    }
+
+    shadowJar {
+        relocate("org.bstats", "dev.foxikle.dependencies.bstats")
     }
 }

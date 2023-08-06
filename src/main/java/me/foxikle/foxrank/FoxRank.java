@@ -2,19 +2,28 @@ package me.foxikle.foxrank;
 
 import com.google.common.collect.Iterables;
 import com.google.gson.JsonParser;
+import me.clip.placeholderapi.PlaceholderAPI;
 import me.foxikle.foxrank.Data.DataManager;
+import me.foxikle.foxrank.Data.PlayerData;
 import me.foxikle.foxrank.events.RankChangeEvent;
+import me.foxikle.foxrank.placeholders.*;
 import org.bstats.bukkit.Metrics;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
+import org.bukkit.OfflinePlayer;
+import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Listener;
+import org.bukkit.permissions.PermissionAttachment;
 import org.bukkit.plugin.ServicePriority;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scoreboard.Scoreboard;
 import org.bukkit.scoreboard.Team;
+import org.jetbrains.annotations.NotNull;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URL;
@@ -35,7 +44,23 @@ public class FoxRank extends JavaPlugin implements Listener {
     public List<Team> rankTeams = new ArrayList<>();
     public Map<String, Team> teamMappings = new HashMap<>();
     public Map<String, Integer> powerLevels = new HashMap<>();
-    public DataManager dm;
+    public Map<UUID, Set<PermissionAttachment>> permissions = new HashMap<>();
+
+    // placeholders
+    public Map<UUID, String> logTypeMap = new HashMap<>();
+    public Map<UUID, String> attemptedBanPresetMap = new HashMap<>();
+    public Map<UUID, UUID> banMap = new HashMap<>();
+    public Map<UUID, UUID> muteMap = new HashMap<>();
+    public Map<UUID, String> syntaxMap = new HashMap<>();
+    public Map<UUID, UUID> targetMap = new HashMap<>();
+    public Map<UUID, String> attemptedNicknameMap = new HashMap<>();
+
+    // data cache
+    private Map<UUID, PlayerData> playerData = new HashMap<>();
+    public List<UUID> bannedPlayers = new ArrayList<>();
+    public List<String> players = new ArrayList<>();
+
+    private DataManager dm;
 
     protected List<String> playerNames = new ArrayList<>();
 
@@ -54,14 +79,24 @@ public class FoxRank extends JavaPlugin implements Listener {
     }
 
     public Rank getRank(Player player) {
-        return playerRanks.get(player);
+        return playerRanks.get(player) == null ? getDefaultRank() : playerRanks.get(player);
     }
 
     public void setRank(Player player, Rank rank) {
-        if (getRank(player) != null)
+        if (getRank(player) != null) {
             this.getServer().getPluginManager().callEvent(new RankChangeEvent(player, rank, getRank(player)));
+            clearPermissions(player.getUniqueId());
+        }
+
         playerRanks.put(player, rank);
-        dm.setStoredRank(player.getUniqueId(), rank);
+        Bukkit.getScheduler().runTaskAsynchronously(this, () -> dm.setStoredRank(player.getUniqueId(), rank));
+        setTeam(player, rank.getId());
+    }
+
+    public void loadRank(Player player) {
+        Rank rank = getPlayerData(player.getUniqueId()).getRank();
+        rank.getPermissionNodes().forEach(s -> player.addAttachment(this, s, true));
+        playerRanks.put(player, rank);
         setTeam(player, rank.getId());
     }
 
@@ -81,6 +116,24 @@ public class FoxRank extends JavaPlugin implements Listener {
             this.getServer().getMessenger().registerIncomingPluginChannel(this, "BungeeCord", pcl);
         }
 
+        if (Bukkit.getPluginManager().getPlugin("PlaceholderAPI") != null) {
+            new BanPlaceholder(this).register();
+            new LinePlaceholder(this).register();
+            new LogTypePlaceholder(this).register();
+            new MutePlaceholder(this).register();
+            new NicknamePlaceholder(this).register();
+            new PlayerRankPlaceholder(this).register();
+            new ServerPlaceholder(this).register();
+            new SyntaxPlaceholder(this).register();
+            new TargetPlaceholder(this).register();
+        } else {
+            getLogger().severe("Could not find PlaceholderAPI! This plugin is required.");
+            Bukkit.getPluginManager().disablePlugin(this);
+        }
+
+        if(!checkVersion()) {
+            getLogger().warning("Incompatible server version! This WILL break the nickname feature. Do not expect support.");
+        }
 
         setupTeams();
         Bukkit.getScheduler().runTaskLater(this, () -> {
@@ -90,27 +143,63 @@ public class FoxRank extends JavaPlugin implements Listener {
             getServer().getPluginManager().registerEvents(new Listeners(this), this);
         }, 20);
         reloadConfig();
-
+        Mute m = new Mute(this);
         getCommand("nick").setExecutor(new Nick());
         getCommand("vanish").setExecutor(new Vanish());
         getCommand("setrank").setExecutor(new SetRank(this));
-        getCommand("mute").setExecutor(new Mute());
-        getCommand("me").setExecutor(new Mute());
-        getCommand("say").setExecutor(new Mute());
-        getCommand("immuted").setExecutor(new Mute());
-        getCommand("unmute").setExecutor(new Mute());
+        getCommand("mute").setExecutor(new Mute(this));
+        getCommand("me").setExecutor(m);
+        getCommand("say").setExecutor(m);
+        getCommand("immuted").setExecutor(m);
+        getCommand("unmute").setExecutor(m);
         getCommand("logs").setExecutor(new Logs(this));
         getCommand("ban").setExecutor(new Ban(this));
         getCommand("unban").setExecutor(new Unban());
+        getCommand("rank").setExecutor(new RankCommand(this));
 
         Bukkit.getServicesManager().register(FoxRank.class, this, this, ServicePriority.Normal);
         Metrics metrics = new Metrics(this, 19157);
+        Bukkit.getScheduler().runTaskAsynchronously(this, () -> dm.setupRanks());
+        Bukkit.getScheduler().runTaskLater(this, () -> Bukkit.getOnlinePlayers().forEach(p -> Bukkit.getScheduler().runTaskAsynchronously(this, () -> {
+            this.loadRank(p);
+            ActionBar.setupActionBar(p);
+            if (getPlayerData(p.getUniqueId()).isMuted()) { //todo: make it support null durations
+                if (getPlayerData(p.getUniqueId()).getMuteDuration().isBefore(Instant.now())) {
+                    ModerationAction.unmutePlayer(new RankedPlayer(p, this), new RankedPlayer(p, this));
+                }
+            }
+            if (Bukkit.getOnlinePlayers().size() == 1) {
+                if (bungeecord) {
+                    Bukkit.getScheduler().runTaskLater(this, () -> FoxRank.pcl.getPlayers(Iterables.getFirst(Bukkit.getOnlinePlayers(), null)), 30);
+                }
+            }
+
+            if (getPlayerData(p.getUniqueId()).isNicked()) {
+                Nick.changeName(getPlayerData(p.getUniqueId()).getNickname(), p);
+                Bukkit.getScheduler().runTask(this, () -> Nick.loadSkin(p));
+                setTeam(p, getPlayerData(p.getUniqueId()).getNicknameRank().getId());
+            }
+            if (getPlayerData(p.getUniqueId()).isVanished()) {
+                Bukkit.getScheduler().runTask(this, () -> Vanish.vanishPlayer(p));
+            }
+        })), 20);
+    }
+
+    private boolean checkVersion(){
+        String sversion;
+        try{
+            sversion = Bukkit.getServer().getClass().getPackage().getName().split("\\.")[3];
+        } catch (ArrayIndexOutOfBoundsException ex){
+            return false;
+        }
+        return (sversion.equals("v1_20_R1") || sversion.equals("v1_20_1_R1"));
     }
 
     @Override
     public void onDisable() {
         for (Player p : this.getServer().getOnlinePlayers()) {
             dm.saveRank(p);
+            clearPermissions(p.getUniqueId());
         }
 
         for (Team team : rankTeams) {
@@ -126,9 +215,9 @@ public class FoxRank extends JavaPlugin implements Listener {
         Bukkit.getServicesManager().unregister(this);
     }
 
-    private void setupTeams() {
+    public void setupTeams() {
         Scoreboard board = Bukkit.getScoreboardManager().getMainScoreboard();
-        for (int i = 0; i < ranks.size() - 1; i++) {
+        for (int i = 0; i < ranks.size(); i++) {
             Rank rank = (Rank) ranks.values().toArray()[i];
             Team team;
             try {
@@ -142,7 +231,6 @@ public class FoxRank extends JavaPlugin implements Listener {
                 team.setColor(ChatColor.WHITE);
             } else {
                 team.setColor(rank.getColor());
-                Bukkit.broadcastMessage(rank.getColor().name());
                 team.setPrefix(rank.getPrefix());
             }
             teamMappings.put(rank.getId(), team);
@@ -179,18 +267,6 @@ public class FoxRank extends JavaPlugin implements Listener {
         }
     }
 
-    public void sendNoPermissionMessage(int powerLevel, RankedPlayer rp) {
-        rp.sendMessage(ChatColor.translateAlternateColorCodes('§', FoxRank.getInstance().getConfig().getString("NoPermissionMessage").replace("$POWERLEVEL", String.valueOf(powerLevel)).replace("\\n", "\n")));
-    }
-
-    public void sendMissingArgsMessage(String command, String args, RankedPlayer rp) {
-        rp.sendMessage(ChatColor.translateAlternateColorCodes('§', FoxRank.getInstance().getConfig().getString("MissingArgsMessage").replace("$COMMAND", command).replace("$ARGS", args)));
-    }
-
-    public void sendInvalidArgsMessage(String args, RankedPlayer rp) {
-        rp.sendMessage(ChatColor.translateAlternateColorCodes('§', FoxRank.getInstance().getConfig().getString("InvalidArgumentMessage").replace("$ARGTYPE", args)));
-    }
-
     public String getTrueName(UUID uuid) {
         URL url;
         try {
@@ -208,11 +284,62 @@ public class FoxRank extends JavaPlugin implements Listener {
      * This is configured in the `ranks.yml` file.
      */
     public Rank getDefaultRank() {
-        return Iterables.getLast(ranks.values(), null);
+        return Iterables.getLast(ranks.values());
     }
 
     @Override
-    public FileConfiguration getConfig() {
+    public @NotNull FileConfiguration getConfig() {
         return dm.getConfig();
+    }
+
+    public void clearPermissions(UUID uuid) {
+        OfflinePlayer op = Bukkit.getOfflinePlayer(uuid);
+        if(op.isOnline()) {
+            Player player = op.getPlayer();
+            if(permissions.get(uuid) == null || permissions.get(uuid).isEmpty()) return;
+            for (PermissionAttachment pa : permissions.get(uuid)) {
+                player.removeAttachment(pa);
+            }
+        } else {
+            permissions.remove(uuid);
+        }
+    }
+
+    public String getMessage(String path, OfflinePlayer p){
+        File file = new File("plugins/FoxRank/messages.yml");
+        YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
+        return PlaceholderAPI.setPlaceholders(p, ChatColor.translateAlternateColorCodes('&', yml.getString(path))).replace("\\n", "\n");
+    }
+    public String getMessage(String path, Player p){
+        File file = new File("plugins/FoxRank/messages.yml");
+        YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
+        return PlaceholderAPI.setPlaceholders(p, ChatColor.translateAlternateColorCodes('&', yml.getString(path))).replace("\\n", "\n");
+    }
+
+    public DataManager getDm(){
+        if(Bukkit.isPrimaryThread()) {
+            throw new IllegalThreadStateException("Database call on main thread");
+        }
+        return dm;
+    }
+    public void sendCommandDisabled(CommandSender commandSender){
+        File file = new File("plugins/FoxRank/messages.yml");
+        YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
+        commandSender.sendMessage(ChatColor.translateAlternateColorCodes('&', yml.getString("CommandDisabledMessage")).replace("\\n", "\n"));
+    }
+    public String getSyntaxMessage(Player player) {
+        File file = new File("plugins/FoxRank/messages.yml");
+        YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
+        return PlaceholderAPI.setPlaceholders(player, ChatColor.translateAlternateColorCodes('&', yml.getString("BadSyntaxMessage"))).replace("\\n", "\n");
+    }
+
+    public PlayerData getPlayerData(UUID uuid){
+        return playerData.get(uuid);
+    }
+    public void clearPlayerData(){
+         playerData.clear();
+    }
+    public void addPlayerDataEntry(PlayerData pd, UUID key){
+        playerData.put(key, pd);
     }
 }

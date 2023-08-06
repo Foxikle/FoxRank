@@ -49,14 +49,9 @@ public class Nick implements CommandExecutor {
             player.setPlayerListName(name);
             player.setCustomName(player.getName());
 
-            String message = FoxRank.getInstance().getConfig().getString("NickNameChangedMessage");
-            message = message.replace("$NEWNICK", name);
-            player.sendMessage(ChatColor.translateAlternateColorCodes('§', message));
-
+            player.sendMessage(FoxRank.getInstance().getMessage("NickNameChangedMessage", player));
         } else {
-            String message = FoxRank.getInstance().getConfig().getString("NicknameTooLongMessage");
-            message = message.replace("$NICKNAME", name);
-            player.sendMessage(ChatColor.translateAlternateColorCodes('§', message));
+            player.sendMessage(FoxRank.getInstance().getMessage("NicknameTooLongMessage", player));
         }
     }
 
@@ -200,9 +195,7 @@ public class Nick implements CommandExecutor {
                 refreshPlayer(player);
             }
         } else {
-            String message = FoxRank.getInstance().getConfig().getString("BlacklistedNicknameMessage");
-            message = message.replace("$BLACKLISTEDNAME", name);
-            player.sendMessage(ChatColor.translateAlternateColorCodes('§', message));
+            player.sendMessage(FoxRank.getInstance().getMessage("BlacklistedNicknameMessage", player));
         }
     }
 
@@ -282,7 +275,7 @@ public class Nick implements CommandExecutor {
             if (!FoxRank.getInstance().getConfig().getBoolean("DisableNicknames")) {
                 if (sender instanceof Player player) {
                     RankedPlayer rp = new RankedPlayer(player, FoxRank.getInstance());
-                    if (rp.getPowerLevel() >= FoxRank.getInstance().getConfig().getInt("NicknamePermissions")) {
+                    if (player.hasPermission("foxrank.nicknames.use")) {
                         if (args.length == 0) {
                             openWarningBook(player);
 
@@ -340,12 +333,12 @@ public class Nick implements CommandExecutor {
                             }
                         }
                     } else {
-                        FoxRank.getInstance().sendNoPermissionMessage(FoxRank.getInstance().getConfig().getInt("NicknamePermissions"), rp);
+                        player.sendMessage(FoxRank.getInstance().getMessage("NoPermissionMessage", player));
                     }
                 }
                 return true;
             } else {
-                sender.sendMessage(ChatColor.translateAlternateColorCodes('§', FoxRank.getInstance().getConfig().getString("CommandDisabledMessage")));
+                sender.sendMessage(FoxRank.getInstance().getMessage("CommandDisabledMessage", (Player) sender));
             }
         }
         return false;

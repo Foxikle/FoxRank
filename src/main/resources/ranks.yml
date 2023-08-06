@@ -7,7 +7,7 @@
 #                                                __/ |
 #                                               |___/
 #
-# Welcome to the FoxRank Rnank Config file. There are a few rules when editing YML files.
+# Welcome to the FoxRank Rank Config file. There are a few rules when editing YML files.
 # 1. NEVER, EVER use tabs. Always use 2 spaces.
 # 2. A '#' means the line is commented out. The server will ignore the line.
 # 3. If you delete a portion of the config, you can delete the 'ranks.yml' and a new one
@@ -23,6 +23,8 @@
 #      color: 'c'                          ~ The color to make the player's name
 #      ChatTextColor: 'f'                  ~ The color or their chat messages
 #      nicknamable: false                  ~ If the rank should be accessable to the /nick command
+#      permissions:                        ~ The permission nodes associated with the rank
+#        - example.permission.node
 # A few notes:
 #  - Having the same rank name as the id is generally useful.
 #  - The color should be JUST the letter/number. A complete
@@ -40,6 +42,8 @@ Ranks:
     color: 'c'
     ChatTextColor: 'f'
     nicknamable: false
+    permissions:
+      - foxrank.*
   ADMIN:
     prefix: '&c[ADMIN] '
     powerLevel: 90
@@ -47,6 +51,12 @@ Ranks:
     color: 'c'
     ChatTextColor: 'f'
     nicknamable: false
+    permissions:
+      - foxrank.moderation.*
+      - foxrank.ranks.setrank
+      - foxrank.logging.*
+      - foxrank.vanish
+      - foxrank.nicknames.*
   MODERATOR:
     prefix: '&2[MOD] '
     powerLevel: 80
@@ -54,6 +64,14 @@ Ranks:
     color: '2'
     ChatTextColor: 'f'
     nicknamable: false
+    permissions:
+      - foxrank.moderation.ban.immune
+      - foxrank.moderation.ban.permanent
+      - foxrank.moderation.ban.temporary
+      - foxrank.moderation.mute.*
+      - foxrank.logging.*
+      - foxrank.vanish
+      - foxrank.nicknames.*
   HELPER:
     prefix: '&9[HELPER] '
     powerLevel: 75
@@ -61,6 +79,15 @@ Ranks:
     color: '9'
     ChatTextColor: 'f'
     nicknamable: false
+    permissions:
+      - foxrank.moderation.ban.immune
+      - foxrank.moderation.ban.temporary
+      - foxrank.moderation.mute.immune
+      - foxrank.moderation.mute.temporary
+      - foxrank.moderation.mute.immuted
+      - foxrank.logging.*
+      - foxrank.vanish
+      - foxrank.nicknames.*
   YOUTUBE:
     prefix: '&c[&fYOUTUBE&c] '
     powerLevel: 70
@@ -68,6 +95,10 @@ Ranks:
     color: 'c'
     ChatTextColor: 'f'
     nicknamable: false
+    permissions:
+      - foxrank.vanish
+      - foxrank.nicknames.*
+      - foxrank.moderation.mute.immuted
   MVP_PLUS:
     prefix: '&b[MVP&6+&b] '
     powerLevel: 65
@@ -75,6 +106,8 @@ Ranks:
     color: 'b'
     ChatTextColor: 'f'
     nicknamable: true
+    permissions:
+      - foxrank.moderation.mute.immuted
   MVP:
     prefix: '&b[MVP] '
     powerLevel: 60
@@ -82,6 +115,8 @@ Ranks:
     color: 'b'
     ChatTextColor: 'f'
     nicknamable: true
+    permissions:
+      - foxrank.moderation.mute.immuted
   VIP_PLUS:
     prefix: '&a[VIP&6+&a] '
     powerLevel: 35
@@ -89,6 +124,8 @@ Ranks:
     color: 'a'
     ChatTextColor: 'f'
     nicknamable: true
+    permissions:
+      - foxrank.moderation.mute.immuted
   VIP:
     prefix: '&a[VIP] '
     powerLevel: 30
@@ -96,6 +133,8 @@ Ranks:
     color: 'a'
     ChatTextColor: 'f'
     nicknamable: true
+    permissions:
+      - foxrank.moderation.mute.immuted
   DEFAULT:
     prefix: ''
     powerLevel: 1
@@ -103,3 +142,5 @@ Ranks:
     color: '7'
     ChatTextColor: '7'
     nicknamable: true
+    permissions:
+      - foxrank.moderation.mute.immuted

@@ -1,5 +1,6 @@
 package me.foxikle.foxrank;
 
+import com.google.gson.JsonParser;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.OfflinePlayer;
@@ -11,11 +12,11 @@ import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
 
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.URL;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Locale;
+import java.util.*;
 
 import static java.util.Objects.hash;
 import static me.foxikle.foxrank.ModerationAction.banOfflinePlayer;
@@ -96,7 +97,8 @@ public class Ban implements CommandExecutor, TabCompleter {
                                         expires = Instant.now().plusSeconds((long) durInt * 60);
                                     }
                                 } else {
-                                    plugin.sendInvalidArgsMessage(args[2] + " Ex. `30d`, `24h`, `30m`", staff);
+                                    plugin.syntaxMap.put(banner.getUniqueId(), "/ban <player> <preset> <duration (`30d`, `24h`, `30m`)> <SILENT/PUBLIC>");
+                                    banner.sendMessage(plugin.getSyntaxMessage(banner));
                                     return false;
 
                                 }
@@ -105,7 +107,8 @@ public class Ban implements CommandExecutor, TabCompleter {
                                 } else if (args[3].equalsIgnoreCase("PUBLIC")) {
                                     silent = false;
                                 } else {
-                                    plugin.sendInvalidArgsMessage("<SILENT/PUBLIC>", staff);
+                                    plugin.syntaxMap.put(banner.getUniqueId(), "/ban <player> <preset> <duration (`30d`, `24h`, `30m`)> <SILENT/PUBLIC>");
+                                    banner.sendMessage(plugin.getSyntaxMessage(banner));
                                 }
                                 reason = removeUnderScore(reason);
                                 banID = getBanID(banee);
@@ -113,8 +116,8 @@ public class Ban implements CommandExecutor, TabCompleter {
 
                             }
                         } else {
-                            if (plugin.dm.getPlayers().contains(args[0])) {
-                                OfflinePlayer banee = Bukkit.getServer().getOfflinePlayer(plugin.dm.getUUID(args[0]));
+                            if (plugin.players.contains(args[0])) {
+                                OfflinePlayer banee = Bukkit.getServer().getOfflinePlayer(getUUID(args[0]));
                                 if (banee != null) {
                                     OfflineRankedPlayer baneeRp = new OfflineRankedPlayer(banee);
                                     if (baneeRp.getPowerLevel() >= staff.getPowerLevel()) {
@@ -162,7 +165,8 @@ public class Ban implements CommandExecutor, TabCompleter {
                                                 expires = Instant.now().plusSeconds((long) durInt * 60);
                                             }
                                         } else {
-                                            plugin.sendInvalidArgsMessage(args[2] + " Ex. `30d`, `24h`, `30m`", staff);
+                                            plugin.syntaxMap.put(banner.getUniqueId(), "/ban <player> <preset> <duration (`30d`, `24h`, `30m`)> <SILENT/PUBLIC>");
+                                            banner.sendMessage(plugin.getSyntaxMessage(banner));
                                             return false;
 
                                         }
@@ -171,7 +175,8 @@ public class Ban implements CommandExecutor, TabCompleter {
                                         } else if (args[3].equalsIgnoreCase("PUBLIC")) {
                                             silent = false;
                                         } else {
-                                            plugin.sendInvalidArgsMessage("<SILENT/PUBLIC>", staff);
+                                            plugin.syntaxMap.put(banner.getUniqueId(), "/ban <player> <preset> <duration (`30d`, `24h`, `30m`)> <SILENT/PUBLIC>");
+                                            banner.sendMessage(plugin.getSyntaxMessage(banner));
                                         }
                                         reason = removeUnderScore(reason);
                                         banID = getBanID(banee);
@@ -180,11 +185,13 @@ public class Ban implements CommandExecutor, TabCompleter {
                                     }
                                 }
                             } else {
-                                plugin.sendInvalidArgsMessage("Player", staff);
+                                plugin.syntaxMap.put(banner.getUniqueId(), "/ban <player> <preset> <duration (`30d`, `24h`, `30m`)> <SILENT/PUBLIC>");
+                                banner.sendMessage(plugin.getSyntaxMessage(banner));
                             }
                         }
                     } else {
-                        plugin.sendMissingArgsMessage("/ban", "<PLAYER> <REASON> <DURATION> <SILENT/PUBLIC>", staff);
+                        plugin.syntaxMap.put(banner.getUniqueId(), "/ban <player> <preset> <duration (`30d`, `24h`, `30m`)> <SILENT/PUBLIC>");
+                        banner.sendMessage(plugin.getSyntaxMessage(banner));
                     }
                 return true;
             }
@@ -201,7 +208,7 @@ public class Ban implements CommandExecutor, TabCompleter {
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
         if (args.length == 1) {
-            return plugin.dm.getPlayers();
+            return plugin.players;
         } else if (args.length == 2) {
             List<String> arguments = new ArrayList<>();
             arguments.addAll(plugin.getConfig().getConfigurationSection("BanReasons").getKeys(false));
@@ -222,5 +229,18 @@ public class Ban implements CommandExecutor, TabCompleter {
 
     private String removeUnderScore(String string) {
         return string.replace("_", "");
+    }
+
+    private UUID getUUID(String name) {
+        URL url;
+        InputStreamReader reader = null;
+        try {
+            url = new URL("https://api.mojang.com/users/profiles/minecraft/" + name);
+            reader = new InputStreamReader(url.openStream());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        String raw = new JsonParser().parse(reader).getAsJsonObject().get("id").getAsString();
+        return UUID.fromString(raw.substring(0, 8) + "-" + raw.substring(8, 12) + "-" + raw.substring(12, 16) + "-" + raw.substring(16, 20) + "-" + raw.substring(20, 32));
     }
 }

@@ -45,11 +45,11 @@ public class BanPlaceholder extends PlaceholderExpansion {
     public @Nullable String onPlaceholderRequest(Player player, @NotNull String params) {
         UUID banned = plugin.banMap.get(player.getUniqueId());
         if (params.equalsIgnoreCase("duration")) {
-            return plugin.getFormattedExpiredString(Instant.parse(plugin.dm.getStoredBanDuration(banned)), Instant.now());
+            return plugin.getFormattedExpiredString(plugin.getPlayerData(banned).getBanDuration(), Instant.now());
         } else if (params.equalsIgnoreCase("reason")) {
-            return plugin.dm.getStoredBanReason(banned);
+            return plugin.getPlayerData(banned).getBanReason();
         } else if (params.equalsIgnoreCase("id")) {
-            return plugin.dm.getStoredBanID(banned);
+            return plugin.getPlayerData(banned).getBanID();
         } else if (params.equalsIgnoreCase("preset")) {
             return plugin.attemptedBanPresetMap.get(player.getUniqueId());
         }

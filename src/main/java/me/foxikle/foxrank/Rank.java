@@ -2,6 +2,9 @@ package me.foxikle.foxrank;
 
 import org.bukkit.ChatColor;
 
+import javax.annotation.Nullable;
+import java.util.List;
+
 public class Rank {
 
     private final int pwrlvl;
@@ -10,14 +13,16 @@ public class Rank {
     private final ChatColor color;
     private final ChatColor textColor;
     private final boolean nicknameable;
+    private final List<String> permissionNodes;
 
-    public Rank(int pwrlvl, String prefix, String id, ChatColor color, ChatColor textColor, boolean nicknameable) {
+    public Rank(int pwrlvl, String prefix, String id, ChatColor color, ChatColor textColor, boolean nicknameable, List<String> permissionNodes) {
         this.pwrlvl = pwrlvl;
         this.prefix = prefix;
         this.id = id;
         this.color = color;
         this.textColor = textColor;
         this.nicknameable = nicknameable;
+        this.permissionNodes = permissionNodes;
     }
 
     public static Rank of(String str) {
@@ -26,6 +31,11 @@ public class Rank {
         } else {
             return FoxRank.getInstance().getDefaultRank();
         }
+    }
+
+    @Nullable
+    public static Rank ofStrict(String str) {
+        return FoxRank.getInstance().ranks.getOrDefault(str, null);
     }
 
     public String getPrefix() {
@@ -50,5 +60,17 @@ public class Rank {
 
     public boolean isNicknameable() {
         return nicknameable;
+    }
+
+    public List<String> getPermissionNodes() {
+        return permissionNodes;
+    }
+
+    public boolean addPermissionNode(String node){
+        return permissionNodes.add(node);
+    }
+
+    public boolean removePermissionNode(String node) {
+        return permissionNodes.remove(node);
     }
 }

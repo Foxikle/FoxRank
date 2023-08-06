@@ -18,11 +18,13 @@ public class ActionBar {
                 new BukkitRunnable() {
                     public void run() {
                         if (!player.isOnline()) return;
-                        if (plugin.dm.isNicked(player.getUniqueId()) && plugin.dm.isVanished(player.getUniqueId())) {
+                        boolean isVanished = plugin.getPlayerData(player.getUniqueId()).isVanished();
+                        boolean isNicked = plugin.getPlayerData(player.getUniqueId()).isNicked();
+                        if ( isNicked && isVanished) {
                             player.spigot().sendMessage(ACTION_BAR, TextComponent.fromLegacyText(ChatColor.WHITE + "You are currently " + ChatColor.RED + "NICKED" + ChatColor.WHITE + " & " + ChatColor.RED + "VANISHED" + ChatColor.WHITE + "."));
-                        } else if (plugin.dm.isVanished(player.getUniqueId())) {
+                        } else if (isVanished) {
                             player.spigot().sendMessage(ACTION_BAR, TextComponent.fromLegacyText(ChatColor.WHITE + "You are currently " + ChatColor.RED + "VANISHED" + ChatColor.WHITE + "."));
-                        } else if (plugin.dm.isNicked(player.getUniqueId())) {
+                        } else if (isNicked) {
                             player.spigot().sendMessage(ACTION_BAR, TextComponent.fromLegacyText(ChatColor.WHITE + "You are currently " + ChatColor.RED + "NICKED" + ChatColor.WHITE + "."));
                         } else {
                             this.cancel();

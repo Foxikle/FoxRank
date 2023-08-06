@@ -8,6 +8,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.time.Instant;
+import java.util.UUID;
 
 public class MutePlaceholder extends PlaceholderExpansion {
     private final FoxRank plugin;
@@ -43,20 +44,22 @@ public class MutePlaceholder extends PlaceholderExpansion {
 
     @Override
     public @Nullable String onPlaceholderRequest(Player player, @NotNull String params) {
+        UUID muted = plugin.muteMap.get(player.getUniqueId());
         if (params.equalsIgnoreCase("duration")) {
-            return plugin.getFormattedExpiredString(plugin.dm.getMuteDuration(player.getUniqueId()), Instant.now());
+            return plugin.getFormattedExpiredString(plugin.getPlayerData(muted).getMuteDuration(), Instant.now());
         } else if (params.equalsIgnoreCase("reason")) {
-            return plugin.dm.getMuteReason(player.getUniqueId());
+            return plugin.getPlayerData(muted).getMuteReason();
         }
         return null;
     }
 
     @Override
     public @Nullable String onRequest(OfflinePlayer player, @NotNull String params) {
+        UUID muted = plugin.muteMap.get(player.getUniqueId());
         if (params.equalsIgnoreCase("duration")) {
-            return plugin.getFormattedExpiredString(plugin.dm.getMuteDuration(player.getUniqueId()), Instant.now());
+            return plugin.getFormattedExpiredString(plugin.getPlayerData(muted).getMuteDuration(), Instant.now());
         } else if (params.equalsIgnoreCase("reason")) {
-            return plugin.dm.getMuteReason(player.getUniqueId());
+            return plugin.getPlayerData(muted).getMuteReason();
         }
         return null;
     }

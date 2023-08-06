@@ -11,6 +11,7 @@ import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
 import java.io.IOException;
@@ -30,8 +31,8 @@ import java.util.stream.Stream;
 public class DataManager {
 
     private final FoxRank plugin;
-    private boolean useDatabase;
     private final FileConfiguration config;
+    private boolean useDatabase;
     private Database db;
 
     //TODO: Make sure to query database ASYNC!!!
@@ -47,7 +48,6 @@ public class DataManager {
     }
 
     public void init() {
-
         plugin.disableRankVis = config.getBoolean("DisableRankVisiblity");
         plugin.bungeecord = config.getBoolean("bungeecord");
         useDatabase = config.getBoolean("UseSQLStorage");
@@ -62,20 +62,18 @@ public class DataManager {
             try {
                 db.connect();
             } catch (ClassNotFoundException | SQLException ignored) {
-                Bukkit.getLogger().log(Level.SEVERE, "[FOXRANK] Invalid database credentials. Disabling plugin.");
+                Bukkit.getLogger().log(Level.SEVERE, "[FoxRank] Invalid database credentials. Disabling plugin.");
                 plugin.getServer().getPluginManager().disablePlugin(plugin);
                 return;
             }
 
-            Bukkit.getLogger().info("[FOXRANK] Database connected.");
+            Bukkit.getLogger().info("[FoxRank] Database connected.");
             // setup datatables
             db.createPlayerDataTable();
             db.createBannedPlayersTable();
             db.createAuditLogTable();
 
             // load things into memory
-            setupRanks();
-
         } else {
             if (!new File("plugins/FoxRank/auditlog.yml").exists()) {
                 plugin.saveResource("auditlog.yml", false);
@@ -83,9 +81,10 @@ public class DataManager {
                 plugin.saveResource("bannedPlayers.yml", false);
             }
         }
+        setupRanks();
     }
 
-    public Rank getStoredRank(UUID uuid) {
+    private Rank getStoredRank(UUID uuid) {
         if (useDatabase) {
             return db.getStoredRank(uuid);
         } else {
@@ -118,7 +117,7 @@ public class DataManager {
         }
     }
 
-    private void setupRanks() {
+    public void setupRanks() {
         File file = new File("plugins/FoxRank/ranks.yml");
         YamlConfiguration yamlConfiguration = YamlConfiguration.loadConfiguration(file);
         ConfigurationSection yml = yamlConfiguration.getConfigurationSection("Ranks");
@@ -128,12 +127,37 @@ public class DataManager {
         Map<Rank, Integer> rankMappy = new HashMap<>();
         for (String str : keys) {
             ConfigurationSection section = yml.getConfigurationSection(str);
-            Rank rank = new Rank(section.getInt("powerLevel"), ChatColor.translateAlternateColorCodes('&', section.getString("prefix")), section.getString("id"), ChatColor.getByChar(section.getString("color").charAt(0)), ChatColor.getByChar(section.getString("ChatTextColor")), section.getBoolean("nicknamable"));
+            Rank rank = new Rank(section.getInt("powerLevel"), ChatColor.translateAlternateColorCodes('&', section.getString("prefix")), section.getString("id"), ChatColor.getByChar(section.getString("color").charAt(0)), ChatColor.getByChar(section.getString("ChatTextColor")), section.getBoolean("nicknamable"), section.getStringList("permissions"));
             powerlevelMappy.put(rank.getId(), rank.getPowerlevel());
             rankMappy.put(rank, rank.getPowerlevel());
         }
         plugin.ranks = getSortedRanks(rankMappy);
         plugin.powerLevels = sortByValue(powerlevelMappy);
+
+        for (UUID uuid : getUUIDs()) {
+            cacheUserData(uuid);
+        }
+        plugin.bannedPlayers.addAll(getBannedPlayers());
+        plugin.players.addAll(getPlayers());
+    }
+
+    public void cacheUserData(UUID uuid) {
+        plugin.addPlayerDataEntry(
+                new PlayerData(
+                        getStoredBanDuration(uuid),
+                        getStoredBanReason(uuid),
+                        getStoredBanID(uuid),
+                        isBanned(uuid),
+                        getMuteDuration(uuid),
+                        getMuteReason(uuid),
+                        isMuted(uuid),
+                        isVanished(uuid),
+                        isNicked(uuid),
+                        getNickname(uuid),
+                        getNicknameRank(uuid),
+                        getStoredRank(uuid),
+                        getNicknameSkin(uuid)
+                ), uuid);
     }
 
     private Map<String, Rank> getSortedRanks(Map<Rank, Integer> unsortMap) {
@@ -188,7 +212,7 @@ public class DataManager {
         }
     }
 
-    public boolean isNicked(UUID uuid) {
+    private boolean isNicked(UUID uuid) {
         if (useDatabase) {
             return db.getStoredNicknameStatus(uuid);
         }
@@ -197,7 +221,7 @@ public class DataManager {
         return yml.getBoolean("isNicked");
     }
 
-    public boolean isBanned(UUID uuid) {
+    private boolean isBanned(UUID uuid) {
         if (useDatabase) {
             return db.getStoredBanStatus(uuid);
         }
@@ -206,7 +230,7 @@ public class DataManager {
         return yml.getBoolean("isBanned");
     }
 
-    public boolean isMuted(UUID uuid) {
+    private boolean isMuted(UUID uuid) {
         if (useDatabase) {
             return db.getStoredMuteStatus(uuid);
         }
@@ -215,7 +239,7 @@ public class DataManager {
         return yml.getBoolean("isMuted");
     }
 
-    public String getMuteReason(UUID uuid) {
+    private String getMuteReason(UUID uuid) {
         if (useDatabase) {
             return db.getStoredMuteReason(uuid);
         }
@@ -224,16 +248,22 @@ public class DataManager {
         return yml.getString("MuteReason");
     }
 
-    public Instant getMuteDuration(UUID uuid) {
+    @Nullable
+    private Instant getMuteDuration(UUID uuid) {
+        String data;
         if (useDatabase) {
-            return Instant.parse(db.getStoredMuteDuration(uuid));
+            data = db.getStoredMuteDuration(uuid);
+        } else {
+            File file = new File("plugins/FoxRank/PlayerData/" + uuid + ".yml");
+            YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
+            data = yml.getString("MuteDuration");
         }
-        File file = new File("plugins/FoxRank/PlayerData/" + uuid + ".yml");
-        YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
-        return Instant.parse(yml.getString("MuteDuration"));
+        if(data == null)
+            return null;
+        return Instant.parse(data);
     }
 
-    public String getNickname(UUID uuid) {
+    private String getNickname(UUID uuid) {
         if (isNicked(uuid)) {
             if (useDatabase) {
                 return db.getStoredNickname(uuid);
@@ -247,7 +277,7 @@ public class DataManager {
         }
     }
 
-    public Rank getNicknameRank(UUID uuid) {
+    private Rank getNicknameRank(UUID uuid) {
         if (useDatabase) {
             return db.getStoredNicknameRank(uuid);
         } else {
@@ -267,8 +297,7 @@ public class DataManager {
             e.printStackTrace();
         }
         String raw = new JsonParser().parse(reader).getAsJsonObject().get("id").getAsString();
-        UUID uid = UUID.fromString(raw.substring(0, 8) + "-" + raw.substring(8, 12) + "-" + raw.substring(12, 16) + "-" + raw.substring(16, 20) + "-" + raw.substring(20, 32));
-        return uid;
+        return UUID.fromString(raw.substring(0, 8) + "-" + raw.substring(8, 12) + "-" + raw.substring(12, 16) + "-" + raw.substring(16, 20) + "-" + raw.substring(20, 32));
     }
 
 
@@ -305,7 +334,7 @@ public class DataManager {
     public List<String> getPlayerNames(Player player) {
         if (plugin.bungeecord) {
             // BAD!
-            //TOOD: Re-work this please. (And require a proxy plugin!)
+            //TODo: Re-work this please. (And require a proxy plugin!)
             return getPlayerNames(player);
         } else {
             List<String> returnme = new ArrayList<>();
@@ -376,7 +405,7 @@ public class DataManager {
         }
     }
 
-    public String getNicknameSkin(UUID uuid) {
+    private String getNicknameSkin(UUID uuid) {
         if (useDatabase) {
             return db.getStoredNicknameSkin(uuid);
         } else {
@@ -435,7 +464,7 @@ public class DataManager {
 
     public void setupPlayerInfoStorage(Player player) {
         if (useDatabase) {
-            db.addPlayerData(new RankedPlayer(player, plugin));
+            db.addPlayerData(player.getUniqueId());
         } else {
 
             File file = new File("plugins/FoxRank/PlayerData/" + player.getUniqueId() + ".yml");
@@ -501,16 +530,16 @@ public class DataManager {
                 if (plugin.disableRankVis) {
                     Bukkit.broadcastMessage(nick + ": " + e.getMessage());
                 } else {
-                    Bukkit.broadcastMessage(rank.getPrefix() + e.getPlayer().getName() + ChatColor.RESET + ": " + rank.getTextColor() + eventMessage);
+                    Bukkit.broadcastMessage(rank.getPrefix() + ChatColor.RESET + rank.getColor() + player.getName() + ChatColor.RESET + ": " + rank.getTextColor() + eventMessage);
                 }
             } else {
                 Rank rank = plugin.getRank(player);
                 if (!plugin.disableRankVis) {
-
+                    if (rank == null) return;
                     if (plugin.getRank(player) != plugin.getDefaultRank()) {
-                        Bukkit.broadcastMessage(rank.getPrefix() + player.getName() + ChatColor.RESET + ": " + rank.getTextColor() + eventMessage);
+                        Bukkit.broadcastMessage(rank.getPrefix() + ChatColor.RESET + rank.getColor() + player.getName() + ChatColor.RESET + ": " + rank.getTextColor() + eventMessage);
                     } else if (plugin.getRank(player) == plugin.getDefaultRank()) {
-                        Bukkit.broadcastMessage(plugin.getRank(player).getPrefix() + player.getDisplayName() + ChatColor.RESET + plugin.getDefaultRank().getTextColor() + ": " + eventMessage);
+                        Bukkit.broadcastMessage(plugin.getRank(player).getPrefix() + ChatColor.RESET + rank.getColor() + player.getDisplayName() + ChatColor.RESET + plugin.getDefaultRank().getTextColor() + ": " + eventMessage);
                     }
                 } else {
                     Bukkit.broadcastMessage(player.getName() + ": " + e.getMessage());
@@ -541,20 +570,17 @@ public class DataManager {
                 Rank rank = Rank.of(yml.getString("Nickname-Rank"));
                 String nick = yml.getString("Nickname");
                 if (!plugin.disableRankVis) {
-                    if (rank == plugin.getDefaultRank()) {
-                        Bukkit.broadcastMessage(rank.getColor() + nick + ": " + rank.getTextColor() + eventMessage);
-                    } else {
-                        Bukkit.broadcastMessage(rank.getPrefix() + e.getPlayer().getName() + ChatColor.RESET + ": " + rank.getTextColor() + eventMessage);
-                    }
+                    Bukkit.broadcastMessage(rank.getPrefix() + ChatColor.RESET + rank.getColor() + e.getPlayer().getName() + ChatColor.RESET + ": " + rank.getTextColor() + eventMessage);
                 } else {
                     Bukkit.broadcastMessage(nick + ": " + e.getMessage());
                 }
             } else {
+                Rank rank = Rank.of(yml.getString("Nickname-Rank"));
                 if (!plugin.disableRankVis) {
                     if (plugin.getRank(player) != plugin.getDefaultRank()) {
-                        Bukkit.broadcastMessage(plugin.getRank(player).getPrefix() + player.getName() + ChatColor.RESET + ": " + e.getMessage());
+                        Bukkit.broadcastMessage(rank.getPrefix() + ChatColor.RESET + rank.getColor() + player.getName() + ChatColor.RESET + ": " + e.getMessage());
                     } else if (plugin.getRank(player) == plugin.getDefaultRank()) {
-                        Bukkit.broadcastMessage(plugin.getRank(player).getPrefix() + player.getName() + ChatColor.RESET + ": " + plugin.getDefaultRank().getTextColor() + e.getMessage());
+                        Bukkit.broadcastMessage(rank.getPrefix() + ChatColor.RESET + rank.getColor() + player.getName() + ChatColor.RESET + ": " + plugin.getDefaultRank().getTextColor() + e.getMessage());
                     }
                 } else {
                     Bukkit.broadcastMessage(player.getName() + ": " + e.getMessage());
@@ -563,7 +589,7 @@ public class DataManager {
         }
     }
 
-    public String getStoredBanReason(UUID uuid) {
+    private String getStoredBanReason(UUID uuid) {
         if (useDatabase) {
             return db.getStoredBanReason(uuid);
         } else {
@@ -573,17 +599,21 @@ public class DataManager {
         }
     }
 
-    public String getStoredBanDuration(UUID uuid) {
+    private Instant getStoredBanDuration(UUID uuid) {
+        String data;
         if (useDatabase) {
-            return db.getStoredBanDuration(uuid);
+            data = db.getStoredBanDuration(uuid);
         } else {
             File file = new File("plugins/FoxRank/PlayerData/" + uuid + ".yml");
             YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
-            return yml.getString("BanDuration");
+            data = yml.getString("BanDuration");
         }
+        if(data == null)
+            return null;
+        return Instant.parse(data);
     }
 
-    public String getStoredBanID(UUID uuid) {
+    private String getStoredBanID(UUID uuid) {
         if (useDatabase) {
             return db.getStoredBanID(uuid);
         } else {

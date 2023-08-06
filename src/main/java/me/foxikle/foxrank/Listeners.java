@@ -28,7 +28,7 @@ public class Listeners implements Listener {
     @EventHandler
     public void onLeave(PlayerQuitEvent event) {
         Player p = event.getPlayer();
-        plugin.dm.saveRank(p);
+        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> plugin.getDm().saveRank(p));
     }
 
     @EventHandler(priority = EventPriority.LOWEST)
@@ -37,20 +37,23 @@ public class Listeners implements Listener {
         if (e.isCancelled()) {
             return;
         }
-        plugin.dm.handleEventMessage(e);
+        plugin.getDm().handleEventMessage(e);
     }
 
     @EventHandler
     public void OnPlayerLogin(PlayerJoinEvent e) {
         //TODO: This should probably be re-worked ._.
         Player p = e.getPlayer();
-        plugin.dm.setupPlayerInfoStorage(p);
-        plugin.dm.updatePlayerName(e.getPlayer());
-        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
-            plugin.setRank(p, plugin.dm.getStoredRank(p.getUniqueId()));
+        Bukkit.getScheduler().runTaskLaterAsynchronously(plugin, () -> {
+            plugin.getDm().setupPlayerInfoStorage(p);
+            plugin.getDm().updatePlayerName(e.getPlayer());
+            plugin.getDm().cacheUserData(p.getUniqueId());
+        }, 0);
+        Bukkit.getScheduler().runTaskLaterAsynchronously(plugin, () -> {
+            plugin.loadRank(p);
             ActionBar.setupActionBar(p);
-            if (plugin.dm.isMuted(p.getUniqueId())) {
-                if (plugin.dm.getMuteDuration(p.getUniqueId()).isBefore(Instant.now())) {
+            if (plugin.getPlayerData(p.getUniqueId()).isMuted()) {
+                if (plugin.getPlayerData(p.getUniqueId()).getMuteDuration().isBefore(Instant.now())) {
                     ModerationAction.unmutePlayer(new RankedPlayer(p, plugin), new RankedPlayer(p, plugin));
                 }
             }
@@ -60,18 +63,15 @@ public class Listeners implements Listener {
                 }
             }
 
-            if (plugin.dm.isNicked(p.getUniqueId())) {
-                Nick.changeName(plugin.dm.getNickname(p.getUniqueId()), p);
-                Nick.loadSkin(p);
-                Nick.refreshPlayer(p);
-                plugin.setTeam(p, plugin.dm.getNicknameRank(p.getUniqueId()).getId());
+            if (plugin.getPlayerData(p.getUniqueId()).isNicked()) {
+                Nick.changeName(plugin.getPlayerData(p.getUniqueId()).getNickname(), p);
+                Bukkit.getScheduler().runTask(plugin, () -> Nick.loadSkin(p));
+                plugin.setTeam(p, plugin.getPlayerData(p.getUniqueId()).getNicknameRank().getId());
             }
-            if (plugin.dm.isVanished(p.getUniqueId())) {
-                Bukkit.getScheduler().runTask(plugin, () -> {
-                    Vanish.vanishPlayer(p);
-                });
+            if (plugin.getDm().isVanished(p.getUniqueId())) {
+                Bukkit.getScheduler().runTask(plugin, () -> Vanish.vanishPlayer(p));
             }
-        });
+        }, 10);
         for (Player player : plugin.vanishedPlayers) {
             p.hidePlayer(plugin, player);
         }
@@ -79,42 +79,27 @@ public class Listeners implements Listener {
 
     @EventHandler
     public void BanHandler(AsyncPlayerPreLoginEvent e) {
-        if (plugin.dm.isBanned(e.getUniqueId())) {
+        if (plugin.getPlayerData(e.getUniqueId()).isBanned()) {
             UUID uuid = e.getUniqueId();
-            String bumper = "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n";
-            String reason = plugin.dm.getStoredBanReason(uuid);
-            String duration = plugin.dm.getStoredBanDuration(uuid);
-            String id = plugin.dm.getStoredBanID(uuid);
+            String duration = plugin.getPlayerData(uuid).getBanDuration().toString();
 
             if (duration == null) {
-                String finalMessage = plugin.getConfig().getString("PermBanMessageFormat")
-                        .replace("$SERVER_NAME", plugin.getConfig().getString("ServerName"))
-                        .replace("$REASON", reason)
-                        .replace("$APPEAL_LINK", plugin.getConfig().getString("BanAppealLink"))
-                        .replace("$ID", id)
-                        .replace("\\n", "\n");
-                e.disallow(AsyncPlayerPreLoginEvent.Result.KICK_BANNED, ChatColor.translateAlternateColorCodes('§', bumper + finalMessage + bumper));
+                //todo: update placeholders to defualt to supplied player if none was found in memory
+                e.disallow(AsyncPlayerPreLoginEvent.Result.KICK_BANNED, ChatColor.translateAlternateColorCodes('§', plugin.getMessage("PermBanMessageFormat", Bukkit.getOfflinePlayer(uuid))));
             } else {
                 Instant inst = Instant.parse(duration);
                 if (Instant.now().isAfter(inst)) {
                     ModerationAction.unbanPlayer(uuid, null);
-                    List<UUID> list = plugin.dm.getBannedPlayers();
+                    List<UUID> list = plugin.getDm().getBannedPlayers();
                     if (list.contains(e.getUniqueId())) {
                         list.remove(e.getUniqueId());
-                        plugin.dm.setBannedPlayers(list);
+                        plugin.getDm().setBannedPlayers(list);
                         return;
                     }
                     e.allow();
                     return;
                 }
-                String finalMessage = plugin.getConfig().getString("TempBanMessageFormat")
-                        .replace("$DURATION", plugin.getFormattedExpiredString(inst, Instant.now()))
-                        .replace("$SERVER_NAME", plugin.getConfig().getString("ServerName"))
-                        .replace("$REASON", reason)
-                        .replace("$APPEAL_LINK", plugin.getConfig().getString("BanAppealLink"))
-                        .replace("$ID", id)
-                        .replace("\\n", "\n");
-                e.disallow(AsyncPlayerPreLoginEvent.Result.KICK_BANNED, ChatColor.translateAlternateColorCodes('§', bumper + finalMessage + bumper));
+                e.disallow(AsyncPlayerPreLoginEvent.Result.KICK_BANNED, ChatColor.translateAlternateColorCodes('§', plugin.getMessage("TempBanMessageFormat", Bukkit.getOfflinePlayer(uuid))));
             }
         } else {
             e.allow();

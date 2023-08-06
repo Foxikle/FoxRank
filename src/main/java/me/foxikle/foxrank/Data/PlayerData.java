@@ -129,7 +129,7 @@ public class PlayerData {
         this.skin = skin;
     }
 
-    public Rank getNickanmeRank() {
+    public Rank getNicknameRank() {
         return nickanmeRank;
     }
 
@@ -142,11 +142,11 @@ public class PlayerData {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         PlayerData that = (PlayerData) o;
-        return isBanned() == that.isBanned() && isMuted() == that.isMuted() && isVanished() == that.isVanished() && isNicked() == that.isNicked() && Objects.equals(getBanDuration(), that.getBanDuration()) && Objects.equals(getBanReason(), that.getBanReason()) && Objects.equals(getBanID(), that.getBanID()) && Objects.equals(getMuteDuration(), that.getMuteDuration()) && Objects.equals(getMuteReason(), that.getMuteReason()) && Objects.equals(getNickname(), that.getNickname()) && Objects.equals(getNickanmeRank(), that.getNickanmeRank()) && Objects.equals(getSkin(), that.getSkin()) && Objects.equals(getRank(), that.getRank());
+        return isBanned() == that.isBanned() && isMuted() == that.isMuted() && isVanished() == that.isVanished() && isNicked() == that.isNicked() && Objects.equals(getBanDuration(), that.getBanDuration()) && Objects.equals(getBanReason(), that.getBanReason()) && Objects.equals(getBanID(), that.getBanID()) && Objects.equals(getMuteDuration(), that.getMuteDuration()) && Objects.equals(getMuteReason(), that.getMuteReason()) && Objects.equals(getNickname(), that.getNickname()) && Objects.equals(getNicknameRank(), that.getNicknameRank()) && Objects.equals(getSkin(), that.getSkin()) && Objects.equals(getRank(), that.getRank());
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(getBanDuration(), getBanReason(), getBanID(), isBanned(), getMuteDuration(), getMuteReason(), isMuted(), isVanished(), isNicked(), getNickname(), getNickanmeRank(), getSkin(), getRank());
+        return Objects.hash(getBanDuration(), getBanReason(), getBanID(), isBanned(), getMuteDuration(), getMuteReason(), isMuted(), isVanished(), isNicked(), getNickname(), getNicknameRank(), getSkin(), getRank());
     }
 }
