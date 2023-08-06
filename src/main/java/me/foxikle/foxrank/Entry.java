@@ -32,7 +32,7 @@ public record Entry(EntryType type, UUID involved, Instant time, Instant duratio
             switch (Objects.requireNonNull(EntryType.valueOf(list.get(0)))) {
                 case BAN -> {
                     if (list.size() >= 8) {
-                        return new Entry(BAN, UUID.fromString(list.get(1)), Instant.parse(list.get(4)), Instant.parse(list.get(5)), list.get(6), list.get(7), UUID.fromString(list.get(2)), list.get(3));
+                        return new Entry(BAN, UUID.fromString(list.get(1)), Instant.parse(list.get(4)), list.get(5) == null ? null : Instant.parse(list.get(5)), list.get(6), list.get(7), UUID.fromString(list.get(2)), list.get(3));
                     }
                     throw new IllegalArgumentException("Expected 8 arguments but found " + list.size());
                 }
@@ -41,7 +41,7 @@ public record Entry(EntryType type, UUID involved, Instant time, Instant duratio
                 }
                 case MUTE -> {
                     if (list.size() >= 7) {
-                        return new Entry(EntryType.MUTE, UUID.fromString(list.get(1)), Instant.parse(list.get(4)), Instant.parse(list.get(5)), list.get(6), null, UUID.fromString(list.get(2)), list.get(3));
+                        return new Entry(EntryType.MUTE, UUID.fromString(list.get(1)), Instant.parse(list.get(4)), list.get(5) == null ? null : Instant.parse(list.get(5)), list.get(6), null, UUID.fromString(list.get(2)), list.get(3));
                     }
                     throw new IllegalArgumentException("Expected 8 arguments but found " + list.size());
                 }
@@ -70,13 +70,13 @@ public record Entry(EntryType type, UUID involved, Instant time, Instant duratio
         return switch (type) {
             case BAN ->
 //              <--- option1 = reason | option2 = silent --->
-                    type + s + involved + s + staff + s + id + s + time + s + duration.toString() + s + option1 + s + option2;
+                    type + s + involved + s + staff + s + id + s + time + s + (duration != null ? duration.toString() : null) + s + option1 + s + option2;
             case UNBAN, UNMUTE ->
 //                <--- option1 = Nothing | option2 = Nothing --->
                     type + s + involved + s + staff + s + id + s + time;
             case MUTE ->
 //               <--- option1 = reason | option2 = Nothing --->
-                    type + s + involved + s + staff + s + id + s + time + s + duration.toString() + s + option1;
+                    type + s + involved + s + staff + s + id + s + time + s + (duration != null ? duration.toString() : null) + s + option1;
             case NICKNAME ->
 //                <--- option1 = nick | option2 = skin --->
                     type + s + involved + s + staff + s + time + s + option1 + s + option2;
