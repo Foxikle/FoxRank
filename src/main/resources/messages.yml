@@ -49,6 +49,9 @@ VanishMessage: '&eYou vanished into the shadows.'
 # CannotBanSuperiorPlayerMessage: -> The message displayed whilst attempting to ban a player with a higher or equal rank.
 CannotBanSuperiorPlayerMessage: '&cYou cannot ban a player with a higher or equal power level!'
 
+# CannotBanImmunePlayer: -> The message displayed whilst attempting to ban a player with the 'foxrank.moderation.ban.immune' permission
+CannotBanImmunePlayer: '&cThis player is immune!'
+
 # TempBanMessageFormat: -> The formatting for ban messages.
 TempBanMessageFormat: '&cYou are temporarily banned for &r%ban_duration%&c from %server_name%!\n\n&7Reason -> &f%ban_reason%\n&bAppeal at -> %server_appeal_link%\n\n&7Ban ID -> &r#%ban_id%\n &7 Sharing your Ban ID may affect the processing of your appeal!'
 
@@ -105,7 +108,7 @@ MutePlayerWithHigherRankMessage: '&cYou cannot mute a player with a higher or eq
 ChatWhileMutedMessage: '&c%line%\n&cYou are currently MUTED for %mute_reason%\n&7Your mute will expire in %mute_duration%.\n%line%'
 
 # IAmMutedCommandMessage: -> The text displayed to both players who received and sent the /immuted command
-IAmMutedCommandMessageToMuted: '&dTo %target_rank_prefix%%target_rank_color%%receiver_name%&7:&e Hey, I am currently muted and unable to chat right now.'
+IAmMutedCommandMessageToMuted: '&dTo %target_rank_prefix%%target_rank_color%%target_name%&7:&e Hey, I am currently muted and unable to chat right now.'
 IAmMutedCommandMessageFromMuted: '&dFrom %playerrank_prefix%%playerrank_color%%player_name%&7:&e Hey, I am currently muted and unable to chat right now.'
 
 ############################
