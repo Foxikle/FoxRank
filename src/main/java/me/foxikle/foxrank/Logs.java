@@ -1,7 +1,7 @@
 package me.foxikle.foxrank;
 
-import com.google.gson.JsonParser;
 import me.clip.placeholderapi.PlaceholderAPI;
+import me.foxikle.foxrank.Data.DataManager;
 import org.bukkit.*;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -14,12 +14,9 @@ import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
-import org.bukkit.inventory.meta.tags.CustomItemTagContainer;
-import org.bukkit.inventory.meta.tags.ItemTagType;
+import org.bukkit.persistence.PersistentDataContainer;
+import org.bukkit.persistence.PersistentDataType;
 
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.net.URL;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -49,13 +46,15 @@ public class Logs implements CommandExecutor, TabCompleter, Listener {
                             if (args.length < 2) {
                                 plugin.syntaxMap.put(player.getUniqueId(), "/logs <player> <logtype>");
                                player.sendMessage(plugin.getSyntaxMessage(player));
-                            } else if (args.length >= 2) {
-                                if (Bukkit.getOfflinePlayer(getUUID(args[0])) != null) {
-                                    OfflineRankedPlayer rp = new OfflineRankedPlayer(Bukkit.getOfflinePlayer(getUUID(args[0])));
+                            } else {
+                                if (Bukkit.getOfflinePlayer(DataManager.getUUID(args[0])) != null) {
+                                    OfflinePlayer target = Bukkit.getOfflinePlayer(DataManager.getUUID(args[0]));
+                                    plugin.targetMap.put(player.getUniqueId(), target.getUniqueId());
+                                    plugin.logTypeMap.put(player.getUniqueId(), args[1]);
                                     if (options.contains(args[1])) {
                                         final DateFormat f = new SimpleDateFormat("MM/dd/yyyy hh:mm:ss a");
                                         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
-                                        entries = plugin.getDm().getLogEntries(rp.getUniqueId());
+                                        entries = plugin.getDm().getLogEntries(DataManager.getUUID(args[0]));
                                         if (args[1].equalsIgnoreCase("MUTE")) {
                                             if (!player.hasPermission("foxrank.logging.mute")) {
                                                 player.sendMessage(plugin.getMessage("NoPermissionMessage", player));
@@ -72,18 +71,19 @@ public class Logs implements CommandExecutor, TabCompleter, Listener {
                                                 Date date = Date.from(e.time());
                                                 meta.setDisplayName(f.format(date));
                                                 List<String> lore = new ArrayList<>();
-                                                OfflineRankedPlayer orp = new OfflineRankedPlayer(Bukkit.getOfflinePlayer(e.staff()));
+                                                OfflinePlayer op = Bukkit.getOfflinePlayer(e.staff());
+                                                Rank staffRank = plugin.getPlayerData(e.staff()).getRank();
                                                 lore.add(ChatColor.translateAlternateColorCodes('§', "§eMute ID: §b" + e.id()));
-                                                lore.add(ChatColor.translateAlternateColorCodes('§', "§eIssued by: " + orp.getPrefix() + orp.getName()));
+                                                lore.add(ChatColor.translateAlternateColorCodes('§', "§eIssued by: " + staffRank.getPrefix() + op.getName()));
                                                 lore.add(ChatColor.translateAlternateColorCodes('§', "§eIssued for: §6" + e.option1()));
                                                 lore.add(ChatColor.translateAlternateColorCodes('§', "§eDuration: §6" + plugin.getFormattedExpiredString(e.duration(), e.time())));
                                                 meta.setLore(lore);
                                                 NamespacedKey key = new NamespacedKey(plugin, "NoClickey");
-                                                meta.getCustomTagContainer().setCustomTag(key, ItemTagType.STRING, "CARD");
+                                                meta.getPersistentDataContainer().set(key, PersistentDataType.STRING, "CARD");
                                                 item.setItemMeta(meta);
                                                 items.add(item);
                                             }
-                                            makeInventories("Mute", rp);
+                                            makeInventories("Mute", player);
                                         } else if (args[1].equalsIgnoreCase("UNMUTE")) {
                                             if (!player.hasPermission("foxrank.logging.unmute")) {
                                                 player.sendMessage(plugin.getMessage("NoPermissionMessage", player));
@@ -99,15 +99,16 @@ public class Logs implements CommandExecutor, TabCompleter, Listener {
                                                 Date date = Date.from(e.time());
                                                 meta.setDisplayName(f.format(date));
                                                 List<String> lore = new ArrayList<>();
+                                                Rank staffRank = plugin.getPlayerData(e.staff()).getRank();
                                                 lore.add(ChatColor.translateAlternateColorCodes('§', "§eUnmute ID: §b" + e.id()));
-                                                lore.add(ChatColor.translateAlternateColorCodes('§', "§eUnmuted by: " + new OfflineRankedPlayer(Bukkit.getOfflinePlayer(e.staff())).getPrefix() + new OfflineRankedPlayer(Bukkit.getOfflinePlayer(e.staff())).getName()));
+                                                lore.add(ChatColor.translateAlternateColorCodes('§', "§eUnmuted by: " + staffRank.getPrefix() + (Bukkit.getOfflinePlayer(e.staff()).getName())));
                                                 meta.setLore(lore);
                                                 NamespacedKey key = new NamespacedKey(plugin, "NoClickey");
-                                                meta.getCustomTagContainer().setCustomTag(key, ItemTagType.STRING, "CARD");
+                                                meta.getPersistentDataContainer().set(key, PersistentDataType.STRING, "CARD");
                                                 item.setItemMeta(meta);
                                                 items.add(item);
                                             }
-                                            makeInventories("Unmute", rp);
+                                            makeInventories("Unmute", player);
                                         } else if (args[1].equalsIgnoreCase("NICKNAME")) {
                                             if (!player.hasPermission("foxrank.logging.nickname")) {
                                                 player.sendMessage(plugin.getMessage("NoPermissionMessage", player));
@@ -126,15 +127,15 @@ public class Logs implements CommandExecutor, TabCompleter, Listener {
                                                 List<String> lore = new ArrayList<>();
 
                                                 lore.add(ChatColor.translateAlternateColorCodes('§', "§eNickName: §b" + e.option1()));
-                                                lore.add(ChatColor.translateAlternateColorCodes('§', rp.getPrefix() + rp.getName()));
+                                                lore.add(ChatColor.translateAlternateColorCodes('§', plugin.getPlayerData(player.getUniqueId()).getRank().getPrefix() + player.getName()));
                                                 lore.add(ChatColor.translateAlternateColorCodes('§', "§eSkin: §6" + e.option2()));
                                                 meta.setLore(lore);
                                                 NamespacedKey key = new NamespacedKey(plugin, "NoClickey");
-                                                meta.getCustomTagContainer().setCustomTag(key, ItemTagType.STRING, "CARD");
+                                                meta.getPersistentDataContainer().set(key, PersistentDataType.STRING, "CARD");
                                                 item.setItemMeta(meta);
                                                 items.add(item);
                                             }
-                                            makeInventories("Nickname", rp);
+                                            makeInventories("Nickname", player);
                                         } else if (args[1].equalsIgnoreCase("BAN")) {
                                             if (!player.hasPermission("foxrank.logging.ban")) {
                                                 player.sendMessage(plugin.getMessage("NoPermissionMessage", player));
@@ -151,19 +152,21 @@ public class Logs implements CommandExecutor, TabCompleter, Listener {
                                                 meta.setDisplayName(f.format(date));
                                                 List<String> lore = new ArrayList<>();
 
-                                                lore.add(ChatColor.translateAlternateColorCodes('§', "§ePlayer: §b" + rp.getPrefix() + rp.getName()));
-                                                lore.add(ChatColor.translateAlternateColorCodes('§', "§eStaff: " + new OfflineRankedPlayer(Bukkit.getOfflinePlayer(e.staff())).getPrefix() + new OfflineRankedPlayer(Bukkit.getOfflinePlayer(e.staff())).getName()));
+                                                Rank staffRank = plugin.getPlayerData(e.staff()).getRank();
+
+                                                lore.add(ChatColor.translateAlternateColorCodes('§', "§ePlayer: §b" + plugin.getPlayerData(player.getUniqueId()).getRank().getPrefix() + player.getName()));
+                                                lore.add(ChatColor.translateAlternateColorCodes('§', "§eStaff: " + staffRank.getPrefix() + Bukkit.getOfflinePlayer(e.staff()).getName()));
                                                 lore.add(ChatColor.translateAlternateColorCodes('§', "§eReason: §b" + e.option1()));
                                                 lore.add(ChatColor.translateAlternateColorCodes('§', "§eDuration: §b" + plugin.getFormattedExpiredString(e.duration(), e.time())));
                                                 lore.add(ChatColor.translateAlternateColorCodes('§', "§eSilent: §b" + e.option2()));
                                                 lore.add(ChatColor.translateAlternateColorCodes('§', "§eBan ID: §b" + e.id()));
                                                 meta.setLore(lore);
                                                 NamespacedKey key = new NamespacedKey(plugin, "NoClickey");
-                                                meta.getCustomTagContainer().setCustomTag(key, ItemTagType.STRING, "CARD");
+                                                meta.getPersistentDataContainer().set(key, PersistentDataType.STRING, "CARD");
                                                 item.setItemMeta(meta);
                                                 items.add(item);
                                             }
-                                            makeInventories("Ban", rp);
+                                            makeInventories("Ban", player);
                                         } else if (args[1].equalsIgnoreCase("UNBAN")) {
                                             if (!player.hasPermission("foxrank.logging.unban")) {
                                                 player.sendMessage(plugin.getMessage("NoPermissionMessage", player));
@@ -179,17 +182,17 @@ public class Logs implements CommandExecutor, TabCompleter, Listener {
                                                 Date date = Date.from(e.time());
                                                 meta.setDisplayName(f.format(date));
                                                 List<String> lore = new ArrayList<>();
-
-                                                lore.add(ChatColor.translateAlternateColorCodes('§', "§ePlayer: §b" + rp.getPrefix() + rp.getName()));
-                                                lore.add(ChatColor.translateAlternateColorCodes('§', "§eStaff: §b" + new OfflineRankedPlayer(Bukkit.getOfflinePlayer(e.staff())).getPrefix() + new OfflineRankedPlayer(Bukkit.getOfflinePlayer(e.staff())).getName()));
+                                                Rank staffRank = plugin.getPlayerData(e.staff()).getRank();
+                                                lore.add(ChatColor.translateAlternateColorCodes('§', "§ePlayer: §b" + plugin.getPlayerData(player.getUniqueId()).getRank().getPrefix() + player.getName()));
+                                                lore.add(ChatColor.translateAlternateColorCodes('§', "§eStaff: §b" + staffRank.getPrefix() + Bukkit.getOfflinePlayer(e.staff()).getName()));
                                                 lore.add(ChatColor.translateAlternateColorCodes('§', "§eBan ID: §b" + e.id()));
                                                 meta.setLore(lore);
                                                 NamespacedKey key = new NamespacedKey(plugin, "NoClickey");
-                                                meta.getCustomTagContainer().setCustomTag(key, ItemTagType.STRING, "CARD");
+                                                meta.getPersistentDataContainer().set(key, PersistentDataType.STRING, "CARD");
                                                 item.setItemMeta(meta);
                                                 items.add(item);
                                             }
-                                            makeInventories("Unban", rp);
+                                            makeInventories("Unban", player);
                                         }
                                         playerPages.put(player, 0);
                                         Bukkit.getScheduler().runTask(plugin, () -> openInv(player, invs.get(playerPages.get(player))));
@@ -202,9 +205,6 @@ public class Logs implements CommandExecutor, TabCompleter, Listener {
                                     plugin.syntaxMap.put(player.getUniqueId(), "/logs <player> <logtype>");
                                     player.sendMessage(plugin.getSyntaxMessage(player));
                                 }
-                            } else {
-                                plugin.syntaxMap.put(player.getUniqueId(), "/logs <player> <logtype>");
-                                player.sendMessage(plugin.getSyntaxMessage(player));
                             }
                         } else {
                             player.sendMessage(plugin.getMessage("NoPermissionMessage", player));
@@ -251,7 +251,7 @@ public class Logs implements CommandExecutor, TabCompleter, Listener {
         ItemMeta meta = item.getItemMeta();
         List<String> lore = new ArrayList<>();
         NamespacedKey key = new NamespacedKey(plugin, "NoClickey");
-        meta.getCustomTagContainer().setCustomTag(key, ItemTagType.STRING, "PANE");
+        meta.getPersistentDataContainer().set(key, PersistentDataType.STRING, "PANE");
         meta.setDisplayName(" ");
         lore.add("");
         meta.setLore(lore);
@@ -265,30 +265,30 @@ public class Logs implements CommandExecutor, TabCompleter, Listener {
         return inv;
     }
 
-    private void makeInventories(String type, OfflineRankedPlayer rp) {
+    private void makeInventories(String type, Player rp) {
 
         ItemStack next = new ItemStack(Material.ARROW);
         ItemMeta nextMeta = next.getItemMeta();
         nextMeta.setDisplayName(ChatColor.translateAlternateColorCodes('§', "§eNext Page"));
         NamespacedKey key = new NamespacedKey(plugin, "NoClickey");
-        nextMeta.getCustomTagContainer().setCustomTag(key, ItemTagType.STRING, "next");
+        nextMeta.getPersistentDataContainer().set(key, PersistentDataType.STRING, "next");
         next.setItemMeta(nextMeta);
 
         ItemStack prev = new ItemStack(Material.ARROW);
         ItemMeta prevMeta = prev.getItemMeta();
         prevMeta.setDisplayName(ChatColor.translateAlternateColorCodes('§', "§ePrevious Page"));
-        prevMeta.getCustomTagContainer().setCustomTag(key, ItemTagType.STRING, "prev");
+        prevMeta.getPersistentDataContainer().set(key, PersistentDataType.STRING, "prev");
         prev.setItemMeta(prevMeta);
 
         ItemStack close = new ItemStack(Material.BARRIER);
         ItemMeta closeMeta = close.getItemMeta();
         closeMeta.setDisplayName(ChatColor.translateAlternateColorCodes('§', "§c§lClose"));
-        closeMeta.getCustomTagContainer().setCustomTag(key, ItemTagType.STRING, "close");
+        closeMeta.getPersistentDataContainer().set(key, PersistentDataType.STRING, "close");
         close.setItemMeta(closeMeta);
         sortItems();
         int pagesint = (int) Math.ceil(items.size() / 28.0);
         for (int i = 0; i < pagesint; i++) {
-            Inventory inv = addBorder(Bukkit.createInventory(null, 54, ChatColor.translateAlternateColorCodes('&', PlaceholderAPI.setPlaceholders(rp.getOfflinePlayer(), plugin.getConfig().getString("LogsMenuName") + "   (" + (i + 1) + "/" + pagesint + ")"))));
+            Inventory inv = addBorder(Bukkit.createInventory(null, 54, ChatColor.translateAlternateColorCodes('&', PlaceholderAPI.setPlaceholders(rp, plugin.getConfig().getString("LogsMenuName") + "   (" + (i + 1) + "/" + pagesint + ")"))));
             if (i < pagesint - 1) {
                 inv.setItem(53, next);
             }
@@ -346,41 +346,31 @@ public class Logs implements CommandExecutor, TabCompleter, Listener {
         if (e.getCurrentItem().getItemMeta() == null) return;
         ItemMeta meta = e.getCurrentItem().getItemMeta();
         NamespacedKey key = new NamespacedKey(plugin, "NoClickey");
-        CustomItemTagContainer tagContainer = meta.getCustomTagContainer();
-        //TODO: change to use persistent data container
+        PersistentDataContainer pdc = meta.getPersistentDataContainer();
         Player player = (Player) e.getWhoClicked();
         if (meta.getPersistentDataContainer().getKeys().contains(key)) {
             playerPages.putIfAbsent(player, 0);
             int page = playerPages.get(player);
             e.setCancelled(true);
-            if (tagContainer.getCustomTag(key, ItemTagType.STRING) != null) {
-                if (tagContainer.getCustomTag(key, ItemTagType.STRING).equals("next")) {
-                    if (invs.size() >= page + 1) {
-                        player.openInventory(invs.get(page + 1));
-                        playerPages.remove(player);
-                        playerPages.put(player, page + 1);
+            if (pdc.get(key, PersistentDataType.STRING) != null) {
+                String data = pdc.get(key, PersistentDataType.STRING);
+                switch (data) {
+                    case "next" -> {
+                        if (invs.size() >= page + 1) {
+                            player.openInventory(invs.get(page + 1));
+                            playerPages.remove(player);
+                            playerPages.put(player, page + 1);
+                        }
                     }
-                } else if (tagContainer.getCustomTag(key, ItemTagType.STRING).equals("prev")) {
-                    player.openInventory(invs.get(page - 1));
-                    playerPages.remove(player);
-                    playerPages.put(player, page - 1);
-                } else if (tagContainer.getCustomTag(key, ItemTagType.STRING).equals("close")) {
-                    player.closeInventory();
+                    case "prev" -> {
+                        player.openInventory(invs.get(page - 1));
+                        playerPages.remove(player);
+                        playerPages.put(player, page - 1);
+                    }
+                    case "close" -> player.closeInventory();
                 }
             }
         }
-    }
-    private UUID getUUID(String name) {
-        URL url;
-        InputStreamReader reader = null;
-        try {
-            url = new URL("https://api.mojang.com/users/profiles/minecraft/" + name);
-            reader = new InputStreamReader(url.openStream());
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        String raw = JsonParser.parseReader(reader).getAsJsonObject().get("id").getAsString();
-        return UUID.fromString(raw.substring(0, 8) + "-" + raw.substring(8, 12) + "-" + raw.substring(12, 16) + "-" + raw.substring(16, 20) + "-" + raw.substring(20, 32));
     }
 }
 
