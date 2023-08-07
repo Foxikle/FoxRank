@@ -134,6 +134,7 @@ permissions:
       - foxrank.nicknames.skin.random
       - foxrank.nicknames.name.custom
       - foxrank.nicknames.name.random
+      - foxrank.nicknames.name.reuse
 
   foxrank.nicknames.use:
     default: false
@@ -153,6 +154,9 @@ permissions:
   foxrank.nicknames.name.custom:
     default: false
     description: Grants permission to use a custom name
+  foxrank.nicknames.name.reuse:
+    default: false
+    description: Grants permission to reuse the last used nickname.
 
   foxrank.ranks.*:
     default: false
