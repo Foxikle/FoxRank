@@ -2,7 +2,7 @@ name: FoxRank
 version: ${version}
 main: me.foxikle.foxrank.FoxRank
 api-version: '1.20'
-description: ''
+description: 'A player management plugin'
 prefix: 'FoxRank'
 authors: [ Foxikle ]
 commands:

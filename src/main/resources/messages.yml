@@ -15,6 +15,8 @@
 # 2. A '#' means the line is commented out. The server will ignore the line.
 # 3. If you delete a portion of the config, you can delete the 'messages.yml' and a new one
 #    will be automatically generated on the next server restart.
+# 4. If you would like to include an apostrophe (') inside the text, you must escape it
+#    by including two. `Section: 'Don''t do that!'`
 # -----------------------------------------------------------------------------------------
 
 ############################
@@ -28,7 +30,7 @@ NicknameTooLongMessage: '&cYour nickname "%nickname_attempt%" cannot be greater 
 NickNameChangedMessage: '&aYour nickname is now "%nickname%".'
 
 # BlacklistedNicknameMessage: -> The message displayed to a user when they attempt to use a blacklisted nickname.
-BlacklistedNicknameMessage: "&cThe nickname &l&c'%nickname_attempt%' &r&c is blacklisted."
+BlacklistedNicknameMessage: '&cThe nickname &l&c''%nickname_attempt%'' &r&c is blacklisted.'
 
 
 ############################
@@ -124,7 +126,7 @@ PromoteSelfMessage: '&cYou cannot promote yourself!'
 AlreadyRankMessage: '&cYou are already %playerrank_prefix%!'
 
 # NoPermissionMessage -> The message displayed when a user doesn't have the permissions.
-NoPermissionMessage: "&cYou don't have the required permission to execute this command.\n&cPlease contact a server administrator if you believe this is a mistake."
+NoPermissionMessage: '&cYou don''t have the required permission to execute this command.\n&cPlease contact a server administrator if you believe this is a mistake.'
 
 # CommandDisabledMessage: -> The message displayed when a command is disabled.
 CommandDisabledMessage: '&cThis command is currently disabled.'
