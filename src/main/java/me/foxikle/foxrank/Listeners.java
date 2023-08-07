@@ -44,34 +44,35 @@ public class Listeners implements Listener {
     @EventHandler
     public void OnPlayerLogin(PlayerJoinEvent e) {
         Player p = e.getPlayer();
-        Bukkit.getScheduler().runTaskLaterAsynchronously(plugin, () -> {
+        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
             plugin.getDm().setupPlayerInfoStorage(p);
             plugin.getDm().updatePlayerName(e.getPlayer());
             plugin.getDm().cacheUserData(p.getUniqueId());
-        }, 0);
-        Bukkit.getScheduler().runTaskLaterAsynchronously(plugin, () -> {
-            plugin.loadRank(p);
-            ActionBar.setupActionBar(p);
-            if (plugin.getPlayerData(p.getUniqueId()).isMuted()) {
-                if (plugin.getPlayerData(p.getUniqueId()).getMuteDuration().isBefore(Instant.now())) {
-                    ModerationAction.unmutePlayer(p, p);
+            Bukkit.getScheduler().runTaskLaterAsynchronously(plugin, () -> {
+                plugin.loadRank(p);
+                ActionBar.setupActionBar(p);
+                if (plugin.getPlayerData(p.getUniqueId()).isMuted()) {
+                    if (plugin.getPlayerData(p.getUniqueId()).getMuteDuration().isBefore(Instant.now())) {
+                        ModerationAction.unmutePlayer(p, p);
+                    }
                 }
-            }
-            if (Bukkit.getOnlinePlayers().size() == 1) {
-                if (plugin.bungeecord) {
-                    Bukkit.getScheduler().runTaskLater(plugin, () -> FoxRank.pcl.getPlayers(Iterables.getFirst(Bukkit.getOnlinePlayers(), null)), 30);
+                if (Bukkit.getOnlinePlayers().size() == 1) {
+                    if (plugin.bungeecord) {
+                        Bukkit.getScheduler().runTaskLater(plugin, () -> FoxRank.pcl.getPlayers(Iterables.getFirst(Bukkit.getOnlinePlayers(), null)), 30);
+                    }
                 }
-            }
 
-            if (plugin.getPlayerData(p.getUniqueId()).isNicked()) {
-                Nick.changeName(plugin.getPlayerData(p.getUniqueId()).getNickname(), p);
-                Bukkit.getScheduler().runTask(plugin, () -> Nick.loadSkin(p));
-                plugin.setTeam(p, plugin.getPlayerData(p.getUniqueId()).getNicknameRank().getId());
-            }
-            if (plugin.getDm().isVanished(p.getUniqueId())) {
-                Bukkit.getScheduler().runTask(plugin, () -> Vanish.vanishPlayer(p));
-            }
-        }, 40);
+                if (plugin.getPlayerData(p.getUniqueId()).isNicked()) {
+                    Nick.changeName(plugin.getPlayerData(p.getUniqueId()).getNickname(), p);
+                    Bukkit.getScheduler().runTask(plugin, () -> Nick.loadSkin(p));
+                    plugin.setTeam(p, plugin.getPlayerData(p.getUniqueId()).getNicknameRank().getId());
+                }
+                if (plugin.getDm().isVanished(p.getUniqueId())) {
+                    Bukkit.getScheduler().runTask(plugin, () -> Vanish.vanishPlayer(p));
+                }
+            }, 40);
+        });
+
         for (Player player : plugin.vanishedPlayers) {
             p.hidePlayer(plugin, player);
         }
