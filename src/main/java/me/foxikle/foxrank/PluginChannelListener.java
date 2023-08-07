@@ -39,7 +39,7 @@ public class PluginChannelListener implements PluginMessageListener {
         if (subChannel.equals("PlayerList")) {
             String server = in.readUTF();
             String[] playerList = in.readUTF().split(", ");
-            FoxRank.getInstance().playerNames = Arrays.stream(playerList).toList();
+            FoxRank.getInstance().players = Arrays.stream(playerList).toList();
             Bukkit.getScheduler().runTaskLaterAsynchronously(FoxRank.getInstance(), () -> getPlayers(Iterables.getFirst(Bukkit.getOnlinePlayers(), null)), 20);
 
         } else if (subChannel.equalsIgnoreCase("FoxRankUpdateData")) {

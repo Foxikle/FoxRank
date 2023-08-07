@@ -106,7 +106,7 @@ public class SetRank implements CommandExecutor, TabCompleter {
             arguments.addAll(FoxRank.getInstance().ranks.keySet());
             return arguments;
         } else if (args.length == 2) {
-            return FoxRank.getInstance().playerNames;
+            return FoxRank.getInstance().players;
         }
         return new ArrayList<>();
     }

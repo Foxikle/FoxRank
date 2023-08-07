@@ -188,7 +188,7 @@ public class Mute implements CommandExecutor, TabCompleter {
                     } else if (args.length >= 1) {
                         Player receiver = Bukkit.getPlayerExact(args[0]);
                         plugin.targetMap.put(player.getUniqueId(), receiver.getUniqueId());
-                        if (plugin.playerNames.contains(args[0])) {
+                        if (plugin.players.contains(args[0])) {
 
                             String to = plugin.getMessage("IAmMutedCommandMessageToMuted", player);
                             String from = plugin.getMessage("IAmMutedCommandMessageFromMuted", player);
@@ -265,11 +265,11 @@ public class Mute implements CommandExecutor, TabCompleter {
                 return arguments;
 
             } else if (args.length == 1) {
-                return plugin.playerNames;
+                return plugin.players;
             }
         } else if (command.getLabel().equalsIgnoreCase("unmute")) {
             if (args.length == 1) {
-                return plugin.playerNames;
+                return plugin.players;
             }
         }
         return new ArrayList<>();

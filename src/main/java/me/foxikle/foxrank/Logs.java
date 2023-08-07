@@ -237,7 +237,7 @@ public class Logs implements CommandExecutor, TabCompleter, Listener {
 
         } else if (args.length == 1) {
             List<String> playerNames = new ArrayList<>();
-            playerNames.addAll(plugin.playerNames);
+            playerNames.addAll(plugin.players);
             for (OfflinePlayer player : Bukkit.getOfflinePlayers()) {
                 playerNames.add(player.getName());
             }
