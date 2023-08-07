@@ -66,12 +66,12 @@ DisableActionbar: false
 # ------------------------------------------------------
 # Configurations for the nickname system
 
-# BlacklistedNicknames: -> A list of disallowed nicknames. MUST BE IN LOWERCASE (Defaults to ["md_5", "foxikle"])
+# BlacklistedNicknames: -> A list of disallowed nicknames. MUST BE IN LOWERCASE
 BlacklistedNicknames:
   - md_5
   - foxikle
 
-# DisableNicknameLogging: -> Disables logging nicknames. (Defaults to false)
+# DisableNicknameLogging: -> Disables logging nicknames.
 DisableNicknameLogging: false
 
 # RandomNicknameList: -> A list of nicknames that are used if a player chooses a random nickname
@@ -169,8 +169,8 @@ BanAppealLink: https://github.com/Foxikle/FoxRank (Not real, I just made the plu
 # Bungeecord: -> Is this server using bungeecord?
 bungeecord: false
 
-# LogsMenuName: -> The name of the menu of /logs ($NAME (Player's logs you're viewing), $LOGTYPE (Type of logs you're viewing), Supports  Colors)
-LogsMenuName: "%target_name%\'s &r&0%log_type% history"
+# LogsMenuName: -> The name of the menu of /logs
+LogsMenuName: '%target_name%''s &r&0%log_type% history'
 
 # ServerName -> Name of server to put into the ban message
 ServerName: The FoxRank Server
