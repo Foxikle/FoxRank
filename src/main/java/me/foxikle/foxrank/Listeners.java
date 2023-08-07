@@ -1,6 +1,7 @@
 package me.foxikle.foxrank;
 
 import com.google.common.collect.Iterables;
+import me.foxikle.foxrank.Data.PlayerData;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
@@ -78,9 +79,14 @@ public class Listeners implements Listener {
 
     @EventHandler
     public void BanHandler(AsyncPlayerPreLoginEvent e) {
-        if (plugin.getPlayerData(e.getUniqueId()).isBanned()) {
+        PlayerData data = plugin.getPlayerData(e.getUniqueId());
+        if(data == null) {  // We don't have data so they can't be banned
+            e.allow();
+            return;
+        }
+        if (data.isBanned()) {
             UUID uuid = e.getUniqueId();
-            String duration = plugin.getPlayerData(uuid).getBanDuration().toString();
+            String duration = data.getBanDuration().toString();
 
             if (duration == null) {
                 //todo: update placeholders to defualt to supplied player if none was found in memory
