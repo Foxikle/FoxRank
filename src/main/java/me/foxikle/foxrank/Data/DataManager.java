@@ -126,17 +126,19 @@ public class DataManager {
         for (String str : keys) {
             ConfigurationSection section = yml.getConfigurationSection(str);
             Rank rank = new Rank(section.getInt("powerLevel"), ChatColor.translateAlternateColorCodes('&', section.getString("prefix")), section.getString("id"), ChatColor.getByChar(section.getString("color").charAt(0)), ChatColor.getByChar(section.getString("ChatTextColor")), section.getBoolean("nicknamable"), section.getStringList("permissions"));
-            powerlevelMappy.put(rank.getId(), rank.getPowerlevel());
-            rankMappy.put(rank, rank.getPowerlevel());
+            if(rank.getId() != null) {
+                powerlevelMappy.put(rank.getId(), rank.getPowerlevel());
+                rankMappy.put(rank, rank.getPowerlevel());
+            }
         }
         plugin.ranks = getSortedRanks(rankMappy);
         plugin.powerLevels = sortByValue(powerlevelMappy);
 
+        plugin.bannedPlayers.addAll(getBannedPlayers());
+        plugin.players.addAll(getPlayers());
         for (UUID uuid : getUUIDs()) {
             cacheUserData(uuid);
         }
-        plugin.bannedPlayers.addAll(getBannedPlayers());
-        plugin.players.addAll(getPlayers());
     }
 
     public void cacheUserData(UUID uuid) {
@@ -478,12 +480,12 @@ public class DataManager {
             yml.addDefault("isVanished", false);
             yml.addDefault("isNicked", false);
             yml.addDefault("isMuted", false);
-            yml.addDefault("MuteDuration", "");
+            yml.addDefault("MuteDuration", Instant.now().toString());
             yml.addDefault("MuteReason", "");
             yml.addDefault("Nickname", player.getName());
             yml.addDefault("Nickname-Rank", plugin.getDefaultRank().getId());
             yml.addDefault("Nickname-Skin", "");
-            yml.addDefault("BanDuration", "");
+            yml.addDefault("BanDuration", Instant.now().toString());
             yml.addDefault("BanReason", "");
             yml.addDefault("BanID", "");
             yml.addDefault("isBanned", false);
