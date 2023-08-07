@@ -35,9 +35,6 @@ public class DataManager {
     private boolean useDatabase;
     private Database db;
 
-    //TODO: Make sure to query database ASYNC!!!
-    //TODO: Look into caching the files in memory
-
     public DataManager(FoxRank plugin) {
         this.plugin = plugin;
         File configFile = new File("plugins/FoxRank/config.yml");
@@ -162,7 +159,6 @@ public class DataManager {
 
     private Map<String, Rank> getSortedRanks(Map<Rank, Integer> unsortMap) {
         List<Map.Entry<Rank, Integer>> list = new LinkedList<>(unsortMap.entrySet());
-        //TODO: write your own comparator that counts from high -> low
         list.sort(Map.Entry.comparingByValue());
         Collections.reverse(list);
         Map<String, Rank> sortedMap = new LinkedHashMap<>();
@@ -174,7 +170,6 @@ public class DataManager {
 
     private Map<String, Integer> sortByValue(Map<String, Integer> unsortMap) {
         List<Map.Entry<String, Integer>> list = new LinkedList<>(unsortMap.entrySet());
-        //TODO: write your own comparator that counts from high -> low
         list.sort(Map.Entry.comparingByValue());
         Collections.reverse(list);
         Map<String, Integer> sortedMap = new LinkedHashMap<>();
@@ -287,7 +282,7 @@ public class DataManager {
         }
     }
 
-    public UUID getUUID(String name) {
+    public static UUID getUUID(String name) {
         URL url;
         InputStreamReader reader = null;
         try {
@@ -511,7 +506,7 @@ public class DataManager {
                 Instant date = Instant.parse(db.getStoredMuteDuration(uuid));
                 Instant now = Instant.now();
                 if (date.isBefore(now)) {
-                    ModerationAction.unmutePlayer(new RankedPlayer(player, plugin), new RankedPlayer(player, plugin));
+                    ModerationAction.unmutePlayer(player, player);
                 } else {
                     String reason = db.getStoredMuteReason(uuid);
                     String border = ChatColor.RED + String.valueOf(ChatColor.STRIKETHROUGH) + "                                                                   ";
@@ -553,7 +548,7 @@ public class DataManager {
                 Instant date = Instant.parse(yml.getString("MuteDuration"));
                 Instant now = Instant.now();
                 if (date.isBefore(now)) {
-                    ModerationAction.unmutePlayer(new RankedPlayer(player, plugin), new RankedPlayer(player, plugin));
+                    ModerationAction.unmutePlayer(player, player);
                 } else {
                     String reason = yml.getString("MuteReason");
                     String border = ChatColor.RED + String.valueOf(ChatColor.STRIKETHROUGH) + "                                                                   ";
@@ -661,7 +656,7 @@ public class DataManager {
 
     public void mutePlayer(UUID uuid, Instant duration, String reason) {
         if (useDatabase) {
-            db.setStoredMuteData(uuid, true, reason, duration);
+            db.setStoredMuteData(uuid, reason, duration);
         } else {
             File file = new File("plugins/FoxRank/PlayerData/" + uuid + ".yml");
             YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
@@ -679,7 +674,7 @@ public class DataManager {
 
     public void unmutePlayer(UUID uuid) {
         if (useDatabase) {
-            db.setStoredMuteState(uuid, false);
+            db.setStoredMuteState(uuid);
         } else {
             File file = new File("plugins/FoxRank/PlayerData/" + uuid + ".yml");
             YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
@@ -699,7 +694,7 @@ public class DataManager {
             List<UUID> bannedPlayers = db.getStoredBannedPlayers();
             bannedPlayers.remove(uuid);
             db.setStoredBannedPlayers(bannedPlayers);
-            db.setStoredBanState(uuid, false);
+            db.setStoredBanState(uuid);
         } else {
             File file = new File("plugins/FoxRank/PlayerData/" + uuid + ".yml");
             YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
@@ -718,7 +713,7 @@ public class DataManager {
             List<UUID> bannedPlayers = db.getStoredBannedPlayers();
             bannedPlayers.add(uuid);
             db.setStoredBannedPlayers(bannedPlayers);
-            db.setStoredBanData(uuid, true, reason, duration, id);
+            db.setStoredBanData(uuid, reason, duration, id);
         } else {
             File file = new File("plugins/FoxRank/PlayerData/" + uuid + ".yml");
             YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
