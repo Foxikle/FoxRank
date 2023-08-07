@@ -6,10 +6,9 @@ import java.time.Instant;
 import java.util.Objects;
 
 public class PlayerData {
-    // bans //todo: make sure to unban people too. So don't rely on this
-    private final Instant banDuration;
-    private final String banReason;
-    private final String banID;
+    private Instant banDuration;
+    private String banReason;
+    private String banID;
     private boolean isBanned;
 
     // mutes
@@ -23,7 +22,7 @@ public class PlayerData {
     // nicknames
     private boolean isNicked;
     private String nickname;
-    private Rank nickanmeRank;
+    private Rank nicknameRank;
     private String skin;
 
     // data
@@ -40,7 +39,7 @@ public class PlayerData {
         this.isVanished = isVanished;
         this.isNicked = isNicked;
         this.nickname = nickname;
-        this.nickanmeRank = nickanmeRank;
+        this.nicknameRank = nickanmeRank;
         this.rank = rank;
         this.skin = skin;
     }
@@ -130,11 +129,23 @@ public class PlayerData {
     }
 
     public Rank getNicknameRank() {
-        return nickanmeRank;
+        return nicknameRank;
     }
 
-    public void setNickanmeRank(Rank nickanmeRank) {
-        this.nickanmeRank = nickanmeRank;
+    public void setNicknameRank(Rank nicknameRank) {
+        this.nicknameRank = nicknameRank;
+    }
+
+    public void setBanDuration(Instant banDuration) {
+        this.banDuration = banDuration;
+    }
+
+    public void setBanID(String banID) {
+        this.banID = banID;
+    }
+
+    public void setBanReason(String banReason) {
+        this.banReason = banReason;
     }
 
     @Override
