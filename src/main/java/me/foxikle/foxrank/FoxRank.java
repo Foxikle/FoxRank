@@ -49,8 +49,6 @@ public class FoxRank extends JavaPlugin implements Listener {
     // placeholders
     public Map<UUID, String> logTypeMap = new HashMap<>();
     public Map<UUID, String> attemptedBanPresetMap = new HashMap<>();
-    public Map<UUID, UUID> banMap = new HashMap<>();
-    public Map<UUID, UUID> muteMap = new HashMap<>();
     public Map<UUID, String> syntaxMap = new HashMap<>();
     public Map<UUID, UUID> targetMap = new HashMap<>();
     public Map<UUID, String> attemptedNicknameMap = new HashMap<>();
@@ -154,7 +152,7 @@ public class FoxRank extends JavaPlugin implements Listener {
         getCommand("unmute").setExecutor(m);
         getCommand("logs").setExecutor(new Logs(this));
         getCommand("ban").setExecutor(new Ban(this));
-        getCommand("unban").setExecutor(new Unban());
+        getCommand("unban").setExecutor(new Unban(this));
         getCommand("rank").setExecutor(new RankCommand(this));
 
         Bukkit.getServicesManager().register(FoxRank.class, this, this, ServicePriority.Normal);
@@ -165,7 +163,7 @@ public class FoxRank extends JavaPlugin implements Listener {
             ActionBar.setupActionBar(p);
             if (getPlayerData(p.getUniqueId()).isMuted()) { //todo: make it support null durations
                 if (getPlayerData(p.getUniqueId()).getMuteDuration().isBefore(Instant.now())) {
-                    ModerationAction.unmutePlayer(new RankedPlayer(p, this), new RankedPlayer(p, this));
+                    ModerationAction.unmutePlayer(p, p);
                 }
             }
             if (Bukkit.getOnlinePlayers().size() == 1) {
