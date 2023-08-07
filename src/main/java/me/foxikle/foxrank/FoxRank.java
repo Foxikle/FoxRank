@@ -97,11 +97,12 @@ public class FoxRank extends JavaPlugin implements Listener {
             rank.getPermissionNodes().forEach(s -> player.addAttachment(this, s, true));
             playerRanks.put(player, rank);
             setTeam(player, rank.getId());
+        } else {
+            Rank rank = getPlayerData(player.getUniqueId()).getRank();
+            rank.getPermissionNodes().forEach(s -> player.addAttachment(this, s, true));
+            playerRanks.put(player, rank);
+            setTeam(player, rank.getId());
         }
-        Rank rank = getPlayerData(player.getUniqueId()).getRank();
-        rank.getPermissionNodes().forEach(s -> player.addAttachment(this, s, true));
-        playerRanks.put(player, rank);
-        setTeam(player, rank.getId());
     }
 
     protected PluginChannelListener getPluginChannelListener() {
