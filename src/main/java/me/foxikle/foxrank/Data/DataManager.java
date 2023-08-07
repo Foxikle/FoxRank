@@ -357,14 +357,14 @@ public class DataManager {
                 try {
                     yml.save(file);
                 } catch (IOException error) {
-                    Bukkit.getLogger().log(Level.SEVERE, "ERROR could not save " + uuid + "'s Vanished state.");
+                    Bukkit.getLogger().log(Level.SEVERE, "ERROR: could not save " + uuid + "'s Vanished state.");
                 }
             } else if (!yml.getBoolean("isVanished")) {
                 yml.set("isVanished", true);
                 try {
                     yml.save(file);
                 } catch (IOException error) {
-                    Bukkit.getLogger().log(Level.SEVERE, "ERROR could not save " + uuid + "'s Vanished state.");
+                    Bukkit.getLogger().log(Level.SEVERE, "ERROR: could not save " + uuid + "'s Vanished state.");
                 }
             }
         }
@@ -630,7 +630,7 @@ public class DataManager {
                 for (String s : listFiles()) {
                     File file = new File("plugins/FoxRank/PlayerData/" + s);
                     YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
-                    strings.add(yml.getString("name"));
+                    strings.add(yml.getString("Name"));
                 }
             } catch (IOException e) {
                 return new ArrayList<>();
