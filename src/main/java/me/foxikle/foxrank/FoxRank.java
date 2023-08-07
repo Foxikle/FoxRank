@@ -60,8 +60,6 @@ public class FoxRank extends JavaPlugin implements Listener {
 
     private DataManager dm;
 
-    protected List<String> playerNames = new ArrayList<>();
-
     public static FoxRank getInstance() {
         return instance;
     }
