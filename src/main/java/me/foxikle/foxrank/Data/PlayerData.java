@@ -1,5 +1,6 @@
 package me.foxikle.foxrank.Data;
 
+import me.foxikle.foxrank.FoxRank;
 import me.foxikle.foxrank.Rank;
 
 import java.time.Instant;
@@ -89,7 +90,9 @@ public class PlayerData {
     }
 
     public Rank getRank() {
-        return rank;
+        if(rank != null)
+            return rank;
+        return FoxRank.getInstance().getDefaultRank();
     }
 
     public void setRank(Rank rank) {
@@ -129,7 +132,9 @@ public class PlayerData {
     }
 
     public Rank getNicknameRank() {
-        return nicknameRank;
+        if(nicknameRank != null)
+            return nicknameRank;
+        return FoxRank.getInstance().getDefaultRank();
     }
 
     public void setNicknameRank(Rank nicknameRank) {
