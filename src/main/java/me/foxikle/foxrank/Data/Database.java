@@ -3,11 +3,13 @@ package me.foxikle.foxrank.Data;
 import me.foxikle.foxrank.Entry;
 import me.foxikle.foxrank.FoxRank;
 import me.foxikle.foxrank.Rank;
+import org.bukkit.Bukkit;
 
 import javax.annotation.Nullable;
 import java.sql.*;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
@@ -43,7 +45,7 @@ public class Database {
             try {
                 connection.close();
             } catch (SQLException e) {
-                e.printStackTrace();
+                plugin.getLogger().severe("An error occoured whilst disconnecting from the database. Please report the following stacktrace to Foxikle: \n" + Arrays.toString(e.getStackTrace()));
             }
         }
     }
@@ -58,7 +60,7 @@ public class Database {
             ps = getConnection().prepareStatement("CREATE TABLE IF NOT EXISTS foxrankplayerdata (name VARCHAR(16), uuid VARCHAR(36), rankid VARCHAR(36), isvanished BOOLEAN, isnicked BOOLEAN, ismuted BOOLEAN, isbanned BOOLEAN, muteduration TEXT, mutereason TEXT, nickname TEXT, nicknamerank TEXT, nicknameskin TEXT, banduration TEXT, banreason TEXT, banid TEXT, PRIMARY KEY(uuid))");
             ps.executeUpdate();
         } catch (SQLException e) {
-            e.printStackTrace();
+            plugin.getLogger().severe("An error occoured whilst fetching data from the database. Please report the following stacktrace to Foxikle: \n" + Arrays.toString(e.getStackTrace()));
         }
     }
 
@@ -68,7 +70,7 @@ public class Database {
             ps = getConnection().prepareStatement("CREATE TABLE IF NOT EXISTS foxrankbannedplayers (uuids TEXT, id VARCHAR(100), PRIMARY KEY(id))");
             ps.executeUpdate();
         } catch (SQLException e) {
-            e.printStackTrace();
+            plugin.getLogger().severe("An error occoured whilst fetching data from the database. Please report the following stacktrace to Foxikle: \n" + Arrays.toString(e.getStackTrace()));
         }
         PreparedStatement ps2;
         try {
@@ -77,7 +79,7 @@ public class Database {
             ps2.setString(2, "bannedPlayers");
             ps2.executeUpdate();
         } catch (SQLException e) {
-            e.printStackTrace();
+            plugin.getLogger().severe("An error occoured whilst fetching data from the database. Please report the following stacktrace to Foxikle: \n" + Arrays.toString(e.getStackTrace()));
         }
     }
 
@@ -87,7 +89,7 @@ public class Database {
             ps = getConnection().prepareStatement("CREATE TABLE IF NOT EXISTS foxrankauditlog (uuid VARCHAR(100), data TEXT, PRIMARY KEY(uuid))");
             ps.executeUpdate();
         } catch (SQLException e) {
-            e.printStackTrace();
+            plugin.getLogger().severe("An error occoured whilst fetching data from the database. Please report the following stacktrace to Foxikle: \n" + Arrays.toString(e.getStackTrace()));
         }
     }
 
@@ -96,7 +98,7 @@ public class Database {
         entries.add(entry);
         StringBuilder str = new StringBuilder();
         for (Entry entry1 : entries) {
-            str.append("::" + entry1.serialize());
+            str.append("::").append(entry1.serialize());
         }
         String str1 = str.toString().replaceFirst("::", "");
         try {
@@ -105,7 +107,7 @@ public class Database {
             ps.setString(2, uuid.toString());
             ps.executeUpdate();
         } catch (SQLException e) {
-            e.printStackTrace();
+            plugin.getLogger().severe("An error occoured whilst fetching data from the database. Please report the following stacktrace to Foxikle: \n" + Arrays.toString(e.getStackTrace()));
         }
     }
 
@@ -118,7 +120,7 @@ public class Database {
 
             if (rs.next()) {
                 String str = rs.getString("data");
-                if (str == null || str.equals("")) return new ArrayList<>();
+                if (str == null || str.isEmpty()) return new ArrayList<>();
                 List<String> list1 = List.of(str.split("::"));
 
                 for (String s : list1) {
@@ -126,7 +128,7 @@ public class Database {
                 }
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            plugin.getLogger().severe("An error occoured whilst fetching data from the database. Please report the following stacktrace to Foxikle: \n" + Arrays.toString(e.getStackTrace()));
         }
         return returnme;
     }
@@ -140,7 +142,7 @@ public class Database {
 
             if (rs.next()) {
                 String str = rs.getString("uuids");
-                if (!str.equals("")) {
+                if (!str.isEmpty()) {
                     List<String> list1 = List.of(str.split(":"));
 
                     for (String s : list1) {
@@ -149,7 +151,7 @@ public class Database {
                 }
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            plugin.getLogger().severe("An error occoured whilst fetching data from the database. Please report the following stacktrace to Foxikle: \n" + Arrays.toString(e.getStackTrace()));
         }
         return returnme;
     }
@@ -166,7 +168,7 @@ public class Database {
             ps.setString(2, "bannedPlayers");
             ps.executeUpdate();
         } catch (SQLException e) {
-            e.printStackTrace();
+            plugin.getLogger().severe("An error occoured whilst fetching data from the database. Please report the following stacktrace to Foxikle: \n" + Arrays.toString(e.getStackTrace()));
         }
     }
 
@@ -179,7 +181,7 @@ public class Database {
                 ResultSet results = ps.executeQuery();
                 exists = results.next();
             } catch (SQLException e) {
-                e.printStackTrace();
+                plugin.getLogger().severe("An error occoured whilst fetching data from the database. Please report the following stacktrace to Foxikle: \n" + Arrays.toString(e.getStackTrace()));
             }
             if (!exists) {
                 PreparedStatement ps = getConnection().prepareStatement("INSERT IGNORE INTO foxrankauditlog (data, uuid) VALUES (?,?)");
@@ -188,17 +190,17 @@ public class Database {
                 ps.executeUpdate();
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            plugin.getLogger().severe("An error occoured whilst fetching data from the database. Please report the following stacktrace to Foxikle: \n" + Arrays.toString(e.getStackTrace()));
         }
         try {
             if (!exists(uuid)) {
                 PreparedStatement ps = getConnection().prepareStatement("INSERT IGNORE INTO foxrankplayerdata (name, uuid) VALUES (?,?)");
-                ps.setString(1, rp.getName());
+                ps.setString(1, Bukkit.getOfflinePlayer(uuid).getName());
                 ps.setString(2, uuid.toString());
                 ps.executeUpdate();
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            plugin.getLogger().severe("An error occoured whilst fetching data from the database. Please report the following stacktrace to Foxikle: \n" + Arrays.toString(e.getStackTrace()));
         }
     }
 
@@ -209,7 +211,7 @@ public class Database {
             ResultSet results = ps.executeQuery();
             return results.next();
         } catch (SQLException e) {
-            e.printStackTrace();
+            plugin.getLogger().severe("An error occoured whilst fetching data from the database. Please report the following stacktrace to Foxikle: \n" + Arrays.toString(e.getStackTrace()));
         }
         return false;
     }
@@ -221,7 +223,7 @@ public class Database {
             ps.setString(2, uuid.toString());
             ps.executeUpdate();
         } catch (SQLException e) {
-            e.printStackTrace();
+            plugin.getLogger().severe("An error occoured whilst fetching data from the database. Please report the following stacktrace to Foxikle: \n" + Arrays.toString(e.getStackTrace()));
         }
     }
 
@@ -232,7 +234,7 @@ public class Database {
             ps.setString(2, uuid.toString());
             ps.executeUpdate();
         } catch (SQLException e) {
-            e.printStackTrace();
+            plugin.getLogger().severe("An error occoured whilst fetching data from the database. Please report the following stacktrace to Foxikle: \n" + Arrays.toString(e.getStackTrace()));
         }
     }
 
@@ -243,49 +245,49 @@ public class Database {
             ps.setString(2, uuid.toString());
             ps.executeUpdate();
         } catch (SQLException e) {
-            e.printStackTrace();
+            plugin.getLogger().severe("An error occoured whilst fetching data from the database. Please report the following stacktrace to Foxikle: \n" + Arrays.toString(e.getStackTrace()));
         }
     }
 
-    protected void setStoredMuteState(UUID uuid, boolean isMuted) {
+    protected void setStoredMuteState(UUID uuid) {
         try {
             PreparedStatement ps = getConnection().prepareStatement("UPDATE foxrankplayerdata SET ismuted = ? WHERE uuid = ?");
-            ps.setBoolean(1, isMuted);
+            ps.setBoolean(1, false);
             ps.setString(2, uuid.toString());
             ps.executeUpdate();
         } catch (SQLException e) {
-            e.printStackTrace();
+            plugin.getLogger().severe("An error occoured whilst fetching data from the database. Please report the following stacktrace to Foxikle: \n" + Arrays.toString(e.getStackTrace()));
         }
     }
 
-    protected void setStoredBanState(UUID uuid, boolean isBanned) {
+    protected void setStoredBanState(UUID uuid) {
         try {
             PreparedStatement ps = getConnection().prepareStatement("UPDATE foxrankplayerdata SET isbanned = ? WHERE uuid = ?");
-            ps.setBoolean(1, isBanned);
+            ps.setBoolean(1, false);
             ps.setString(2, uuid.toString());
             ps.executeUpdate();
         } catch (SQLException e) {
-            e.printStackTrace();
+            plugin.getLogger().severe("An error occoured whilst fetching data from the database. Please report the following stacktrace to Foxikle: \n" + Arrays.toString(e.getStackTrace()));
         }
     }
 
-    protected void setStoredMuteData(UUID uuid, boolean isMuted, String reason, Instant duration) {
+    protected void setStoredMuteData(UUID uuid, String reason, Instant duration) {
         try {
             PreparedStatement ps = getConnection().prepareStatement("UPDATE foxrankplayerdata SET ismuted = ?, muteduration = ?, mutereason = ? WHERE uuid=?");
-            ps.setBoolean(1, isMuted);
+            ps.setBoolean(1, true);
             ps.setString(2, duration.toString());
             ps.setString(3, reason);
             ps.setString(4, uuid.toString());
             ps.executeUpdate();
         } catch (SQLException e) {
-            e.printStackTrace();
+            plugin.getLogger().severe("An error occoured whilst fetching data from the database. Please report the following stacktrace to Foxikle: \n" + Arrays.toString(e.getStackTrace()));
         }
     }
 
-    protected void setStoredBanData(UUID uuid, boolean isBanned, String reason, @Nullable Instant duration, String ID) {
+    protected void setStoredBanData(UUID uuid, String reason, @Nullable Instant duration, String ID) {
         try {
             PreparedStatement ps = getConnection().prepareStatement("UPDATE foxrankplayerdata SET isbanned = ?, banduration = ?, banreason = ?, banid = ? WHERE uuid = ?");
-            ps.setBoolean(1, isBanned);
+            ps.setBoolean(1, true);
             ps.setString(2, (duration == null) ? null : duration.toString());
             ps.setString(3, reason);
             ps.setString(4, ID);
@@ -293,7 +295,7 @@ public class Database {
 
             ps.executeUpdate();
         } catch (SQLException e) {
-            e.printStackTrace();
+            plugin.getLogger().severe("An error occoured whilst fetching data from the database. Please report the following stacktrace to Foxikle: \n" + Arrays.toString(e.getStackTrace()));
         }
     }
 
@@ -307,7 +309,7 @@ public class Database {
             ps.setString(5, uuid.toString());
             ps.executeUpdate();
         } catch (SQLException e) {
-            e.printStackTrace();
+            plugin.getLogger().severe("An error occoured whilst fetching data from the database. Please report the following stacktrace to Foxikle: \n" + Arrays.toString(e.getStackTrace()));
         }
     }
 
@@ -320,7 +322,7 @@ public class Database {
                 return Rank.of(rs.getString("rankid"));
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            plugin.getLogger().severe("An error occoured whilst fetching data from the database. Please report the following stacktrace to Foxikle: \n" + Arrays.toString(e.getStackTrace()));
         }
         return plugin.getDefaultRank();
     }
@@ -334,7 +336,7 @@ public class Database {
                 return rs.getBoolean("ismuted");
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            plugin.getLogger().severe("An error occoured whilst fetching data from the database. Please report the following stacktrace to Foxikle: \n" + Arrays.toString(e.getStackTrace()));
         }
         return false;
     }
@@ -348,7 +350,7 @@ public class Database {
                 return rs.getBoolean("isbanned");
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            plugin.getLogger().severe("An error occoured whilst fetching data from the database. Please report the following stacktrace to Foxikle: \n" + Arrays.toString(e.getStackTrace()));
         }
         return false;
     }
@@ -362,7 +364,7 @@ public class Database {
                 return rs.getBoolean("isnicked");
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            plugin.getLogger().severe("An error occoured whilst fetching data from the database. Please report the following stacktrace to Foxikle: \n" + Arrays.toString(e.getStackTrace()));
         }
         return false;
     }
@@ -376,7 +378,7 @@ public class Database {
                 return rs.getBoolean("isvanished");
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            plugin.getLogger().severe("An error occoured whilst fetching data from the database. Please report the following stacktrace to Foxikle: \n" + Arrays.toString(e.getStackTrace()));
         }
         return false;
     }
@@ -390,7 +392,7 @@ public class Database {
                 return rs.getString("nickname");
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            plugin.getLogger().severe("An error occoured whilst fetching data from the database. Please report the following stacktrace to Foxikle: \n" + Arrays.toString(e.getStackTrace()));
         }
         return "";
     }
@@ -404,7 +406,7 @@ public class Database {
                 return rs.getString("nicknameskin");
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            plugin.getLogger().severe("An error occoured whilst fetching data from the database. Please report the following stacktrace to Foxikle: \n" + Arrays.toString(e.getStackTrace()));
         }
         return "";
     }
@@ -418,7 +420,7 @@ public class Database {
                 return Rank.of(rs.getString("nicknamerank"));
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            plugin.getLogger().severe("An error occoured whilst fetching data from the database. Please report the following stacktrace to Foxikle: \n" + Arrays.toString(e.getStackTrace()));
         }
         return plugin.getDefaultRank();
     }
@@ -432,7 +434,7 @@ public class Database {
                 return rs.getString("muteduration");
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            plugin.getLogger().severe("An error occoured whilst fetching data from the database. Please report the following stacktrace to Foxikle: \n" + Arrays.toString(e.getStackTrace()));
         }
         return null;
     }
@@ -446,7 +448,7 @@ public class Database {
                 return rs.getString("mutereason");
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            plugin.getLogger().severe("An error occoured whilst fetching data from the database. Please report the following stacktrace to Foxikle: \n" + Arrays.toString(e.getStackTrace()));
         }
         return null;
     }
@@ -460,7 +462,7 @@ public class Database {
                 return rs.getString("banid");
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            plugin.getLogger().severe("An error occoured whilst fetching data from the database. Please report the following stacktrace to Foxikle: \n" + Arrays.toString(e.getStackTrace()));
         }
         return null;
     }
@@ -474,7 +476,7 @@ public class Database {
                 return rs.getString("banduration");
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            plugin.getLogger().severe("An error occoured whilst fetching data from the database. Please report the following stacktrace to Foxikle: \n" + Arrays.toString(e.getStackTrace()));
         }
         return null;
     }
@@ -488,7 +490,7 @@ public class Database {
                 return rs.getString("banreason");
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            plugin.getLogger().severe("An error occoured whilst fetching data from the database. Please report the following stacktrace to Foxikle: \n" + Arrays.toString(e.getStackTrace()));
         }
         return null;
     }
@@ -505,7 +507,7 @@ public class Database {
             }
             return returnme;
         } catch (SQLException e) {
-            e.printStackTrace();
+            plugin.getLogger().severe("An error occoured whilst fetching data from the database. Please report the following stacktrace to Foxikle: \n" + Arrays.toString(e.getStackTrace()));
         }
         return new ArrayList<>();
     }
@@ -522,7 +524,7 @@ public class Database {
             }
             return returnme;
         } catch (SQLException e) {
-            e.printStackTrace();
+            plugin.getLogger().severe("An error occoured whilst fetching data from the database. Please report the following stacktrace to Foxikle: \n" + Arrays.toString(e.getStackTrace()));
         }
         return new ArrayList<>();
     }
