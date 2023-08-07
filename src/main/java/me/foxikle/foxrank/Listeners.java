@@ -71,7 +71,7 @@ public class Listeners implements Listener {
             if (plugin.getDm().isVanished(p.getUniqueId())) {
                 Bukkit.getScheduler().runTask(plugin, () -> Vanish.vanishPlayer(p));
             }
-        }, 10);
+        }, 40);
         for (Player player : plugin.vanishedPlayers) {
             p.hidePlayer(plugin, player);
         }
