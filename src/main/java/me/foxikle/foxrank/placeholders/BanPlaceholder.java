@@ -43,7 +43,7 @@ public class BanPlaceholder extends PlaceholderExpansion {
 
     @Override
     public @Nullable String onPlaceholderRequest(Player player, @NotNull String params) {
-        UUID banned = plugin.banMap.get(player.getUniqueId());
+        UUID banned = plugin.targetMap.get(player.getUniqueId());
         if (params.equalsIgnoreCase("duration")) {
             return plugin.getFormattedExpiredString(plugin.getPlayerData(banned).getBanDuration(), Instant.now());
         } else if (params.equalsIgnoreCase("reason")) {
