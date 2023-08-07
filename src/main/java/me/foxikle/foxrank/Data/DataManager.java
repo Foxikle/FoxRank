@@ -96,7 +96,8 @@ public class DataManager {
     }
 
     public void shutDown() {
-        db.disconnect();
+        if(useDatabase)
+            db.disconnect();
     }
 
     public void setStoredRank(UUID uuid, Rank rank) {
@@ -253,7 +254,7 @@ public class DataManager {
             YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
             data = yml.getString("MuteDuration");
         }
-        if(data == null)
+        if(data == null || data.isEmpty())
             return null;
         return Instant.parse(data);
     }
@@ -552,7 +553,7 @@ public class DataManager {
                 } else {
                     String reason = yml.getString("MuteReason");
                     String border = ChatColor.RED + String.valueOf(ChatColor.STRIKETHROUGH) + "                                                                   ";
-                    String muteMessage = plugin.getConfig().getString("ChatWhileMutedMessage").replace("$LINE", border);
+                    String muteMessage = plugin.getConfig().getString("ChatWhileMutedMessage").replace("$LINE", border); //todo wtf is this
                     muteMessage = muteMessage.replace("\\n", "\n");
                     muteMessage = muteMessage.replace("$DURATION", plugin.getFormattedExpiredString(date, Instant.now()));
                     muteMessage = muteMessage.replace("$REASON", reason);
@@ -603,7 +604,7 @@ public class DataManager {
             YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
             data = yml.getString("BanDuration");
         }
-        if(data == null)
+        if(data == null || data.isEmpty())
             return null;
         return Instant.parse(data);
     }
@@ -630,7 +631,7 @@ public class DataManager {
                     strings.add(yml.getString("name"));
                 }
             } catch (IOException e) {
-                throw new RuntimeException(e);
+                return new ArrayList<>();
             }
             return strings;
         }
