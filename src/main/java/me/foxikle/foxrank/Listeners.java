@@ -42,7 +42,6 @@ public class Listeners implements Listener {
 
     @EventHandler
     public void OnPlayerLogin(PlayerJoinEvent e) {
-        //TODO: This should probably be re-worked ._.
         Player p = e.getPlayer();
         Bukkit.getScheduler().runTaskLaterAsynchronously(plugin, () -> {
             plugin.getDm().setupPlayerInfoStorage(p);
@@ -54,7 +53,7 @@ public class Listeners implements Listener {
             ActionBar.setupActionBar(p);
             if (plugin.getPlayerData(p.getUniqueId()).isMuted()) {
                 if (plugin.getPlayerData(p.getUniqueId()).getMuteDuration().isBefore(Instant.now())) {
-                    ModerationAction.unmutePlayer(new RankedPlayer(p, plugin), new RankedPlayer(p, plugin));
+                    ModerationAction.unmutePlayer(p, p);
                 }
             }
             if (Bukkit.getOnlinePlayers().size() == 1) {
