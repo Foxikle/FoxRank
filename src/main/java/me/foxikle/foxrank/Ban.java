@@ -65,53 +65,30 @@ public class Ban implements CommandExecutor, TabCompleter {
                                     banner.sendMessage(plugin.getMessage("NoPresetBanReason", banner));
                                     return true;
                                 }
-                                if (args[2].contains("d") || args[2].contains("h") || args[2].contains("m") || args[2].equalsIgnoreCase("-1")) {
-                                    expires = Instant.now();
-                                    String durStr = args[2];
-                                    if (args[2].equalsIgnoreCase("-1")) {
+                                    long seconds = FoxRank.parseDuration(args[2]);
+                                    if(seconds == -2) {
+                                        plugin.syntaxMap.put(banner.getUniqueId(), "The duration must be a number followed by [y/d/h/m/s]. They can be chained like '20d12h47m26s'");
+                                        banner.sendMessage(plugin.getSyntaxMessage(banner));
+                                        return true;
+                                    } else if(seconds == -1){
                                         if (!banner.hasPermission("foxrank.moderation.ban.permanent")) {
                                             banner.sendMessage(plugin.getMessage("NoPermissionMessage", banner));
                                             return true;
                                         }
-
                                         expires = null;
-                                    } else if (args[2].contains("d")) {
+                                    } else {
                                         if (!banner.hasPermission("foxrank.moderation.ban.temporary")) {
                                             banner.sendMessage(plugin.getMessage("NoPermissionMessage", banner));
                                             return true;
                                         }
-                                        durStr = durStr.replace("d", "");
-                                        int durInt = Integer.parseInt(durStr);
-                                        expires = Instant.now().plusSeconds((long) durInt * 24 * 60 * 60);
-                                    } else if (args[2].contains("h")) {
-                                        if (!banner.hasPermission("foxrank.moderation.ban.temporary")) {
-                                            banner.sendMessage(plugin.getMessage("NoPermissionMessage", banner));
-                                            return true;
-                                        }
-                                        durStr = durStr.replace("h", "");
-                                        int durInt = Integer.parseInt(durStr);
-                                        expires = Instant.now().plusSeconds((long) durInt * 60 * 60);
-                                    } else if (args[2].contains("m")) {
-                                        if (!banner.hasPermission("foxrank.moderation.ban.temporary")) {
-                                            banner.sendMessage(plugin.getMessage("NoPermissionMessage", banner));
-                                            return true;
-                                        }
-                                        durStr = durStr.replace("m", "");
-                                        int durInt = Integer.parseInt(durStr);
-                                        expires = Instant.now().plusSeconds((long) durInt * 60);
+                                        expires = Instant.now().plusSeconds(seconds);
                                     }
-                                } else {
-                                    plugin.syntaxMap.put(banner.getUniqueId(), "/ban <player> <preset> <duration (`30d`, `24h`, `30m`)> <SILENT/PUBLIC>");
-                                    banner.sendMessage(plugin.getSyntaxMessage(banner));
-                                    return false;
-
-                                }
                                 if (args[3].equalsIgnoreCase("SILENT")) {
                                     silent = true;
                                 } else if (args[3].equalsIgnoreCase("PUBLIC")) {
                                     silent = false;
                                 } else {
-                                    plugin.syntaxMap.put(banner.getUniqueId(), "/ban <player> <preset> <duration (`30d`, `24h`, `30m`)> <SILENT/PUBLIC>");
+                                    plugin.syntaxMap.put(banner.getUniqueId(), "/ban <player> <preset> <duration> <SILENT/PUBLIC>");
                                     banner.sendMessage(plugin.getSyntaxMessage(banner));
                                 }
                                 reason = removeUnderScore(reason);
@@ -140,52 +117,32 @@ public class Ban implements CommandExecutor, TabCompleter {
                                             banner.sendMessage(plugin.getMessage("NoPermissionMessage", banner));
                                             return true;
                                         }
-                                        if (args[2].contains("d") || args[2].contains("h") || args[2].contains("m") || args[2].equalsIgnoreCase("-1")) {
-                                            expires = Instant.now();
-                                            String durStr = args[2];
-                                            if (args[1].equalsIgnoreCase("-1")) {
+                                            long seconds = FoxRank.parseDuration(args[2]);
+                                            if(seconds == -2) {
+                                                plugin.syntaxMap.put(banner.getUniqueId(), "The duration must be a number followed by [y/d/h/m/s]. They can be chained like '20d12h47m26s'");
+                                                banner.sendMessage(plugin.getSyntaxMessage(banner));
+                                                return true;
+                                            }
+                                            if(seconds == -1){
                                                 if (!banner.hasPermission("foxrank.moderation.ban.permanent")) {
                                                     banner.sendMessage(plugin.getMessage("NoPermissionMessage", banner));
                                                     return true;
                                                 }
                                                 expires = null;
-                                            } else if (args[2].contains("d")) {
+                                            } else {
                                                 if (!banner.hasPermission("foxrank.moderation.ban.temporary")) {
                                                     banner.sendMessage(plugin.getMessage("NoPermissionMessage", banner));
                                                     return true;
                                                 }
-                                                durStr = durStr.replace("d", "");
-                                                int durInt = Integer.parseInt(durStr);
-                                                expires = Instant.now().plusSeconds((long) durInt * 24 * 60 * 60);
-                                            } else if (args[2].contains("h")) {
-                                                if (!banner.hasPermission("foxrank.moderation.ban.temporary")) {
-                                                    banner.sendMessage(plugin.getMessage("NoPermissionMessage", banner));
-                                                    return true;
-                                                }
-                                                durStr = durStr.replace("h", "");
-                                                int durInt = Integer.parseInt(durStr);
-                                                expires = Instant.now().plusSeconds((long) durInt * 60 * 60);
-                                            } else if (args[2].contains("m")) {
-                                                if (!banner.hasPermission("foxrank.moderation.ban.temporary")) {
-                                                    banner.sendMessage(plugin.getMessage("NoPermissionMessage", banner));
-                                                    return true;
-                                                }
-                                                durStr = durStr.replace("m", "");
-                                                int durInt = Integer.parseInt(durStr);
-                                                expires = Instant.now().plusSeconds((long) durInt * 60);
+                                                expires = Instant.now().plusSeconds(seconds);
                                             }
-                                        } else {
-                                            plugin.syntaxMap.put(banner.getUniqueId(), "/ban <player> <preset> <duration (`30d`, `24h`, `30m`)> <SILENT/PUBLIC>");
-                                            banner.sendMessage(plugin.getSyntaxMessage(banner));
-                                            return false;
 
-                                        }
                                         if (args[3].equalsIgnoreCase("SILENT")) {
                                             silent = true;
                                         } else if (args[3].equalsIgnoreCase("PUBLIC")) {
                                             silent = false;
                                         } else {
-                                            plugin.syntaxMap.put(banner.getUniqueId(), "/ban <player> <preset> <duration (`30d`, `24h`, `30m`)> <SILENT/PUBLIC>");
+                                            plugin.syntaxMap.put(banner.getUniqueId(), "/ban <player> <preset> <duration> <SILENT/PUBLIC>");
                                             banner.sendMessage(plugin.getSyntaxMessage(banner));
                                         }
                                         reason = removeUnderScore(reason);
@@ -195,12 +152,12 @@ public class Ban implements CommandExecutor, TabCompleter {
                                     }
                                 }
                             } else {
-                                plugin.syntaxMap.put(banner.getUniqueId(), "/ban <player> <preset> <duration (`30d`, `24h`, `30m`)> <SILENT/PUBLIC>");
+                                plugin.syntaxMap.put(banner.getUniqueId(), "/ban <player> <preset> <duration> <SILENT/PUBLIC>");
                                 banner.sendMessage(plugin.getSyntaxMessage(banner));
                             }
                         }
                     } else {
-                        plugin.syntaxMap.put(banner.getUniqueId(), "/ban <player> <preset> <duration (`30d`, `24h`, `30m`)> <SILENT/PUBLIC>");
+                        plugin.syntaxMap.put(banner.getUniqueId(), "/ban <player> <preset> <duration> <SILENT/PUBLIC>");
                         banner.sendMessage(plugin.getSyntaxMessage(banner));
                     }
                 return true;

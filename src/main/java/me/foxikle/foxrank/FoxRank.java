@@ -31,6 +31,8 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.logging.Level;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class FoxRank extends JavaPlugin implements Listener {
 
@@ -248,15 +250,23 @@ public class FoxRank extends JavaPlugin implements Listener {
         if (date == null) {
             return "Permanant";
         } else {
-            Instant temp = date;
-            long days = ChronoUnit.DAYS.between(now, temp);
-            temp = temp.minusSeconds(days * 24 * 60 * 60);
-            long hours = ChronoUnit.HOURS.between(now, temp);
-            temp = temp.minusSeconds(hours * 60 * 60);
-            long minutes = ChronoUnit.MINUTES.between(now, temp);
-            temp = temp.minusSeconds(minutes * 60);
-            long seconds = ChronoUnit.SECONDS.between(now, temp);
+            long totalSeconds = ChronoUnit.SECONDS.between(now, date);
+
+            long years = totalSeconds / (365 * 24 * 60 * 60);
+            long remainingSeconds = totalSeconds % (365 * 24 * 60 * 60);
+
+            long days = remainingSeconds / (24 * 60 * 60);
+            remainingSeconds %= (24 * 60 * 60);
+
+            long hours = remainingSeconds / (60 * 60);
+            remainingSeconds %= (60 * 60);
+
+            long minutes = remainingSeconds / 60;
+            long seconds = remainingSeconds % 60;
             String str = "";
+            if (years != 0) {
+                str = str + years + "y ";
+            }
             if (days != 0) {
                 str = str + days + "d ";
             }
@@ -347,5 +357,42 @@ public class FoxRank extends JavaPlugin implements Listener {
     }
     public void addPlayerDataEntry(PlayerData pd, UUID key){
         playerData.put(key, pd);
+    }
+
+    public static long parseDuration(String input) {
+        if (input.equalsIgnoreCase("-1")) {
+            return -1;
+        }
+        Pattern pattern = Pattern.compile("(\\d+y)?(\\d+d)?(\\d+h)?(\\d+m)?(\\d+s)?");
+        Matcher matcher = pattern.matcher(input);
+
+        int years = 0;
+        int days = 0;
+        int hours = 0;
+        int minutes = 0;
+        int seconds = 0;
+
+        while (matcher.find()) {
+            if (matcher.group(1) != null) years = Integer.parseInt(matcher.group(1).replace("y", ""));
+            if (matcher.group(2) != null) days = Integer.parseInt(matcher.group(2).replace("d", ""));
+            if (matcher.group(3) != null) hours = Integer.parseInt(matcher.group(3).replace("h", ""));
+            if (matcher.group(4) != null) minutes = Integer.parseInt(matcher.group(4).replace("m", ""));
+            if (matcher.group(5) != null) seconds = Integer.parseInt(matcher.group(5).replace("s", ""));
+        }
+
+        FoxRank.getInstance().getLogger().log(Level.INFO, "y: " + years);
+        FoxRank.getInstance().getLogger().log(Level.INFO, "d: " + days);
+        FoxRank.getInstance().getLogger().log(Level.INFO, "h: " + hours);
+        FoxRank.getInstance().getLogger().log(Level.INFO, "m: " + minutes);
+        FoxRank.getInstance().getLogger().log(Level.INFO, "s: " + seconds);
+        if (years > 0 || days > 0 || hours > 0 || minutes > 0 || seconds > 0) { // validate input
+            return (long) years * 365 * 24 * 60 * 60
+                    + (long) days * 24 * 60 * 60
+                    + (long) hours * 60 * 60
+                    + minutes * 60L
+                    + seconds;
+        } else {
+            return -2; // Return -2 for invalid input
+        }
     }
 }

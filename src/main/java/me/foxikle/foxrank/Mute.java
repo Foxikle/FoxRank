@@ -16,6 +16,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.UUID;
 
 public class Mute implements CommandExecutor, TabCompleter {
 
@@ -26,8 +27,8 @@ public class Mute implements CommandExecutor, TabCompleter {
     }
 
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command cmd, String label, String[] args) {
-        if (label.equalsIgnoreCase("mute")) {
-            Instant expires;
+        if (label.equalsIgnoreCase("mute") || label.equalsIgnoreCase("foxrank:mute")) {
+            Instant expires = Instant.now();
             String reason;
             if (!plugin.getConfig().getBoolean("DisableMute")) {
                 if (sender instanceof Player player) {
@@ -40,123 +41,86 @@ public class Mute implements CommandExecutor, TabCompleter {
                             if (muteeRank.getPowerlevel() >= playerRank.getPowerlevel()) {
                                 player.sendMessage(plugin.getMessage("MutePlayerWithHigherRankMessage", player));
                             } else {
-                                    if (!plugin.getPlayerData(mutee.getUniqueId()).isMuted()) {
-                                        if (args[1].contains("d") || args[1].contains("h") || args[1].contains("m") || args[1].equalsIgnoreCase("-1")) {
-                                            expires = Instant.now();
-                                            String durStr = args[1];
-                                            if (args[1].equalsIgnoreCase("-1")) {
-                                                if (!player.hasPermission("foxrank.moderation.mute.permanent")) {
-                                                    player.sendMessage(plugin.getMessage("NoPermissionMessage", player));
-                                                    return true;
-                                                }
-
-                                                expires = null;
-                                            } else if (args[1].contains("d")) {
-                                                if (!player.hasPermission("foxrank.moderation.mute.temporary")) {
-                                                    player.sendMessage(plugin.getMessage("NoPermissionMessage", player));
-                                                    return true;
-                                                }
-                                                durStr = durStr.replace("d", "");
-                                                int durInt = Integer.parseInt(durStr);
-                                                expires = Instant.now().plusSeconds((long) durInt * 24 * 60 * 60);
-                                            } else if (args[1].contains("h")) {
-                                                if (!player.hasPermission("foxrank.moderation.mute.temporary")) {
-                                                    player.sendMessage(plugin.getMessage("NoPermissionMessage", player));
-                                                    return true;
-                                                }
-                                                durStr = durStr.replace("h", "");
-                                                int durInt = Integer.parseInt(durStr);
-                                                expires = Instant.now().plusSeconds((long) durInt * 60 * 60);
-                                            } else if (args[1].contains("m")) {
-                                                if (!player.hasPermission("foxrank.moderation.mute.temporary")) {
-                                                    player.sendMessage(plugin.getMessage("NoPermissionMessage", player));
-                                                    return true;
-                                                }
-                                                durStr = durStr.replace("m", "");
-                                                int durInt = Integer.parseInt(durStr);
-                                                expires = Instant.now().plusSeconds((long) durInt * 60);
-                                            }
-                                            if (args.length >= 3) {
-                                                ArrayList<String> list = new ArrayList<>(Arrays.asList(args));
-                                                list.remove(1);
-                                                list.remove(0);
-                                                reason = String.join(" ", list);
-                                                me.foxikle.foxrank.ModerationAction.mutePlayer(mutee, expires, reason, player);
-                                                plugin.getServer().getPluginManager().callEvent(new ModerationActionEvent(player, mutee, plugin.getPlayerData(mutee.getUniqueId()).getRank(), plugin.getPlayerData(player.getUniqueId()).getRank(), ModerationAction.MUTE, reason, expires, null));
-                                            } else {
-                                                plugin.syntaxMap.put(player.getUniqueId(), "/mute <player> <duration (`1d`, `6h`, `30m`)> [reason]");
-                                                player.sendMessage(plugin.getSyntaxMessage(player));
-                                                return false;
-                                            }
-                                        }
-                                    } else {
-                                        player.sendMessage(plugin.getMessage("MuteCommandPlayerAlreadyMuted", mutee));
+                                if (!plugin.getPlayerData(mutee.getUniqueId()).isMuted()) {
+                                    String durStr = args[1];
+                                    long seconds = FoxRank.parseDuration(durStr);
+                                    if (seconds == -2) {
+                                        plugin.syntaxMap.put(player.getUniqueId(), "The duration must be a number followed by [y/d/h/m/s]. They can be chained like '20d12h47m26s'");
+                                        player.sendMessage(plugin.getSyntaxMessage(player));
+                                        return true;
                                     }
+                                    if (seconds == -1) {
+                                        if (!player.hasPermission("foxrank.moderation.mute.permanent")) {
+                                            player.sendMessage(plugin.getMessage("NoPermissionMessage", player));
+                                            return true;
+                                        }
+                                        expires = null;
+                                    } else {
+                                        if (!player.hasPermission("foxrank.moderation.mute.temporary")) {
+                                            player.sendMessage(plugin.getMessage("NoPermissionMessage", player));
+                                            return true;
+                                        }
+                                        expires = Instant.now().plusSeconds(seconds);
+                                    }
+                                    if (args.length >= 3) {
+                                        ArrayList<String> list = new ArrayList<>(Arrays.asList(args));
+                                        list.remove(1);
+                                        list.remove(0);
+                                        reason = String.join(" ", list);
+                                        me.foxikle.foxrank.ModerationAction.mutePlayer(mutee, expires, reason, player);
+                                        player.sendMessage(plugin.getMessage("MuteSenderMessage", player));
+                                        plugin.getServer().getPluginManager().callEvent(new ModerationActionEvent(player, mutee, plugin.getPlayerData(mutee.getUniqueId()).getRank(), plugin.getPlayerData(player.getUniqueId()).getRank(), ModerationAction.MUTE, reason, expires, null));
+                                    } else {
+                                        plugin.syntaxMap.put(player.getUniqueId(), "/mute <player> <duration> [reason]");
+                                        player.sendMessage(plugin.getSyntaxMessage(player));
+                                        return false;
+                                    }
+                                } else {
+                                    player.sendMessage(plugin.getMessage("MuteCommandPlayerAlreadyMuted", mutee));
+                                }
                             }
                         } else if (Bukkit.getOfflinePlayer(DataManager.getUUID(args[0])) != null) {
                             OfflinePlayer mutee = Bukkit.getOfflinePlayer(DataManager.getUUID(args[0]));
-
+                            plugin.targetMap.put(player.getUniqueId(), mutee.getUniqueId());
                             Rank muteeRank = plugin.getPlayerData(mutee.getUniqueId()).getRank();
                             Rank playerRank = plugin.getPlayerData(player.getUniqueId()).getRank();
                             if (muteeRank.getPowerlevel() >= playerRank.getPowerlevel()) {
                                 player.sendMessage(plugin.getMessage("MutePlayerWithHigherRankMessage", player)); //todo: confirm the papi argument in player
                             } else {
-
-                                    if (!plugin.getPlayerData(mutee.getUniqueId()).isMuted()) {
-                                        expires = Instant.now();
-                                        if (args[1].contains("d") || args[1].contains("h") || args[1].contains("m") || args[1].equalsIgnoreCase("-1")) {
-                                            expires = Instant.now();
-                                            String durStr = args[1];
-                                            if (args[1].equalsIgnoreCase("-1")) {
-                                                if (!player.hasPermission("foxrank.moderation.mute.permanent")) {
-                                                    player.sendMessage(plugin.getMessage("NoPermissionMessage", player));
-                                                    return true;
-                                                }
-                                                //todo: improve parsing to support multiple different units 1d12h
-
-                                                expires = null;
-                                            } else if (args[1].contains("d")) {
-                                                if (!player.hasPermission("foxrank.moderation.mute.temporary")) {
-                                                    player.sendMessage(plugin.getMessage("NoPermissionMessage", player));
-                                                    return true;
-                                                }
-                                                durStr = durStr.replace("d", "");
-                                                int durInt = Integer.parseInt(durStr);
-                                                expires = Instant.now().plusSeconds((long) durInt * 24 * 60 * 60);
-                                            } else if (args[1].contains("h")) {
-                                                if (!player.hasPermission("foxrank.moderation.mute.temporary")) {
-                                                    player.sendMessage(plugin.getMessage("NoPermissionMessage", player));
-                                                    return true;
-                                                }
-                                                durStr = durStr.replace("h", "");
-                                                int durInt = Integer.parseInt(durStr);
-                                                expires = Instant.now().plusSeconds((long) durInt * 60 * 60);
-                                            } else if (args[1].contains("m")) {
-                                                if (!player.hasPermission("foxrank.moderation.mute.temporary")) {
-                                                    player.sendMessage(plugin.getMessage("NoPermissionMessage", player));
-                                                    return true;
-                                                }
-                                                durStr = durStr.replace("m", "");
-                                                int durInt = Integer.parseInt(durStr);
-                                                expires = Instant.now().plusSeconds((long) durInt * 60);
-                                            }
-                                        } else {
-                                            plugin.syntaxMap.put(player.getUniqueId(), "/mute <player> <duration (`1d`, `6h`, `30m`)> [reason]");
-                                            player.sendMessage(plugin.getSyntaxMessage(player));
-                                            return false;
-                                        }
-                                        if (args.length >= 3) {
-                                            ArrayList<String> list = new ArrayList<>(Arrays.asList(args));
-                                            list.remove(1);
-                                            list.remove(0);
-                                            reason = String.join(" ", list);
-                                            me.foxikle.foxrank.ModerationAction.muteOfflinePlayer(mutee, expires, reason, player);
-                                            player.sendMessage(plugin.getMessage("MuteSenderMessage", player));
-                                            plugin.getServer().getPluginManager().callEvent(new ModerationActionEvent(player, mutee.getPlayer(), muteeRank, playerRank, ModerationAction.MUTE, reason, expires, null));
-                                        }
-                                    } else {
-                                        player.sendMessage(plugin.getMessage("MuteCommandPlayerAlreadyMuted", mutee));
+                                if (!plugin.getPlayerData(mutee.getUniqueId()).isMuted()) {
+                                    String durStr = args[1];
+                                    long seconds = FoxRank.parseDuration(durStr);
+                                    if (seconds == -2) {
+                                        plugin.syntaxMap.put(player.getUniqueId(), "The duration must be a number followed by [y/d/h/m/s]. They can be chained like '20d12h47m26s'");
+                                        player.sendMessage(plugin.getSyntaxMessage(player));
+                                        return true;
                                     }
+                                    if (seconds == -1) {
+                                        if (!player.hasPermission("foxrank.moderation.mute.permanent")) {
+                                            player.sendMessage(plugin.getMessage("NoPermissionMessage", player));
+                                            return true;
+                                        }
+                                        expires = null;
+                                    } else {
+                                        if (!player.hasPermission("foxrank.moderation.mute.temporary")) {
+                                            player.sendMessage(plugin.getMessage("NoPermissionMessage", player));
+                                            return true;
+                                        }
+                                        expires = Instant.now().plusSeconds(seconds);
+                                    }
+
+                                    if (args.length >= 3) {
+                                        ArrayList<String> list = new ArrayList<>(Arrays.asList(args));
+                                        list.remove(1);
+                                        list.remove(0);
+                                        reason = String.join(" ", list);
+                                        me.foxikle.foxrank.ModerationAction.muteOfflinePlayer(mutee, expires, reason, player);
+                                        player.sendMessage(plugin.getMessage("MuteSenderMessage", player));
+                                        plugin.getServer().getPluginManager().callEvent(new ModerationActionEvent(player, mutee.getPlayer(), muteeRank, playerRank, ModerationAction.MUTE, reason, expires, null));
+                                    }
+                                } else {
+                                    player.sendMessage(plugin.getMessage("MuteCommandPlayerAlreadyMuted", player));
+                                }
                             }
                         } else {
                             plugin.syntaxMap.put(player.getUniqueId(), "/mute <player> <duration> [reason]");
@@ -170,18 +134,42 @@ public class Mute implements CommandExecutor, TabCompleter {
             } else {
                 sender.sendMessage(plugin.getMessage("CommandDisabledMessage", (Player) sender));
             }
-        } else if (label.equalsIgnoreCase("me")) {
+        } else if (label.equalsIgnoreCase("minecraft:me") || label.equalsIgnoreCase("me")) {
             if (sender instanceof Player player) {
-                return plugin.getPlayerData(player.getUniqueId()).isMuted();
+                UUID uuid = player.getUniqueId();
+                if (plugin.getPlayerData(uuid).isMuted()) {
+                    Instant date = plugin.getPlayerData(uuid).getMuteDuration();
+                    if (date == null) {
+                        player.sendMessage(plugin.getMessage("ChatWhilePermanantlyMutedMessage", player));
+                        return true;
+                    } else if (date.isBefore(Instant.now())) {
+                        me.foxikle.foxrank.ModerationAction.unmutePlayer(player, player);
+                    } else {
+                        player.sendMessage(plugin.getMessage("ChatWhileMutedMessage", player));
+                        return true;
+                    }
+                }
             }
             return false;
-        } else if (label.equalsIgnoreCase("say")) {
+        } else if (label.equalsIgnoreCase("say") || label.equalsIgnoreCase("minecraft:say")) {
             if (sender instanceof Player player) {
-                return plugin.getPlayerData(player.getUniqueId()).isMuted();
+                UUID uuid = player.getUniqueId();
+                if (plugin.getPlayerData(uuid).isMuted()) {
+                    Instant date = plugin.getPlayerData(uuid).getMuteDuration();
+                    if (date == null) {
+                        player.sendMessage(plugin.getMessage("ChatWhilePermanantlyMutedMessage", player));
+                        return true;
+                    } else if (date.isBefore(Instant.now())) {
+                        me.foxikle.foxrank.ModerationAction.unmutePlayer(player, player);
+                    } else {
+                        player.sendMessage(plugin.getMessage("ChatWhileMutedMessage", player));
+                        return true;
+                    }
+                }
             }
             return false;
         }
-        if (label.equalsIgnoreCase("immuted")) {
+        if (label.equalsIgnoreCase("immuted") || label.equalsIgnoreCase("foxrank:immuted")) {
             if (!plugin.getConfig().getBoolean("DisableImMuted")) {
                 if (sender instanceof Player player) {
                     if (!plugin.getPlayerData(player.getUniqueId()).isMuted()) {
@@ -210,7 +198,7 @@ public class Mute implements CommandExecutor, TabCompleter {
             } else {
                 sender.sendMessage(plugin.getMessage("CommandDisabledMessage", (Player) sender));
             }
-        } else if (label.equalsIgnoreCase("unmute")) {
+        } else if (label.equalsIgnoreCase("unmute") || label.equalsIgnoreCase("foxrank:unmute")) {
             if (!plugin.getConfig().getBoolean("DisableUnmute")) {
                 if (sender instanceof Player player) {
                     if (player.hasPermission("foxrank.moderation.mute.unmute")) {
@@ -255,7 +243,7 @@ public class Mute implements CommandExecutor, TabCompleter {
 
     @Override
     public List<String> onTabComplete(@NotNull CommandSender sender, Command command, @NotNull String alias, String[] args) {
-        if (command.getLabel().equalsIgnoreCase("mute")) {
+        if (command.getLabel().equalsIgnoreCase("mute") || command.getLabel().equalsIgnoreCase("foxrank:mute")) {
             if (args.length == 2) {
                 List<String> arguments = new ArrayList<>();
                 arguments.add("1d");
@@ -266,7 +254,11 @@ public class Mute implements CommandExecutor, TabCompleter {
             } else if (args.length == 1) {
                 return plugin.players;
             }
-        } else if (command.getLabel().equalsIgnoreCase("unmute")) {
+        } else if (command.getLabel().equalsIgnoreCase("unmute") || command.getLabel().equalsIgnoreCase("foxrank:unmute")) {
+            if (args.length == 1) {
+                return plugin.players;
+            }
+        } else if (command.getLabel().equalsIgnoreCase("immuted") || command.getLabel().equalsIgnoreCase("foxrank:immuted")) {
             if (args.length == 1) {
                 return plugin.players;
             }
