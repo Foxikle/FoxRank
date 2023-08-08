@@ -513,10 +513,7 @@ public class DataManager {
             Instant date = plugin.getPlayerData(uuid).getMuteDuration();
             if(date == null) {
                 player.sendMessage(plugin.getMessage("ChatWhilePermanantlyMutedMessage", player));
-                return;
-            }
-
-            if (date.isBefore(Instant.now())) {
+            } else if (date.isBefore(Instant.now())) {
                 ModerationAction.unmutePlayer(player, player);
             } else {
                 player.sendMessage(plugin.getMessage("ChatWhileMutedMessage", player));
@@ -524,50 +521,25 @@ public class DataManager {
             }
         }
 
-        if (useDatabase) {
-            if (db.getStoredNicknameStatus(uuid)) {
-                Rank rank = db.getStoredNicknameRank(uuid);
-                String nick = db.getStoredNickname(uuid);
-                if (plugin.disableRankVis) {
-                    Bukkit.broadcastMessage(nick + ": " + e.getMessage());
-                } else {
-                    Bukkit.broadcastMessage(rank.getPrefix() + ChatColor.RESET + rank.getColor() + player.getName() + ChatColor.RESET + ": " + rank.getTextColor() + eventMessage);
-                }
+        PlayerData pd = plugin.getPlayerData(uuid);
+        if(pd.isNicked()) {
+            Rank rank = pd.getNicknameRank();
+            String nick = pd.getNickname();
+            if (plugin.disableRankVis) {
+                Bukkit.broadcastMessage(nick + ": " + e.getMessage());
             } else {
-                Rank rank = plugin.getRank(player);
-                if (!plugin.disableRankVis) {
-                    if (rank == null) return;
-                    if (plugin.getRank(player) != plugin.getDefaultRank()) {
-                        Bukkit.broadcastMessage(rank.getPrefix() + ChatColor.RESET + rank.getColor() + player.getName() + ChatColor.RESET + ": " + rank.getTextColor() + eventMessage);
-                    } else if (plugin.getRank(player) == plugin.getDefaultRank()) {
-                        Bukkit.broadcastMessage(plugin.getRank(player).getPrefix() + ChatColor.RESET + rank.getColor() + player.getDisplayName() + ChatColor.RESET + plugin.getDefaultRank().getTextColor() + ": " + eventMessage);
-                    }
-                } else {
-                    Bukkit.broadcastMessage(player.getName() + ": " + e.getMessage());
-                }
+                Bukkit.broadcastMessage(rank.getPrefix() + ChatColor.RESET + rank.getColor() + player.getName() + ChatColor.RESET + ": " + rank.getTextColor() + eventMessage);
             }
         } else {
-            File file = new File("plugins/FoxRank/PlayerData/" + player.getUniqueId() + ".yml");
-            YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
-
-            if (yml.getBoolean("isNicked")) {
-                Rank rank = Rank.of(yml.getString("Nickname-Rank"));
-                String nick = yml.getString("Nickname");
-                if (!plugin.disableRankVis) {
-                    Bukkit.broadcastMessage(rank.getPrefix() + ChatColor.RESET + rank.getColor() + e.getPlayer().getName() + ChatColor.RESET + ": " + rank.getTextColor() + eventMessage);
-                } else {
-                    Bukkit.broadcastMessage(nick + ": " + e.getMessage());
-                }
+            Rank rank = plugin.getRank(player);
+            if (plugin.disableRankVis) {
+                Bukkit.broadcastMessage(player.getName() + ": " + e.getMessage());
             } else {
-                Rank rank = Rank.of(yml.getString("Nickname-Rank"));
-                if (!plugin.disableRankVis) {
-                    if (plugin.getRank(player) != plugin.getDefaultRank()) {
-                        Bukkit.broadcastMessage(rank.getPrefix() + ChatColor.RESET + rank.getColor() + player.getName() + ChatColor.RESET + ": " + e.getMessage());
-                    } else if (plugin.getRank(player) == plugin.getDefaultRank()) {
-                        Bukkit.broadcastMessage(rank.getPrefix() + ChatColor.RESET + rank.getColor() + player.getName() + ChatColor.RESET + ": " + plugin.getDefaultRank().getTextColor() + e.getMessage());
-                    }
-                } else {
-                    Bukkit.broadcastMessage(player.getName() + ": " + e.getMessage());
+                if (rank == null) return;
+                if (rank != plugin.getDefaultRank()) {
+                    Bukkit.broadcastMessage(rank.getPrefix() + ChatColor.RESET + rank.getColor() + player.getName() + ChatColor.RESET + ": " + rank.getTextColor() + eventMessage);
+                } else if (rank == plugin.getDefaultRank()) {
+                    Bukkit.broadcastMessage(rank.getPrefix() + ChatColor.RESET + rank.getColor() + player.getDisplayName() + ChatColor.RESET + rank.getTextColor() + ": " + eventMessage);
                 }
             }
         }
