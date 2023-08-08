@@ -66,7 +66,7 @@ public class Nick implements CommandExecutor {
 
         for (Rank rank : FoxRank.getInstance().ranks.values()) {
             if (rank.isNicknameable()) {
-                TextComponent component = new TextComponent(ChatColor.BLACK + "\n » " + (rank.getPrefix().isBlank() ? rank.getColor() + rank.getId() : rank.getPrefix()));
+                TextComponent component = new TextComponent(ChatColor.BLACK + "\n» " + (rank.getPrefix().isBlank() ? rank.getColor() + rank.getId() : rank.getPrefix()));
                 component.setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/nick rank " + rank.getId()));
                 component.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new ComponentBuilder("Click to choose " + rank.getId()).color(rank.getColor().asBungee()).create()));
                 textCompnent.addExtra(component);
@@ -94,7 +94,7 @@ public class Nick implements CommandExecutor {
         TextComponent textCompnent = new TextComponent("Nicknames allow you to play with a different username to not get recognized. \n\nAll rules still apply. You can still be reported and all name history is stored.");
         textCompnent.setColor(ChatColor.BLACK);
 
-        TextComponent continueComponent = new TextComponent(ChatColor.BOLD + "\n\n » " + ChatColor.RESET + ChatColor.BLACK + "I understand, setup my nickname.");
+        TextComponent continueComponent = new TextComponent(ChatColor.BOLD + "\n\n» " + ChatColor.RESET + ChatColor.BLACK + "I understand, setup my nickname.");
         continueComponent.setColor(ChatColor.BLACK);
         continueComponent.setColor(ChatColor.UNDERLINE);
         continueComponent.setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/nick agree"));
@@ -117,11 +117,11 @@ public class Nick implements CommandExecutor {
         ItemStack book = new ItemStack(Material.WRITTEN_BOOK);
         BookMeta meta = (BookMeta) book.getItemMeta();
 
-        TextComponent textCompnent = new TextComponent("Alright, now you'll \nneed to choose the\n " + ChatColor.BOLD + "NAME " + ChatColor.RESET + "to use!\n");
+        TextComponent textCompnent = new TextComponent("Alright, now you'll \nneed to choose the\n" + ChatColor.BOLD + "NAME " + ChatColor.RESET + "to use!\n");
         textCompnent.setColor(ChatColor.BLACK);
 
         if(player.hasPermission("foxrank.nicknames.name.custom")) {
-            TextComponent customComponent = new TextComponent(ChatColor.BOLD + "\n » " + ChatColor.RESET + ChatColor.BLACK + "Use a custom name.");
+            TextComponent customComponent = new TextComponent(ChatColor.BOLD + "\n» " + ChatColor.RESET + ChatColor.BLACK + "Use a custom name.");
             customComponent.setColor(ChatColor.BLACK);
             customComponent.setColor(ChatColor.UNDERLINE);
             customComponent.setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/nick set"));
@@ -130,23 +130,23 @@ public class Nick implements CommandExecutor {
         }
 
         if(player.hasPermission("foxrank.nicknames.name.random")) {
-            TextComponent randomNameComponent = new TextComponent(ChatColor.BOLD + "\n » " + ChatColor.RESET + ChatColor.BLACK + "Use a random name.");
+            TextComponent randomNameComponent = new TextComponent(ChatColor.BOLD + "\n» " + ChatColor.RESET + ChatColor.BLACK + "Use a random name.");
             randomNameComponent.setColor(ChatColor.BLACK);
             randomNameComponent.setColor(ChatColor.UNDERLINE);
             randomNameComponent.setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/nick random"));
             randomNameComponent.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new ComponentBuilder("Click to choose a random name.").color(ChatColor.GREEN).create()));
             textCompnent.addExtra(randomNameComponent);
         }
-        if(FoxRank.getInstance().getPlayerData(player.getUniqueId()).getNickname() != null && player.hasPermission("foxrank.nicknames.name.reuse")) {
-            String name = FoxRank.getInstance().getPlayerData(player.getUniqueId()).getNickname();
-            TextComponent reuseComponent = new TextComponent(ChatColor.BOLD + "\n » " + ChatColor.RESET + ChatColor.BLACK + "Reuse '" + name + "'");
+        String name = FoxRank.getInstance().getPlayerData(player.getUniqueId()).getNickname();
+        if(FoxRank.getInstance().getPlayerData(player.getUniqueId()).getNickname() != null && player.hasPermission("foxrank.nicknames.name.reuse") && !name.equalsIgnoreCase(FoxRank.getInstance().getTrueName(player.getUniqueId()))) {
+            TextComponent reuseComponent = new TextComponent(ChatColor.BOLD + "\n» " + ChatColor.RESET + ChatColor.BLACK + "Reuse '" + name + "'");
             reuseComponent.setColor(ChatColor.BLACK);
             reuseComponent.setColor(ChatColor.UNDERLINE);
             reuseComponent.setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/nick reuse"));
             reuseComponent.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new ComponentBuilder("Click to reuse '" + name + "'" ).color(ChatColor.GREEN).create()));
             textCompnent.addExtra(reuseComponent);
         }
-        TextComponent goBackComponent = new TextComponent("To go back to being\n your usual self, type:\n " + ChatColor.BOLD + "/nick reset");
+        TextComponent goBackComponent = new TextComponent("\n\nTo go back to being\nyour usual self, type:\n " + ChatColor.BOLD + "/nick reset");
         textCompnent.addExtra(goBackComponent);
         BaseComponent[] pages = new BaseComponent[]{textCompnent};
 
