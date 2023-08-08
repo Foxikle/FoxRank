@@ -31,9 +31,9 @@ public class ModerationAction {
 
         String muteMessage;
         if(duration == null) {
-            muteMessage = plugin.getMessage("PermanentMuteMessage", mutee);
+            muteMessage = plugin.getMessage("PermanentMuteMessage", admin);
         } else {
-            muteMessage = plugin.getMessage("MuteMessage", mutee);
+            muteMessage = plugin.getMessage("MuteMessage", admin);
         }
 
         if (plugin.bungeecord) {
@@ -50,11 +50,11 @@ public class ModerationAction {
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> plugin.getDm().unmutePlayer(unmutee.getUniqueId()));
         Logging.addLogEntry(EntryType.UNMUTE, unmutee.getUniqueId(), staff.getUniqueId(), null, null, null, id);
         if (plugin.bungeecord) {
-            plugin.getPluginChannelListener().sendMessage(staff, unmutee.getName(), plugin.getMessage("UnmuteRecieverMessage", unmutee));
+            plugin.getPluginChannelListener().sendMessage(staff, unmutee.getName(), plugin.getMessage("UnmuteRecieverMessage", staff));
         } else {
-            unmutee.sendMessage(plugin.getMessage("UnmuteRecieverMessage", unmutee.getPlayer()));
+            unmutee.sendMessage(plugin.getMessage("UnmuteRecieverMessage", staff));
         }
-        staff.sendMessage(plugin.getMessage("UnmuteSenderMessage", unmutee.getPlayer()));
+        staff.sendMessage(plugin.getMessage("UnmuteSenderMessage", staff));
     }
 
     public static void unmuteOfflinePlayer(OfflinePlayer unmutee, Player staff) {
@@ -63,7 +63,6 @@ public class ModerationAction {
         String id = Integer.toString(hash("FoxRank:" + unmutee.getName() + ":" + Instant.now()), 16).toUpperCase(Locale.ROOT).replace("-", "");
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> plugin.getDm().unmutePlayer(unmutee.getUniqueId()));
         Logging.addLogEntry(EntryType.UNMUTE, unmutee.getUniqueId(), staff.getUniqueId(), null, null, null, id);
-        staff.sendMessage(plugin.getMessage("UnmuteSenderMessage", unmutee));
     }
 
     public static void muteOfflinePlayer(OfflinePlayer mutee, Instant duration, String reason, Player admin) {
@@ -76,14 +75,14 @@ public class ModerationAction {
         if (plugin.bungeecord) {
             String muteMessage;
             if(duration == null) {
-                muteMessage = plugin.getMessage("PermanentMuteMessage", mutee);
+                muteMessage = plugin.getMessage("PermanentMuteMessage", admin);
             } else {
-                muteMessage = plugin.getMessage("MuteMessage", mutee);
+                muteMessage = plugin.getMessage("MuteMessage", admin);
             }
             plugin.getPluginChannelListener().sendMessage(admin, mutee.getName(), muteMessage);
         }
         Logging.addLogEntry(EntryType.MUTE, mutee.getUniqueId(), admin.getUniqueId(), duration, reason, null, id);
-        admin.sendMessage(plugin.getMessage("MuteSenderMessage", mutee));
+        admin.sendMessage(plugin.getMessage("MuteSenderMessage", admin));
     }
 
     public static void unbanPlayer(UUID uuid, UUID staff) {
@@ -92,30 +91,32 @@ public class ModerationAction {
         }
         PlayerData pd = plugin.getPlayerData(uuid);
         pd.setBanned(false);
+        plugin.bannedPlayers.remove(uuid);
         String id = Integer.toString(hash("FoxRank:" + uuid + ":" + Instant.now()), 16).toUpperCase(Locale.ROOT).replace("-", "");
         Bukkit.getScheduler().runTaskAsynchronously(plugin,  () -> plugin.getDm().unbanPlayer(uuid));
-        plugin.getPlayerData(uuid).setBanned(false);
         Logging.addLogEntry(EntryType.UNBAN, uuid, staff, null, null, null, id);
     }
 
     public static void banPlayer(@Nullable Player banner, Player banee, boolean silent, String reasonStr, Instant duration, String broadcastReason, String banID) {
-        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> plugin.getDm().banPlayer(banee.getUniqueId(), reasonStr, banID, duration));
         PlayerData pd = plugin.getPlayerData(banee.getUniqueId());
         pd.setBanned(true);
         pd.setBanID(banID);
         pd.setBanDuration(duration);
         pd.setBanReason(reasonStr);
-        plugin.getServer().getPluginManager().callEvent(new ModerationActionEvent(banee, banner, plugin.getPlayerData(banee.getUniqueId()).getRank(), (banner == null ? null : plugin.getRank(banner)), me.foxikle.foxrank.events.ModerationAction.BAN, reasonStr, duration, banID));
         if (!plugin.bannedPlayers.contains(banee.getUniqueId())) {
+            plugin.bannedPlayers.add(banee.getUniqueId());
+            plugin.getServer().getPluginManager().callEvent(new ModerationActionEvent(banee, banner, plugin.getPlayerData(banee.getUniqueId()).getRank(), (banner == null ? null : plugin.getRank(banner)), me.foxikle.foxrank.events.ModerationAction.BAN, reasonStr, duration, banID));
+
+            Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> plugin.getDm().banPlayer(banee.getUniqueId(), reasonStr, banID, duration));
             if (plugin.bungeecord) {
                 plugin.getPluginChannelListener().kickPlayer(Iterables.getLast(Bukkit.getOnlinePlayers()), banee.getName(), plugin.getMessage(duration == null ? "PermBanMessageFormat" : "TempBanMessageFormat", banee));
             } else {
-                banee.kickPlayer(plugin.getMessage(duration == null ? "PermBanMessageFormat" : "TempBanMessageFormat", banee));
+                banee.kickPlayer(plugin.getMessage(duration == null ? "PermBanMessageFormat" : "TempBanMessageFormat", banner));
             }
             if (!broadcastReason.equalsIgnoreCase("SECURITY")) {
                 if (silent) {
                     if (banner != null) {
-                        banner.sendMessage(plugin.getMessage("SilentBanSenderMessage", banee));
+                        banner.sendMessage(plugin.getMessage("SilentBanSenderMessage", banner));
                     }
                 } else {
                     if (broadcastReason.replace("_", "").equalsIgnoreCase("CUSTOM")) { // todo: redo this pls to use messages
@@ -125,33 +126,40 @@ public class ModerationAction {
                     }
                     banee.getWorld().playSound(banner.getLocation(), Sound.ENTITY_LIGHTNING_BOLT_THUNDER, 1000f, 1);
                     if (banner.getPlayer() != null)
-                        banner.sendMessage(plugin.getMessage("BanSenderMessage", banee));
+                        banner.sendMessage(plugin.getMessage("BanSenderMessage", banner));
                 }
             } else {
-                banner.sendMessage(plugin.getMessage("SecurityBanSenderMessage", banee));
+                banner.sendMessage(plugin.getMessage("SecurityBanSenderMessage", banner));
             }
             Logging.addLogEntry(EntryType.BAN, banee.getUniqueId(), banner.getUniqueId(), duration, reasonStr, String.valueOf(silent), banID);
+        } else {
+            banner.sendMessage(plugin.getMessage("BanCommandAlreadyBanned", banner));
         }
     }
 
     public static void banOfflinePlayer(Player banner, OfflinePlayer banee, String reasonStr, Instant duration, String broadcastReason, String banID) {
-        plugin.getServer().getPluginManager().callEvent(new ModerationActionEvent(banee.getPlayer(), banner.getPlayer(), plugin.getPlayerData(banee.getUniqueId()).getRank(), plugin.getPlayerData(banner.getUniqueId()).getRank(), me.foxikle.foxrank.events.ModerationAction.BAN, reasonStr, duration, banID));
         PlayerData pd = plugin.getPlayerData(banee.getUniqueId());
         pd.setBanned(true);
         pd.setBanID(banID);
         pd.setBanDuration(duration);
         pd.setBanReason(reasonStr);
-        if (plugin.bungeecord) {
-            plugin.getPluginChannelListener().kickPlayer(Iterables.getLast(Bukkit.getOnlinePlayers()), banee.getName(), plugin.getMessage(duration == null ? "PermBanMessageFormat" : "TempBanMessageFormat", banee));
-        }
-        if (broadcastReason.equalsIgnoreCase("SECURITY")) {
-            banner.sendMessage(plugin.getMessage("SecurityBanSenderMessage", banee));
-        } else {
-            banner.sendMessage(plugin.getMessage("BanSenderMessage", banee));
-        }
-        Logging.addLogEntry(EntryType.BAN, banee.getUniqueId(), banner.getUniqueId(), duration, reasonStr, "true", banID);
         if (!plugin.bannedPlayers.contains(banee.getUniqueId())) {
-            Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> plugin.getDm().banPlayer(banee.getUniqueId(), reasonStr, banID, duration));
+                plugin.bannedPlayers.add(banee.getUniqueId());
+            plugin.getServer().getPluginManager().callEvent(new ModerationActionEvent(banee.getPlayer(), banner.getPlayer(), plugin.getPlayerData(banee.getUniqueId()).getRank(), plugin.getPlayerData(banner.getUniqueId()).getRank(), me.foxikle.foxrank.events.ModerationAction.BAN, reasonStr, duration, banID));
+            if (plugin.bungeecord) {
+                plugin.getPluginChannelListener().kickPlayer(Iterables.getLast(Bukkit.getOnlinePlayers()), banee.getName(), plugin.getMessage(duration == null ? "PermBanMessageFormat" : "TempBanMessageFormat", banee));
+            }
+            if (broadcastReason.equalsIgnoreCase("SECURITY")) {
+                banner.sendMessage(plugin.getMessage("SecurityBanSenderMessage", banner));
+            } else {
+                banner.sendMessage(plugin.getMessage("BanSenderMessage", banner)); //todo:
+            }
+            Logging.addLogEntry(EntryType.BAN, banee.getUniqueId(), banner.getUniqueId(), duration, reasonStr, "true", banID);
+            if (!plugin.bannedPlayers.contains(banee.getUniqueId())) {
+                Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> plugin.getDm().banPlayer(banee.getUniqueId(), reasonStr, banID, duration));
+            }
+        } else {
+            banner.sendMessage(plugin.getMessage("BanCommandAlreadyBanned", banner));
         }
     }
 }
