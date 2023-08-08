@@ -53,8 +53,7 @@ public class SetRank implements CommandExecutor, TabCompleter {
                         Player p = Bukkit.getServer().getPlayer(args[1]);
                         if (FoxRank.getInstance().getRank(player).getPowerlevel() > FoxRank.getInstance().getRank(p).getPowerlevel()) {
                             if (FoxRank.getInstance().ranks.containsKey(args[0])) {
-                                Rank rank = Rank.of(args[0]);
-                                plugin.setRank(p, rank);
+                                plugin.setRank(p, Rank.of(args[0]));
                                 p.sendMessage(plugin.getMessage("RankIsNowMessage", p));
                             } else {
                                 plugin.syntaxMap.put(player.getUniqueId(), "/setrank <RankID> [Player]");
