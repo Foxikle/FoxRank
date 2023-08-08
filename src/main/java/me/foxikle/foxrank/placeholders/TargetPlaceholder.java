@@ -46,11 +46,11 @@ public class TargetPlaceholder extends PlaceholderExpansion {
         if (params.equalsIgnoreCase("name")) {
             return target.getName();
         } else if (params.equalsIgnoreCase("rank_prefix")) {
-            return plugin.getPlayerData(player.getUniqueId()).getRank().getPrefix();
+            return plugin.getPlayerData(target.getUniqueId()).getRank().getPrefix();
         } else if (params.equalsIgnoreCase("rank_id")) {
-            return  plugin.getPlayerData(player.getUniqueId()).getRank().getId();
+            return  plugin.getPlayerData(target.getUniqueId()).getRank().getId();
         } else if (params.equalsIgnoreCase("rank_color")) {
-            return plugin.getPlayerData(player.getUniqueId()).getRank().getColor().toString();
+            return plugin.getPlayerData(target.getUniqueId()).getRank().getColor().toString();
         }
         return null;
     }
