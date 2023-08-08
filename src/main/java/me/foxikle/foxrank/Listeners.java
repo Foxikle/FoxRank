@@ -3,7 +3,6 @@ package me.foxikle.foxrank;
 import com.google.common.collect.Iterables;
 import me.foxikle.foxrank.Data.PlayerData;
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -14,7 +13,7 @@ import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 
 import java.time.Instant;
-import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 public class Listeners implements Listener {
@@ -70,7 +69,7 @@ public class Listeners implements Listener {
                 if (plugin.getDm().isVanished(p.getUniqueId())) {
                     Bukkit.getScheduler().runTask(plugin, () -> Vanish.vanishPlayer(p));
                 }
-            }, 40);
+            }, 1);
         });
 
         for (Player player : plugin.vanishedPlayers) {
@@ -81,31 +80,30 @@ public class Listeners implements Listener {
     @EventHandler
     public void BanHandler(AsyncPlayerPreLoginEvent e) {
         PlayerData data = plugin.getPlayerData(e.getUniqueId());
-        if(data == null) {  // We don't have data so they can't be banned
+        if(data == null) {  // We don't have data, so they can't be banned
             e.allow();
             return;
         }
         if (data.isBanned()) {
             UUID uuid = e.getUniqueId();
-            String duration = data.getBanDuration().toString();
 
-            if (duration == null) {
-                //todo: update placeholders to defualt to supplied player if none was found in memory
-                e.disallow(AsyncPlayerPreLoginEvent.Result.KICK_BANNED, ChatColor.translateAlternateColorCodes('§', plugin.getMessage("PermBanMessageFormat", Bukkit.getOfflinePlayer(uuid))));
+            if (data.getBanDuration() == null) {
+                e.disallow(AsyncPlayerPreLoginEvent.Result.KICK_BANNED, plugin.getMessage("PermBanMessageFormat", Bukkit.getOfflinePlayer(uuid)));
             } else {
+                String duration = data.getBanDuration().toString();
                 Instant inst = Instant.parse(duration);
                 if (Instant.now().isAfter(inst)) {
-                    ModerationAction.unbanPlayer(uuid, null);
-                    List<UUID> list = plugin.getDm().getBannedPlayers();
-                    if (list.contains(e.getUniqueId())) {
-                        list.remove(e.getUniqueId());
-                        plugin.getDm().setBannedPlayers(list);
+                    ModerationAction.unbanPlayer(uuid, uuid);
+                    Set<UUID> set = plugin.getDm().getBannedPlayers();
+                    if (set.contains(e.getUniqueId())) {
+                        set.remove(e.getUniqueId());
+                        plugin.getDm().setBannedPlayers(set);
                         return;
                     }
                     e.allow();
                     return;
                 }
-                e.disallow(AsyncPlayerPreLoginEvent.Result.KICK_BANNED, ChatColor.translateAlternateColorCodes('§', plugin.getMessage("TempBanMessageFormat", Bukkit.getOfflinePlayer(uuid))));
+                e.disallow(AsyncPlayerPreLoginEvent.Result.KICK_BANNED, plugin.getMessage("TempBanMessageFormat", Bukkit.getOfflinePlayer(uuid)));
             }
         } else {
             e.allow();
