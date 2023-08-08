@@ -1,10 +1,12 @@
 package me.foxikle.foxrank.Data;
 
 import com.google.gson.JsonParser;
-import me.foxikle.foxrank.*;
+import me.foxikle.foxrank.Entry;
+import me.foxikle.foxrank.FoxRank;
+import me.foxikle.foxrank.ModerationAction;
+import me.foxikle.foxrank.Rank;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
-import org.bukkit.OfflinePlayer;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -31,12 +33,20 @@ import java.util.stream.Stream;
 public class DataManager {
 
     private final FoxRank plugin;
-    private final FileConfiguration config;
+    private FileConfiguration config;
     private boolean useDatabase;
     private Database db;
 
     public DataManager(FoxRank plugin) {
         this.plugin = plugin;
+        File configFile = new File("plugins/FoxRank/config.yml");
+        if (!configFile.exists()) {
+            plugin.saveResource("config.yml", false);
+        }
+        config = YamlConfiguration.loadConfiguration(configFile);
+    }
+
+    public void reloadConfig(){
         File configFile = new File("plugins/FoxRank/config.yml");
         if (!configFile.exists()) {
             plugin.saveResource("config.yml", false);
@@ -80,6 +90,8 @@ public class DataManager {
             } else if (!new File("plugins/FoxRank/bannedPlayers.yml").exists()) {
                 plugin.saveResource("bannedPlayers.yml", false);
             }
+            File dir = new File("plugins/FoxRank/PlayerData");
+            dir.mkdirs();
         }
         setupRanks();
     }
@@ -139,7 +151,6 @@ public class DataManager {
 
         plugin.bannedPlayers.addAll(getBannedPlayers());
         plugin.players.addAll(getPlayers());
-        Bukkit.broadcastMessage(getUUIDs().toString());
         for (UUID uuid : getUUIDs()) {
             cacheUserData(uuid);
         }
@@ -260,7 +271,7 @@ public class DataManager {
             YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
             data = yml.getString("MuteDuration");
         }
-        if(data == null || data.isEmpty())
+        if(data == null || data.isEmpty() || data.equalsIgnoreCase("null"))
             return null;
         return Instant.parse(data);
     }
@@ -441,7 +452,9 @@ public class DataManager {
         } else {
             File file = new File("plugins/FoxRank/auditlog.yml");
             YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
-            yml.getStringList(involved.toString()).add(entry.serialize());
+            List<String> entries = yml.getStringList(involved.toString());
+            entries.add(entry.serialize());
+            yml.set(involved.toString(), entries);
             try {
                 yml.save(file);
             } catch (IOException e) {
@@ -469,7 +482,6 @@ public class DataManager {
         if (useDatabase) {
             db.addPlayerData(player.getUniqueId());
         } else {
-
             File file = new File("plugins/FoxRank/PlayerData/" + player.getUniqueId() + ".yml");
             if (!file.exists()) {
                 try {
@@ -500,6 +512,17 @@ public class DataManager {
             } catch (IOException error) {
                 error.printStackTrace();
             }
+
+            File f = new File("plugins/FoxRank/auditlog.yml");
+            YamlConfiguration y = YamlConfiguration.loadConfiguration(f);
+            if(!y.contains(player.getUniqueId().toString())) {
+                y.set(player.getUniqueId().toString(), new ArrayList<>());
+            }
+            try {
+                y.save(f);
+            } catch (IOException e) {
+                plugin.getLogger().severe("An error occoured whilst saving " + player.getUniqueId() + "'s audit log section\n" + Arrays.toString(e.getStackTrace()));
+            }
         }
     }
 
@@ -508,11 +531,11 @@ public class DataManager {
         String eventMessage = e.getMessage();
         Player player = e.getPlayer();
         UUID uuid = player.getUniqueId();
-
         if (plugin.getPlayerData(uuid).isMuted()) {
             Instant date = plugin.getPlayerData(uuid).getMuteDuration();
             if(date == null) {
                 player.sendMessage(plugin.getMessage("ChatWhilePermanantlyMutedMessage", player));
+                return;
             } else if (date.isBefore(Instant.now())) {
                 ModerationAction.unmutePlayer(player, player);
             } else {
@@ -622,7 +645,7 @@ public class DataManager {
             File file = new File("plugins/FoxRank/PlayerData/" + uuid + ".yml");
             YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
             yml.set("isMuted", true);
-            yml.set("MuteDuration", duration == null? null : duration.toString());
+            yml.set("MuteDuration", duration == null? "null" : duration.toString());
             yml.set("MuteReason", reason);
             try {
                 yml.save(file);
