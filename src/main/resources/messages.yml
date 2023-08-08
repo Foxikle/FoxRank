@@ -116,8 +116,8 @@ ChatWhileMutedMessage: '&c%line%\n&cYou are currently MUTED for %mute_reason%\n&
 ChatWhilePermanantlyMutedMessage: '&c%line%\n&cYou are currently MUTED for %mute_reason%\n&7Your mute will not expire.\n&c%line%'
 
 # IAmMutedCommandMessage: -> The text displayed to both players who received and sent the /immuted command
-IAmMutedCommandMessageToMuted: '&dTo %target_rank_prefix%%target_rank_color%%target_name%&7:&e Hey, I am currently muted and unable to chat right now.'
-IAmMutedCommandMessageFromMuted: '&dFrom %playerrank_prefix%%playerrank_color%%player_name%&7:&e Hey, I am currently muted and unable to chat right now.'
+IAmMutedCommandMessageToMuted: '&dTo %target_rank_prefix%%target_rank_color%%target_name%&7:&e&o Hey, I am currently muted and unable to chat right now.'
+IAmMutedCommandMessageFromMuted: '&dFrom %playerrank_prefix%%playerrank_color%%player_name%&7:&e&o Hey, I am currently muted and unable to chat right now.'
 
 ############################
 #     General Messages     #
