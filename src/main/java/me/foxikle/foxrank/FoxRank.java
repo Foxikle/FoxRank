@@ -85,6 +85,9 @@ public class FoxRank extends JavaPlugin implements Listener {
         }
 
         playerRanks.put(player, rank);
+        getPlayerData(player.getUniqueId()).setRank(rank);
+        clearPermissions(player.getUniqueId());
+        rank.getPermissionNodes().forEach(s -> player.addAttachment(this, s, true));
         Bukkit.getScheduler().runTaskAsynchronously(this, () -> dm.setStoredRank(player.getUniqueId(), rank));
         setTeam(player, rank.getId());
     }
