@@ -2,6 +2,7 @@ package me.foxikle.foxrank.placeholders;
 
 import me.clip.placeholderapi.expansion.PlaceholderExpansion;
 import me.foxikle.foxrank.FoxRank;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -44,6 +45,24 @@ public class BanPlaceholder extends PlaceholderExpansion {
     @Override
     public @Nullable String onPlaceholderRequest(Player player, @NotNull String params) {
         UUID banned = plugin.targetMap.get(player.getUniqueId());
+        if(banned == null)
+            banned = player.getUniqueId();
+        if (params.equalsIgnoreCase("duration")) {
+            return plugin.getFormattedExpiredString(plugin.getPlayerData(banned).getBanDuration(), Instant.now());
+        } else if (params.equalsIgnoreCase("reason")) {
+            return plugin.getPlayerData(banned).getBanReason();
+        } else if (params.equalsIgnoreCase("id")) {
+            return plugin.getPlayerData(banned).getBanID();
+        } else if (params.equalsIgnoreCase("preset")) {
+            return plugin.attemptedBanPresetMap.get(player.getUniqueId());
+        }
+        return null;
+    }
+    @Override
+    public @Nullable String onRequest(OfflinePlayer player, @NotNull String params) {
+        UUID banned = plugin.targetMap.get(player.getUniqueId());
+        if(banned == null)
+            banned = player.getUniqueId();
         if (params.equalsIgnoreCase("duration")) {
             return plugin.getFormattedExpiredString(plugin.getPlayerData(banned).getBanDuration(), Instant.now());
         } else if (params.equalsIgnoreCase("reason")) {
