@@ -29,7 +29,7 @@ public class Unban implements CommandExecutor, TabCompleter {
                     if (args.length >= 1) {
                         OfflinePlayer op = Bukkit.getOfflinePlayer(args[0]);
                         plugin.targetMap.put(player.getUniqueId(), op.getUniqueId());
-                        if (FoxRank.getInstance().getDm().getBannedPlayers().contains(op.getUniqueId())) {
+                        if (FoxRank.getInstance().bannedPlayers.contains(op.getUniqueId())) {
                             ModerationAction.unbanPlayer(op.getUniqueId(), player.getUniqueId());
                             player.sendMessage(ChatColor.GREEN + op.getName() + " was unbanned.");
                         } else {
@@ -54,8 +54,7 @@ public class Unban implements CommandExecutor, TabCompleter {
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String label, String[] args) {
         if (args.length == 1) {
-            //todo: cache banned players
-            List<UUID> list = FoxRank.getInstance().getDm().getBannedPlayers();
+            List<UUID> list = FoxRank.getInstance().bannedPlayers;
             List<String> returnme = new ArrayList<>();
             for (UUID uuid : list) {
                 returnme.add(Bukkit.getOfflinePlayer(uuid).getName());
