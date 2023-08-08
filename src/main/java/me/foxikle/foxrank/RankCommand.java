@@ -63,18 +63,19 @@ public class RankCommand implements CommandExecutor, TabExecutor {
                             plugin.clearPlayerData();
                             plugin.playerRanks.clear();
                             plugin.rankTeams.clear();
-                            Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> plugin.getDm().setupRanks());
-                            plugin.setupTeams();
-
-
-                            Bukkit.getOnlinePlayers().forEach(p -> Bukkit.getScheduler().runTaskLaterAsynchronously(plugin, () -> {
-                                plugin.loadRank(p);
-                                if (plugin.getPlayerData(p.getUniqueId()).isNicked()) {
-                                    Nick.changeName(plugin.getPlayerData(p.getUniqueId()).getNickname(), p);
-                                    Bukkit.getScheduler().runTask(plugin, () -> Nick.loadSkin(p));
-                                    plugin.setTeam(p, plugin.getPlayerData(p.getUniqueId()).getNicknameRank().getId());
-                                }
-                            }, 10));
+                            Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+                                plugin.getDm().setupRanks();
+                                Bukkit.getOnlinePlayers().forEach(p -> Bukkit.getScheduler().runTaskLaterAsynchronously(plugin, () -> {
+                                    plugin.setupTeams();
+                                    plugin.getDm().cacheUserData(p.getUniqueId());
+                                    plugin.loadRank(p);
+                                    if (plugin.getPlayerData(p.getUniqueId()).isNicked()) {
+                                        Nick.changeName(plugin.getPlayerData(p.getUniqueId()).getNickname(), p);
+                                        Bukkit.getScheduler().runTask(plugin, () -> Nick.loadSkin(p));
+                                        plugin.setTeam(p, plugin.getPlayerData(p.getUniqueId()).getNicknameRank().getId());
+                                    }
+                                }, 10));
+                            });
                         }
                     }
                 } else { // `/rank modify ADMIN prefix <prefix>`
