@@ -8,10 +8,7 @@ import org.bukkit.Bukkit;
 import javax.annotation.Nullable;
 import java.sql.*;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 public class Database {
     private final FoxRank plugin;
@@ -133,8 +130,8 @@ public class Database {
         return returnme;
     }
 
-    protected List<UUID> getStoredBannedPlayers() {
-        List<UUID> returnme = new ArrayList<>();
+    protected Set<UUID> getStoredBannedPlayers() {
+        Set<UUID> returnme = new HashSet<>();
         try {
             PreparedStatement ps = getConnection().prepareStatement("SELECT uuids FROM foxrankbannedplayers WHERE id=?");
             ps.setString(1, "bannedPlayers");
@@ -156,7 +153,7 @@ public class Database {
         return returnme;
     }
 
-    protected void setStoredBannedPlayers(List<UUID> players) {
+    protected void setStoredBannedPlayers(Set<UUID> players) {
         List<String> uuids = new ArrayList<>();
         try {
             for (UUID u : players) {
