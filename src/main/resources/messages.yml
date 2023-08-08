@@ -69,6 +69,9 @@ BanSenderMessage: '&c%target_name% was silently banned for %ban_reason%'
 # NoPresetBanReason: -> The message sent when there was no preset ban reason.
 NoPresetBanReason: '&c"%ban_preset%" is not a valid preset!'
 
+# BanCommandAlreadyBanned: -> The message displayed to a user whilst attempting to unban a player that is not banned.
+BanCommandAlreadyBanned: '&c%target_name% is already banned!'
+
 # UnbanCommandNotBanned: -> The message displayed to a user whilst attempting to unban a player that is not banned.
 UnbanCommandNotBanned: '&c%target_name% is not banned!'
 
@@ -83,7 +86,7 @@ UnbanCommandMessage: '&a%target_name% was unbanned.'
 MuteMessage: '&c%line%\n&cYou are now MUTED for %mute_reason%\n&7Your mute will expire in %mute_duration%.\n&c%line%'
 
 # MuteMessage: -> The text displayed to a user when they get muted.
-PermanentMuteMessage: '&c%line%\n&cYou are now MUTED for %mute_reason%\n&7Your mute will not expire.\n%line%'
+PermanentMuteMessage: '&c%line%\n&cYou are now MUTED for %mute_reason%\n&7Your mute will not expire.\n&c%line%'
 
 # MuteCommandPlayerAlreadyMuted: -> The messaged displayed whilst attempting to mute a player that is already muted.
 MuteCommandPlayerAlreadyMuted: '&c%target_name% is already muted!'
@@ -101,13 +104,16 @@ UnmuteSenderMessage: '&a%target_name% is now unmuted.'
 MuteSenderMessage: '&c%target_name% is now muted for %mute_reason%'
 
 # UnmuteRecieverMessage: -> The message send to the player being unmutted.
-UnmuteRecieverMessage: '&a%line%\nYou are now UNMUTED.\n%line%'
+UnmuteRecieverMessage: '&a%line%&a\nYou are now UNMUTED.\n&a%line%'
 
 # MutePlayerWithHigherPowerLevelMessage: -> The message displayed whilst attempting to mute a player with a higher or equal PowerLevel. 
 MutePlayerWithHigherRankMessage: '&cYou cannot mute a player with a higher or equal rank!'
 
 # ChatWhileMutedMessage: -> The text displayed to a user when they try to chat whilst muted.
-ChatWhileMutedMessage: '&c%line%\n&cYou are currently MUTED for %mute_reason%\n&7Your mute will expire in %mute_duration%.\n%line%'
+ChatWhileMutedMessage: '&c%line%\n&cYou are currently MUTED for %mute_reason%\n&7Your mute will expire in %mute_duration%.\n&c%line%'
+
+# ChatWhilePermanantlyMutedMessage: -> The text displayed to a user when they try to chat whilst permanantly muted.
+ChatWhilePermanantlyMutedMessage: '&c%line%\n&cYou are currently MUTED for %mute_reason%\n&7Your mute will not expire.\n&c%line%'
 
 # IAmMutedCommandMessage: -> The text displayed to both players who received and sent the /immuted command
 IAmMutedCommandMessageToMuted: '&dTo %target_rank_prefix%%target_rank_color%%target_name%&7:&e Hey, I am currently muted and unable to chat right now.'
@@ -126,7 +132,7 @@ PromoteSelfMessage: '&cYou cannot promote yourself!'
 AlreadyRankMessage: '&cYou are already %playerrank_prefix%!'
 
 # NoPermissionMessage -> The message displayed when a user doesn't have the permissions.
-NoPermissionMessage: '&cYou don''t have the required permission to execute this command.\n&cPlease contact a server administrator if you believe this is a mistake.'
+NoPermissionMessage: '&cYou don''t have the required permission to execute this command. Please contact a server administrator if you believe this is a mistake.'
 
 # CommandDisabledMessage: -> The message displayed when a command is disabled.
 CommandDisabledMessage: '&cThis command is currently disabled.'
