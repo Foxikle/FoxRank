@@ -64,6 +64,7 @@ public class RankCommand implements CommandExecutor, TabExecutor {
                             plugin.playerRanks.clear();
                             plugin.rankTeams.clear();
                             Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+                                plugin.getDm().reloadConfig();
                                 plugin.getDm().setupRanks();
                                 Bukkit.getOnlinePlayers().forEach(p -> Bukkit.getScheduler().runTaskLaterAsynchronously(plugin, () -> {
                                     plugin.setupTeams();
