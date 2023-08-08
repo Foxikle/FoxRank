@@ -36,7 +36,7 @@ public class Logs implements CommandExecutor, TabCompleter, Listener {
 
     public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
-            if (label.equalsIgnoreCase("logs")) {
+            if (label.equalsIgnoreCase("logs") || label.equalsIgnoreCase("foxrank:logs")) {
                 invs.clear();
                 items.clear();
                 if (!plugin.getConfig().getBoolean("DisableLogsCommand")) {
@@ -63,6 +63,7 @@ public class Logs implements CommandExecutor, TabCompleter, Listener {
                                             entries.removeIf(e -> e.type() != EntryType.MUTE);
                                             if (entries.isEmpty()) {
                                                 player.sendMessage(plugin.getMessage("LogsNoData", player));
+                                                return;
                                             }
 
                                             for (Entry e : entries) {
@@ -195,7 +196,7 @@ public class Logs implements CommandExecutor, TabCompleter, Listener {
                                             makeInventories("Unban", player);
                                         }
                                         playerPages.put(player, 0);
-                                        Bukkit.getScheduler().runTask(plugin, () -> openInv(player, invs.get(playerPages.get(player))));
+                                        openInv(player, invs.get(playerPages.get(player)));
                                         });
                                     } else {
                                         plugin.syntaxMap.put(player.getUniqueId(), "/logs <player> <logtype>");
