@@ -3,6 +3,7 @@ package me.foxikle.foxrank.placeholders;
 import me.clip.placeholderapi.expansion.PlaceholderExpansion;
 import me.foxikle.foxrank.FoxRank;
 import org.bukkit.Bukkit;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -41,7 +42,7 @@ public class TargetPlaceholder extends PlaceholderExpansion {
 
     @Override
     public @Nullable String onPlaceholderRequest(Player player, @NotNull String params) {
-        Player target = Bukkit.getPlayer(plugin.targetMap.get(player.getUniqueId()));
+        OfflinePlayer target = Bukkit.getOfflinePlayer(plugin.targetMap.get(player.getUniqueId()));
         if (params.equalsIgnoreCase("name")) {
             return target.getName();
         } else if (params.equalsIgnoreCase("rank_prefix")) {
