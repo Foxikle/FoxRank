@@ -52,6 +52,9 @@ public class DataManager {
         if (!new File("plugins/FoxRank/ranks.yml").exists()) {
             plugin.saveResource("ranks.yml", false);
         }
+        if (!new File("plugins/FoxRank/messages.yml").exists()) {
+            plugin.saveResource("messages.yml", false);
+        }
 
         if (useDatabase) {
             // setup database itself
@@ -136,6 +139,7 @@ public class DataManager {
 
         plugin.bannedPlayers.addAll(getBannedPlayers());
         plugin.players.addAll(getPlayers());
+        Bukkit.broadcastMessage(getUUIDs().toString());
         for (UUID uuid : getUUIDs()) {
             cacheUserData(uuid);
         }
@@ -299,23 +303,24 @@ public class DataManager {
     }
 
 
-    public List<UUID> getBannedPlayers() {
+    public Set<UUID> getBannedPlayers() {
         if (useDatabase) {
             return db.getStoredBannedPlayers();
         }
         File file = new File("plugins/FoxRank/bannedPlayers.yml");
         YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
-        List<UUID> players = new ArrayList<>();
+        Set<UUID> players = new HashSet<>();
         if (yml.getStringList("CurrentlyBannedPlayers").isEmpty()) {
-            return new ArrayList<>();
+            return new HashSet<>();
         }
         for (String str : yml.getStringList("CurrentlyBannedPlayers")) {
-            players.add(UUID.fromString(str));
+            if(!players.contains(UUID.fromString(str)))
+                players.add(UUID.fromString(str));
         }
         return players;
     }
 
-    public void setBannedPlayers(List<UUID> uuids) {
+    public void setBannedPlayers(Set<UUID> uuids) {
         if (useDatabase) {
             db.setStoredBannedPlayers(uuids);
         } else {
@@ -323,7 +328,8 @@ public class DataManager {
             YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
             List<String> uuidStrings = new ArrayList<>();
             for (UUID u : uuids) {
-                uuidStrings.add(u.toString());
+                if(!uuidStrings.contains(u.toString()))
+                    uuidStrings.add(u.toString());
             }
             yml.set("CurrentlyBannedPlayers", uuidStrings);
         }
@@ -422,9 +428,8 @@ public class DataManager {
             return db.getUUIDs();
         } else {
             List<UUID> returnme = new ArrayList<>();
-            for (OfflinePlayer op : Bukkit.getOfflinePlayers()) {
-                File file = new File("/plugins/FoxRank/PlayerData/" + op.getUniqueId() + ".yml");
-                if (file.exists()) returnme.add(op.getUniqueId());
+            for (String s : getPlayers()) {
+                returnme.add(Bukkit.getOfflinePlayer(s).getUniqueId());
             }
             return returnme;
         }
@@ -504,24 +509,22 @@ public class DataManager {
         Player player = e.getPlayer();
         UUID uuid = player.getUniqueId();
 
-        if (useDatabase) {
-            if (isMuted(uuid)) {
-                Instant date = Instant.parse(db.getStoredMuteDuration(uuid));
-                Instant now = Instant.now();
-                if (date.isBefore(now)) {
-                    ModerationAction.unmutePlayer(player, player);
-                } else {
-                    String reason = db.getStoredMuteReason(uuid);
-                    String border = ChatColor.RED + String.valueOf(ChatColor.STRIKETHROUGH) + "                                                                   ";
-                    String muteMessage = plugin.getConfig().getString("ChatWhileMutedMessage").replace("$LINE", border);
-                    muteMessage = muteMessage.replace("\\n", "\n");
-                    muteMessage = muteMessage.replace("$DURATION", plugin.getFormattedExpiredString(date, Instant.now()));
-                    muteMessage = muteMessage.replace("$REASON", reason);
-                    muteMessage = ChatColor.translateAlternateColorCodes('§', muteMessage);
-                    player.sendMessage(muteMessage);
-                    return;
-                }
+        if (plugin.getPlayerData(uuid).isMuted()) {
+            Instant date = plugin.getPlayerData(uuid).getMuteDuration();
+            if(date == null) {
+                player.sendMessage(plugin.getMessage("ChatWhilePermanantlyMutedMessage", player));
+                return;
             }
+
+            if (date.isBefore(Instant.now())) {
+                ModerationAction.unmutePlayer(player, player);
+            } else {
+                player.sendMessage(plugin.getMessage("ChatWhileMutedMessage", player));
+                return;
+            }
+        }
+
+        if (useDatabase) {
             if (db.getStoredNicknameStatus(uuid)) {
                 Rank rank = db.getStoredNicknameRank(uuid);
                 String nick = db.getStoredNickname(uuid);
@@ -547,23 +550,6 @@ public class DataManager {
             File file = new File("plugins/FoxRank/PlayerData/" + player.getUniqueId() + ".yml");
             YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
 
-            if (isMuted(player.getUniqueId())) {
-                Instant date = Instant.parse(yml.getString("MuteDuration"));
-                Instant now = Instant.now();
-                if (date.isBefore(now)) {
-                    ModerationAction.unmutePlayer(player, player);
-                } else {
-                    String reason = yml.getString("MuteReason");
-                    String border = ChatColor.RED + String.valueOf(ChatColor.STRIKETHROUGH) + "                                                                   ";
-                    String muteMessage = plugin.getConfig().getString("ChatWhileMutedMessage").replace("$LINE", border); //todo wtf is this
-                    muteMessage = muteMessage.replace("\\n", "\n");
-                    muteMessage = muteMessage.replace("$DURATION", plugin.getFormattedExpiredString(date, Instant.now()));
-                    muteMessage = muteMessage.replace("$REASON", reason);
-                    muteMessage = ChatColor.translateAlternateColorCodes('§', muteMessage);
-                    player.sendMessage(muteMessage);
-                    return;
-                }
-            }
             if (yml.getBoolean("isNicked")) {
                 Rank rank = Rank.of(yml.getString("Nickname-Rank"));
                 String nick = yml.getString("Nickname");
@@ -664,7 +650,7 @@ public class DataManager {
             File file = new File("plugins/FoxRank/PlayerData/" + uuid + ".yml");
             YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
             yml.set("isMuted", true);
-            yml.set("MuteDuration", duration.toString());
+            yml.set("MuteDuration", duration == null? null : duration.toString());
             yml.set("MuteReason", reason);
             try {
                 yml.save(file);
@@ -693,10 +679,10 @@ public class DataManager {
     }
 
     public void unbanPlayer(UUID uuid) {
+        Set<UUID> bannedPlayers = getBannedPlayers();
+        bannedPlayers.remove(uuid);
+        setBannedPlayers(bannedPlayers);
         if (useDatabase) {
-            List<UUID> bannedPlayers = db.getStoredBannedPlayers();
-            bannedPlayers.remove(uuid);
-            db.setStoredBannedPlayers(bannedPlayers);
             db.setStoredBanState(uuid);
         } else {
             File file = new File("plugins/FoxRank/PlayerData/" + uuid + ".yml");
@@ -713,7 +699,7 @@ public class DataManager {
 
     public void banPlayer(UUID uuid, String reason, String id, Instant duration) {
         if (useDatabase) {
-            List<UUID> bannedPlayers = db.getStoredBannedPlayers();
+            Set<UUID> bannedPlayers = db.getStoredBannedPlayers();
             bannedPlayers.add(uuid);
             db.setStoredBannedPlayers(bannedPlayers);
             db.setStoredBanData(uuid, reason, duration, id);
