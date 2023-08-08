@@ -123,6 +123,7 @@ public class Ban implements CommandExecutor, TabCompleter {
                             if (plugin.players.contains(args[0])) {
                                 OfflinePlayer banee = Bukkit.getServer().getOfflinePlayer(DataManager.getUUID(args[0]));
                                 if (banee != null) {
+                                    plugin.targetMap.put(banner.getUniqueId(), banee.getUniqueId());
                                     Rank baneeRank = plugin.getPlayerData(banee.getUniqueId()).getRank();
                                     Rank staffRank = plugin.getPlayerData(banner.getUniqueId()).getRank();
                                     if (baneeRank.getPermissionNodes().contains("foxrank.moderation.ban.immune")){
