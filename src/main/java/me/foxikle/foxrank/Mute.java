@@ -43,7 +43,7 @@ public class Mute implements CommandExecutor, TabCompleter {
                                     if (!plugin.getPlayerData(mutee.getUniqueId()).isMuted()) {
                                         if (args[1].contains("d") || args[1].contains("h") || args[1].contains("m") || args[1].equalsIgnoreCase("-1")) {
                                             expires = Instant.now();
-                                            String durStr = args[2];
+                                            String durStr = args[1];
                                             if (args[1].equalsIgnoreCase("-1")) {
                                                 if (!player.hasPermission("foxrank.moderation.mute.permanent")) {
                                                     player.sendMessage(plugin.getMessage("NoPermissionMessage", player));
@@ -106,12 +106,13 @@ public class Mute implements CommandExecutor, TabCompleter {
                                         expires = Instant.now();
                                         if (args[1].contains("d") || args[1].contains("h") || args[1].contains("m") || args[1].equalsIgnoreCase("-1")) {
                                             expires = Instant.now();
-                                            String durStr = args[2];
+                                            String durStr = args[1];
                                             if (args[1].equalsIgnoreCase("-1")) {
                                                 if (!player.hasPermission("foxrank.moderation.mute.permanent")) {
                                                     player.sendMessage(plugin.getMessage("NoPermissionMessage", player));
                                                     return true;
                                                 }
+                                                //todo: improve parsing to support multiple different units 1d12h
 
                                                 expires = null;
                                             } else if (args[1].contains("d")) {
@@ -150,8 +151,8 @@ public class Mute implements CommandExecutor, TabCompleter {
                                             list.remove(0);
                                             reason = String.join(" ", list);
                                             me.foxikle.foxrank.ModerationAction.muteOfflinePlayer(mutee, expires, reason, player);
-                                            player.sendMessage(plugin.getMessage("MuteSenderMessage", mutee));
-                                            plugin.getServer().getPluginManager().callEvent(new ModerationActionEvent(((Player) sender).getPlayer(), mutee.getPlayer(), muteeRank, playerRank, ModerationAction.MUTE, reason, expires, null));
+                                            player.sendMessage(plugin.getMessage("MuteSenderMessage", player));
+                                            plugin.getServer().getPluginManager().callEvent(new ModerationActionEvent(player, mutee.getPlayer(), muteeRank, playerRank, ModerationAction.MUTE, reason, expires, null));
                                         }
                                     } else {
                                         player.sendMessage(plugin.getMessage("MuteCommandPlayerAlreadyMuted", mutee));
@@ -224,7 +225,6 @@ public class Mute implements CommandExecutor, TabCompleter {
                                 } else {
                                     me.foxikle.foxrank.ModerationAction.unmutePlayer(receiver, player);
                                     plugin.getServer().getPluginManager().callEvent(new ModerationActionEvent(player, receiver.getPlayer(), muteeRank, playerRank, ModerationAction.UNMUTE, null, null, null));
-                                    player.sendMessage(plugin.getMessage("UnmuteSenderMessage", player));
                                 }
                             } else if (Bukkit.getOfflinePlayer(DataManager.getUUID(args[0])) != null) {
                                 OfflinePlayer receiver = Bukkit.getOfflinePlayer(DataManager.getUUID(args[0]));
@@ -235,7 +235,6 @@ public class Mute implements CommandExecutor, TabCompleter {
                                 } else {
                                     me.foxikle.foxrank.ModerationAction.unmuteOfflinePlayer(receiver, player);
                                     plugin.getServer().getPluginManager().callEvent(new ModerationActionEvent(player, receiver.getPlayer(), muteeRank, playerRank, ModerationAction.UNMUTE, null, null, null));
-                                    player.sendMessage(plugin.getMessage("UnmuteSenderMessage", player));
                                 }
                             }
                         } else {
