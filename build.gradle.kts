@@ -21,7 +21,7 @@ dependencies {
 }
 
 group = "me.foxikle"
-version = "1.9.5"
+version = "2.0.0-beta1"
 description = "FoxRank"
 java.sourceCompatibility = JavaVersion.VERSION_16
 
