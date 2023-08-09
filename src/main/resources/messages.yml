@@ -58,7 +58,7 @@ CannotBanImmunePlayer: '&cThis player is immune!'
 TempBanMessageFormat: '&cYou are temporarily banned for &r%ban_duration%&c from %server_name%!\n\n&7Reason -> &f%ban_reason%\n&bAppeal at -> %server_appeal_link%\n\n&7Ban ID -> &r#%ban_id%\n &7 Sharing your Ban ID may affect the processing of your appeal!'
 
 # PermBanMessageFormat: -> The formatting for permban messages.
-PermBanMessageFormat: '&cYou are permanantly banned from %server_name%!\n\n&7Reason -> &f%ban_reason%\n&bAppeal at -> %server_appeal_link%\n\n&7Ban ID -> &r#%ban_id%\n &7 Sharing your Ban ID may affect the processing of your appeal!'
+PermBanMessageFormat: '&cYou are permanently banned from %server_name%!\n\n&7Reason -> &f%ban_reason%\n&bAppeal at -> %server_appeal_link%\n\n&7Ban ID -> &r#%ban_id%\n &7 Sharing your Ban ID may affect the processing of your appeal!'
 
 # SilentBanSenderMessage: -> The message sent to the player who silently banned.
 SilentBanSenderMessage: '&c%target_name% was silently banned for %ban_reason%'
@@ -103,8 +103,8 @@ UnmuteSenderMessage: '&a%target_name% is now unmuted.'
 # muteSenderMessage: -> The message sent to the sender of the /mute command.
 MuteSenderMessage: '&c%target_name% is now muted for %mute_reason%'
 
-# UnmuteRecieverMessage: -> The message send to the player being unmutted.
-UnmuteRecieverMessage: '&a%line%&a\nYou are now UNMUTED.\n&a%line%'
+# UnmuteReceiverMessage: -> The message send to the player being unmutted.
+UnmuteReceiverMessage: '&a%line%&a\nYou are now UNMUTED.\n&a%line%'
 
 # MutePlayerWithHigherPowerLevelMessage: -> The message displayed whilst attempting to mute a player with a higher or equal PowerLevel. 
 MutePlayerWithHigherRankMessage: '&cYou cannot mute a player with a higher or equal rank!'
@@ -112,8 +112,8 @@ MutePlayerWithHigherRankMessage: '&cYou cannot mute a player with a higher or eq
 # ChatWhileMutedMessage: -> The text displayed to a user when they try to chat whilst muted.
 ChatWhileMutedMessage: '&c%line%\n&cYou are currently MUTED for %mute_reason%\n&7Your mute will expire in %mute_duration%.\n&c%line%'
 
-# ChatWhilePermanantlyMutedMessage: -> The text displayed to a user when they try to chat whilst permanantly muted.
-ChatWhilePermanantlyMutedMessage: '&c%line%\n&cYou are currently MUTED for %mute_reason%\n&7Your mute will not expire.\n&c%line%'
+# ChatWhilePermanentlyMutedMessage: -> The text displayed to a user when they try to chat whilst permanently muted.
+ChatWhilePermanentlyMutedMessage: '&c%line%\n&cYou are currently MUTED for %mute_reason%\n&7Your mute will not expire.\n&c%line%'
 
 # IAmMutedCommandMessage: -> The text displayed to both players who received and sent the /immuted command
 IAmMutedCommandMessageToMuted: '&dTo %target_rank_prefix%%target_rank_color%%target_name%&7:&e&o Hey, I am currently muted and unable to chat right now.'
