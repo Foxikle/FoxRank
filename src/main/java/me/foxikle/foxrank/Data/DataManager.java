@@ -534,7 +534,7 @@ public class DataManager {
         if (plugin.getPlayerData(uuid).isMuted()) {
             Instant date = plugin.getPlayerData(uuid).getMuteDuration();
             if(date == null) {
-                player.sendMessage(plugin.getMessage("ChatWhilePermanantlyMutedMessage", player));
+                player.sendMessage(plugin.getMessage("ChatWhilePermanentlyMutedMessage", player));
                 return;
             } else if (date.isBefore(Instant.now())) {
                 ModerationAction.unmutePlayer(player, player);
