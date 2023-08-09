@@ -149,21 +149,37 @@ public class FoxRank extends JavaPlugin implements Listener {
             getServer().getPluginManager().registerEvents(new JoinLeaveMsgs(this), this);
             getServer().getPluginManager().registerEvents(new Logs(this), this);
             getServer().getPluginManager().registerEvents(new Listeners(this), this);
-        }, 20);
+        }, 10);
         reloadConfig();
         Mute m = new Mute(this);
-        getCommand("nick").setExecutor(new Nick());
-        getCommand("vanish").setExecutor(new Vanish());
-        getCommand("setrank").setExecutor(new SetRank(this));
-        getCommand("mute").setExecutor(new Mute(this));
+        Nick n = new Nick();
+        Vanish v = new Vanish();
+        SetRank s = new SetRank(this);
+        Logs l = new Logs(this);
+        Ban b = new Ban(this);
+        Unban u = new Unban(this);
+        RankCommand r = new RankCommand(this);
+        getCommand("nick").setExecutor(n);
+        getCommand("nick").setTabCompleter(n);
+        getCommand("vanish").setExecutor(v);
+        getCommand("setrank").setExecutor(s);
+        getCommand("setrank").setTabCompleter(s);
+        getCommand("mute").setExecutor(m);
+        getCommand("mute").setTabCompleter(m);
         getCommand("me").setExecutor(m);
         getCommand("say").setExecutor(m);
         getCommand("immuted").setExecutor(m);
         getCommand("unmute").setExecutor(m);
-        getCommand("logs").setExecutor(new Logs(this));
-        getCommand("ban").setExecutor(new Ban(this));
-        getCommand("unban").setExecutor(new Unban(this));
-        getCommand("rank").setExecutor(new RankCommand(this));
+        getCommand("immuted").setTabCompleter(m);
+        getCommand("unmute").setTabCompleter(m);
+        getCommand("logs").setExecutor(l);
+        getCommand("logs").setTabCompleter(l);
+        getCommand("ban").setExecutor(b);
+        getCommand("ban").setTabCompleter(b);
+        getCommand("unban").setExecutor(u);
+        getCommand("unban").setTabCompleter(u);
+        getCommand("rank").setExecutor(r);
+        getCommand("rank").setTabCompleter(r);
 
         Bukkit.getServicesManager().register(FoxRank.class, this, this, ServicePriority.Normal);
         Metrics metrics = new Metrics(this, 19157);
@@ -171,7 +187,7 @@ public class FoxRank extends JavaPlugin implements Listener {
         Bukkit.getScheduler().runTaskLater(this, () -> Bukkit.getOnlinePlayers().forEach(p -> Bukkit.getScheduler().runTaskAsynchronously(this, () -> {
             this.loadRank(p);
             ActionBar.setupActionBar(p);
-            if (getPlayerData(p.getUniqueId()).isMuted()) { //todo: make it support null durations
+            if (getPlayerData(p.getUniqueId()).isMuted()) {
                 if (getPlayerData(p.getUniqueId()).getMuteDuration().isBefore(Instant.now())) {
                     ModerationAction.unmutePlayer(p, p);
                 }
