@@ -43,7 +43,7 @@ permissions:
       - foxrank.logging.*
       - foxrank.nicknames.*
       - foxrank.ranks.*
-
+      - foxrank.commands.*
   foxrank.moderation.*:
     default: false
     description: A wildcard for all moderation commands
@@ -79,7 +79,7 @@ permissions:
     description: A wildcard permission for all ban related commands
     children:
       - foxrank.moderation.mute.immune
-      - foxrank.moderation.mute.permanent #TODO: add permanant mutes
+      - foxrank.moderation.mute.permanent
       - foxrank.moderation.mute.temporary
       - foxrank.moderation.mute.immuted
       - foxrank.moderation.unmute
@@ -184,8 +184,9 @@ permissions:
       - foxrank.ranks.modify.textcolor
       - foxrank.ranks.modify.powerlevel
       - foxrank.ranks.modify.prefix
-      - foxrank.ranks.modify.addpermission
-      - foxrank.ranks.modify.removepermission
+      - foxrank.ranks.modify.add_permission
+      - foxrank.ranks.modify.remove_permission
+      - foxrank.ranks.modify.list_permissions
 
   foxrank.ranks.modify.color:
     default: false
@@ -199,13 +200,31 @@ permissions:
   foxrank.ranks.modify.prefix:
     default: false
     description: the permission to modify a rank's prefix
-  foxrank.ranks.modify.addpermission:
+  foxrank.ranks.modify.add_permission:
     default: false
-    description: the permission to modify rank colors
-  foxrank.ranks.modify.removepermission:
+    description: the permission to modify rank permission nodes
+  foxrank.ranks.modify.remove_permission:
     default: false
-    description: the permission to modify rank colors
+    description: the permission to modify rank permission nodes
+  foxrank.ranks.modify.list_permissions:
+    default: false
+    description: The permission to view a rank's permission nodes
 
   foxrank.vanish:
     default: false
     description: A permission to use the /vanish command
+
+  foxrank.commands.*:
+    default: false
+    description: A wildcard permission for all of the /rank commands. Does not include any commands to modify ranks. (create, remove, modify)
+    children:
+      - foxrank.commands.help
+      - foxrank.commands.list
+      - foxrank.commands.reload
+
+  foxrank.commands.help:
+    description: A permission to use the /rank help
+  foxrank.commands.list:
+    description: A permission to use the /rank list
+  foxrank.commands.reload:
+    description: A permission to use the /rank reload
