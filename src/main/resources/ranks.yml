@@ -11,27 +11,29 @@
 # 1. NEVER, EVER use tabs. Always use 2 spaces.
 # 2. A '#' means the line is commented out. The server will ignore the line.
 # 3. If you delete a portion of the config, you can delete the 'ranks.yml' and a new one
-#    will be automatically generated on the next server restart. This file is ignored
-#    if 'UseSQLStorage' is true. This file can be directly edited or using the `/rank`
-#    command in-game.
+#    will be automatically generated on the next server restart. This file is used even
+#    if 'UseSQLStorage' is true. This may change at some point, make sure to let Foxikle
+#    if that is something you'd like. For now, this file can be directly edited or using
+#    the `/rank` command in-game.
 #
 # Ranks follow the following format:
-#    <RANK_NAME>:
+#    <RANK_ID>:
 #      prefix: '&cR&6A&eI&aN&1B&dO&5W '    ~ The visible prefix of the rank
-#      powerLevel: 1                       ~ The powerlevel associated with the rank (internal permissions)
-#      id: '<RANK_NAME>'                   ~ The ID of the rank
+#      powerLevel: 1                       ~ The powerlevel associated with the rank (internal permissions / hierarchy)
+#      id: '<RANK_ID>'                   ~ The ID of the rank
 #      color: 'c'                          ~ The color to make the player's name
 #      ChatTextColor: 'f'                  ~ The color or their chat messages
 #      nicknamable: false                  ~ If the rank should be accessable to the /nick command
 #      permissions:                        ~ The permission nodes associated with the rank
 #        - example.permission.node
 # A few notes:
-#  - Having the same rank name as the id is generally useful.
 #  - The color should be JUST the letter/number. A complete
 #     list of colors can be found here https://htmlcolorcodes.com/minecraft-color-codes/
+#     But its 0-9, a-f
 #  - Put a space after the end of the rank prefix. If you don't
-#     in the tab list it will show up as 'PREFIXPLAYER_NAME' and
-#     not 'PREFIX PLAYER_NAME'
+#     in the tab list it will show up as '[ADMIN]Foxikle' and
+#     not '[ADMIN] Foxikle'. Assuming [ADMIN] is the prefix,
+#     and Foxikle is the player's name
 #
 # ---------------------------------------------------------------------------------------
 Ranks:
@@ -57,6 +59,7 @@ Ranks:
       - foxrank.logging.*
       - foxrank.vanish
       - foxrank.nicknames.*
+      - foxrank.commands.*
   MODERATOR:
     prefix: '&2[MOD] '
     powerLevel: 80
