@@ -85,7 +85,7 @@ public class Mute implements CommandExecutor, TabCompleter {
                             Rank muteeRank = plugin.getPlayerData(mutee.getUniqueId()).getRank();
                             Rank playerRank = plugin.getPlayerData(player.getUniqueId()).getRank();
                             if (muteeRank.getPowerlevel() >= playerRank.getPowerlevel()) {
-                                player.sendMessage(plugin.getMessage("MutePlayerWithHigherRankMessage", player)); //todo: confirm the papi argument in player
+                                player.sendMessage(plugin.getMessage("MutePlayerWithHigherRankMessage", player));
                             } else {
                                 if (!plugin.getPlayerData(mutee.getUniqueId()).isMuted()) {
                                     String durStr = args[1];

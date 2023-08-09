@@ -50,9 +50,9 @@ public class ModerationAction {
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> plugin.getDm().unmutePlayer(unmutee.getUniqueId()));
         Logging.addLogEntry(EntryType.UNMUTE, unmutee.getUniqueId(), staff.getUniqueId(), null, null, null, id);
         if (plugin.bungeecord) {
-            plugin.getPluginChannelListener().sendMessage(staff, unmutee.getName(), plugin.getMessage("UnmuteRecieverMessage", staff));
+            plugin.getPluginChannelListener().sendMessage(staff, unmutee.getName(), plugin.getMessage("UnmuteReceiverMessage", staff));
         } else {
-            unmutee.sendMessage(plugin.getMessage("UnmuteRecieverMessage", staff));
+            unmutee.sendMessage(plugin.getMessage("UnmuteReceiverMessage", staff));
         }
         staff.sendMessage(plugin.getMessage("UnmuteSenderMessage", staff));
     }
@@ -152,7 +152,7 @@ public class ModerationAction {
             if (broadcastReason.equalsIgnoreCase("SECURITY")) {
                 banner.sendMessage(plugin.getMessage("SecurityBanSenderMessage", banner));
             } else {
-                banner.sendMessage(plugin.getMessage("BanSenderMessage", banner)); //todo:
+                banner.sendMessage(plugin.getMessage("BanSenderMessage", banner));
             }
             Logging.addLogEntry(EntryType.BAN, banee.getUniqueId(), banner.getUniqueId(), duration, reasonStr, "true", banID);
             if (!plugin.bannedPlayers.contains(banee.getUniqueId())) {
