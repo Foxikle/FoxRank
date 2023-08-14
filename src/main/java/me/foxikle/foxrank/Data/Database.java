@@ -272,7 +272,7 @@ public class Database {
         try {
             PreparedStatement ps = getConnection().prepareStatement("UPDATE foxrankplayerdata SET ismuted = ?, muteduration = ?, mutereason = ? WHERE uuid=?");
             ps.setBoolean(1, true);
-            ps.setString(2, duration.toString());
+            ps.setString(2, duration == null ? null : duration.toString());
             ps.setString(3, reason);
             ps.setString(4, uuid.toString());
             ps.executeUpdate();
