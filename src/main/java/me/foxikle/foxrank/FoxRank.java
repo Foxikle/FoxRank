@@ -77,12 +77,12 @@ public class FoxRank extends JavaPlugin implements Listener {
     }
 
     public Rank getRank(Player player) {
-        return playerRanks.get(player) == null ? getDefaultRank() : playerRanks.get(player);
+        return getPlayerData(player.getUniqueId()).getRank() == null ? getDefaultRank() : getPlayerData(player.getUniqueId()).getRank();
     }
 
     public void setRank(Player player, Rank rank) {
         if (getRank(player) != null) {
-            this.getServer().getPluginManager().callEvent(new RankChangeEvent(player, rank, getRank(player)));
+            Bukkit.getScheduler().runTask(this, () -> this.getServer().getPluginManager().callEvent(new RankChangeEvent(player, rank, getRank(player))));
             clearPermissions(player.getUniqueId());
         }
 
@@ -395,12 +395,6 @@ public class FoxRank extends JavaPlugin implements Listener {
             if (matcher.group(4) != null) minutes = Integer.parseInt(matcher.group(4).replace("m", ""));
             if (matcher.group(5) != null) seconds = Integer.parseInt(matcher.group(5).replace("s", ""));
         }
-
-        FoxRank.getInstance().getLogger().log(Level.INFO, "y: " + years);
-        FoxRank.getInstance().getLogger().log(Level.INFO, "d: " + days);
-        FoxRank.getInstance().getLogger().log(Level.INFO, "h: " + hours);
-        FoxRank.getInstance().getLogger().log(Level.INFO, "m: " + minutes);
-        FoxRank.getInstance().getLogger().log(Level.INFO, "s: " + seconds);
         if (years > 0 || days > 0 || hours > 0 || minutes > 0 || seconds > 0) { // validate input
             return (long) years * 365 * 24 * 60 * 60
                     + (long) days * 24 * 60 * 60
