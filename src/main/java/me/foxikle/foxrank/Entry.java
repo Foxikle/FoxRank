@@ -32,7 +32,7 @@ public record Entry(EntryType type, UUID involved, Instant time, Instant duratio
             switch (Objects.requireNonNull(EntryType.valueOf(list.get(0)))) {
                 case BAN -> {
                     if (list.size() >= 8) {
-                        return new Entry(BAN, UUID.fromString(list.get(1)), Instant.parse(list.get(4)), list.get(5) == null ? null : Instant.parse(list.get(5)), list.get(6), list.get(7), UUID.fromString(list.get(2)), list.get(3));
+                        return new Entry(BAN, UUID.fromString(list.get(1)), Instant.parse(list.get(4)), (list.get(5) == null || list.get(5).equalsIgnoreCase("null")) ? null : Instant.parse(list.get(5)), list.get(6), list.get(7), UUID.fromString(list.get(2)), list.get(3));
                     }
                     throw new IllegalArgumentException("Expected 8 arguments but found " + list.size());
                 }
@@ -41,7 +41,7 @@ public record Entry(EntryType type, UUID involved, Instant time, Instant duratio
                 }
                 case MUTE -> {
                     if (list.size() >= 7) {
-                        return new Entry(EntryType.MUTE, UUID.fromString(list.get(1)), Instant.parse(list.get(4)), list.get(5) == null ? null : Instant.parse(list.get(5)), list.get(6), null, UUID.fromString(list.get(2)), list.get(3));
+                        return new Entry(EntryType.MUTE, UUID.fromString(list.get(1)), Instant.parse(list.get(4)), (list.get(5) == null || list.get(5).equalsIgnoreCase("null")) ? null : Instant.parse(list.get(5)), list.get(6), null, UUID.fromString(list.get(2)), list.get(3));
                     }
                     throw new IllegalArgumentException("Expected 8 arguments but found " + list.size());
                 }
