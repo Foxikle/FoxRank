@@ -376,7 +376,7 @@ public class FoxRank extends JavaPlugin implements Listener {
     }
 
     public static long parseDuration(String input) {
-        if (input.equalsIgnoreCase("-1")) {
+        if (input.contains("-")) {
             return -1;
         }
         Pattern pattern = Pattern.compile("(\\d+y)?(\\d+d)?(\\d+h)?(\\d+m)?(\\d+s)?");
