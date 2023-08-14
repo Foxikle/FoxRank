@@ -43,6 +43,7 @@ public class PluginChannelListener implements PluginMessageListener {
             Bukkit.getScheduler().runTaskLaterAsynchronously(FoxRank.getInstance(), () -> getPlayers(Iterables.getFirst(Bukkit.getOnlinePlayers(), null)), 20);
 
         } else if (subChannel.equalsIgnoreCase("FoxRankUpdateData")) {
+            // recache player's data
             try {
                 short len = in.readShort();
                 byte[] msgbytes = new byte[len];
@@ -50,7 +51,10 @@ public class PluginChannelListener implements PluginMessageListener {
                 DataInputStream msgin = new DataInputStream(new ByteArrayInputStream(msgbytes));
                 String somedata = msgin.readUTF();
                 if (somedata.equals("updateData")) {
-                    Bukkit.getScheduler().runTaskAsynchronously(FoxRank.getInstance(), () -> FoxRank.getInstance().setRank(player, FoxRank.getInstance().getPlayerData(player.getUniqueId()).getRank()));
+                    Bukkit.getScheduler().runTaskAsynchronously(FoxRank.getInstance(), () -> {
+                        FoxRank.getInstance().getDm().cacheUserData(player.getUniqueId());
+                        FoxRank.getInstance().setRank(player, FoxRank.getInstance().getRank(player));
+                    });
                 }
             } catch (IOException e) {
                 e.printStackTrace();
