@@ -28,6 +28,9 @@ public class SetRank implements CommandExecutor, TabCompleter {
                         FoxRank.getInstance().syntaxMap.put(player.getUniqueId(), "/setrank <RankID> [Player]");
                         player.sendMessage(FoxRank.getInstance().getSyntaxMessage(player));
                     } else if (args.length == 1) {
+                        if(!Rank.exists(args[0])) {
+                            sender.sendMessage(ChatColor.RED + "The rank '" + args[0] + "' does not exist!");
+                        }
                         Rank rank = plugin.getRank(player);
                         if (FoxRank.getInstance().ranks.containsKey(args[0])) {
                             if (Rank.of(args[0]).getPowerlevel() > rank.getPowerlevel()) {
@@ -44,6 +47,9 @@ public class SetRank implements CommandExecutor, TabCompleter {
                             player.sendMessage(FoxRank.getInstance().getSyntaxMessage(player));
                         }
                     } else {
+                        if(!Rank.exists(args[0])) {
+                            sender.sendMessage(ChatColor.RED + "The rank '" + args[0] + "' does not exist!");
+                        }
                         if (plugin.bungeecord) {
                             Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> plugin.getDm().setStoredRank(Bukkit.getOfflinePlayer(args[1]).getUniqueId(), Rank.of(args[0])));
                             plugin.getPluginChannelListener().sendUpdateDataMessage(args[1]);
@@ -74,21 +80,30 @@ public class SetRank implements CommandExecutor, TabCompleter {
                 if (args.length < 2) {
                     sender.sendMessage(ChatColor.RED + "Invalid Arguments: /setrank <rankID> <player>");
                 } else {
-                    if (plugin.bungeecord) {
-                        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> plugin.getDm().setStoredRank(Bukkit.getOfflinePlayer(args[1]).getUniqueId(), Rank.of(args[0])));
-                        plugin.getPluginChannelListener().sendUpdateDataMessage(args[1]);
-                        //todo: fix this probably VV
-                        plugin.getPluginChannelListener().sendMessage(Iterables.getLast(Bukkit.getOnlinePlayers()), args[1], plugin.getMessage("RankIsNowMessage", Bukkit.getOfflinePlayer(args[1])));
-                        return true;
+                    if(!Rank.exists(args[0])) {
+                        sender.sendMessage(ChatColor.RED + "The rank '" + args[0] + "' does not exist!");
                     }
-                    Player p = Bukkit.getServer().getPlayer(args[1]);
-
-                    if (FoxRank.getInstance().ranks.containsKey(args[0])) {
-                        Rank rank = Rank.of(args[0]);
-                        plugin.setRank(p, rank);
-                        p.sendMessage(plugin.getMessage("RankIsNowMessage", p));
+                    if (plugin.bungeecord) {
+                        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+                            plugin.getPlayerData(Bukkit.getOfflinePlayer(args[1]).getUniqueId()).setRank(Rank.of(args[0]));
+                            plugin.getDm().setStoredRank(Bukkit.getOfflinePlayer(args[1]).getUniqueId(), Rank.of(args[0]));
+                            Bukkit.getScheduler().runTaskLater(plugin, () -> {
+                                plugin.getPluginChannelListener().sendUpdateDataMessage(args[1]);
+                                //todo: fix this probably VV
+                                plugin.getPluginChannelListener().sendMessage(Iterables.getLast(Bukkit.getOnlinePlayers()), args[1], plugin.getMessage("RankIsNowMessage", Bukkit.getOfflinePlayer(args[1])));
+                            }, 20);
+                        });
+                         return true;
                     } else {
-                        sender.sendMessage(ChatColor.RED + "Invalid Rank provided");
+                        Player p = Bukkit.getServer().getPlayer(args[1]);
+
+                        if (FoxRank.getInstance().ranks.containsKey(args[0])) {
+                            Rank rank = Rank.of(args[0]);
+                            plugin.setRank(p, rank);
+                            p.sendMessage(plugin.getMessage("RankIsNowMessage", p));
+                        } else {
+                            sender.sendMessage(ChatColor.RED + "Invalid Rank provided");
+                        }
                     }
                 }
             } else {
