@@ -1,6 +1,7 @@
 package me.foxikle.foxrank;
 
 import org.bukkit.ChatColor;
+import org.bukkit.entity.Fox;
 
 import javax.annotation.Nullable;
 import java.util.List;
@@ -36,6 +37,10 @@ public class Rank {
     @Nullable
     public static Rank ofStrict(String str) {
         return FoxRank.getInstance().ranks.getOrDefault(str, null);
+    }
+
+    public static boolean exists(String id) {
+        return FoxRank.getInstance().ranks.containsKey(id);
     }
 
     public String getPrefix() {
