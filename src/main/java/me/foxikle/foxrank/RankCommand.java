@@ -52,7 +52,7 @@ public class RankCommand implements TabExecutor {
                                     return true;
                                 }
                                 player.sendMessage( """
-                            §2§m                       §r§6§l FoxRank §r§7[§8v2.0-beta1§7] §r§2§m                   \s
+                            §2§m                       §r§6§l FoxRank §r§7[§8v2.0-beta2§7] §r§2§m                   \s
                             §r                                 §r§6By Foxikle
    
                             """);
@@ -75,7 +75,7 @@ public class RankCommand implements TabExecutor {
                                 return true;
                             }
                             player.sendMessage( """
-                            §2§m                    §r§6§l FoxRank §r§7[§8v2.0-beta1§7] §r§2§m                     \s
+                            §2§m                    §r§6§l FoxRank §r§7[§8v2.0-beta2§7] §r§2§m                     \s
                             §r                                 §r§6By Foxikle
                             
    
@@ -140,7 +140,7 @@ public class RankCommand implements TabExecutor {
                             if(args.length >= 3) {
                                 String arg = args[2].toLowerCase();
                                 player.sendMessage( """
-                            §2§m                    §r§6§l FoxRank §r§7[§8v2.0-beta1§7] §r§2§m                     \s
+                            §2§m                    §r§6§l FoxRank §r§7[§8v2.0-beta2§7] §r§2§m                     \s
                             §r                                 §r§6By Foxikle
                             
    
@@ -169,7 +169,7 @@ public class RankCommand implements TabExecutor {
                                 player.sendMessage("§2§m                                                                                ");
                             } else {
                                 player.sendMessage( """
-                            §2§m                    §r§6§l FoxRank §r§7[§8v2.0-beta1§7] §r§2§m                     \s
+                            §2§m                    §r§6§l FoxRank §r§7[§8v2.0-beta2§7] §r§2§m                     \s
                             §r                                 §r§6By Foxikle
                             
    
@@ -251,7 +251,7 @@ public class RankCommand implements TabExecutor {
                                             return true;
                                         }
                                         player.sendMessage( """
-                            §2§m                    §r§6§l FoxRank §r§7[§8v2.0-beta1§7] §r§2§m                     \s
+                            §2§m                    §r§6§l FoxRank §r§7[§8v2.0-beta2§7] §r§2§m                     \s
                             §r                                 §r§6By Foxikle
                             
    
@@ -355,7 +355,7 @@ public class RankCommand implements TabExecutor {
                     switch (arg) {
                         case "help" -> {
                             console.sendMessage( """
-                            §2§m                       §r§6§l FoxRank §r§7[§8v2.0-beta1§7] §r§2§m                   \s
+                            §2§m                       §r§6§l FoxRank §r§7[§8v2.0-beta2§7] §r§2§m                   \s
                             §r                                 §r§6By Foxikle
    
                             """);
@@ -374,7 +374,7 @@ public class RankCommand implements TabExecutor {
                         }
                         case "list" -> {
                             console.sendMessage( """
-                            §2§m                    §r§6§l FoxRank §r§7[§8v2.0-beta1§7] §r§2§m                     \s
+                            §2§m                    §r§6§l FoxRank §r§7[§8v2.0-beta2§7] §r§2§m                     \s
                             §r                                 §r§6By Foxikle
                             
    
@@ -431,7 +431,7 @@ public class RankCommand implements TabExecutor {
                             if(args.length >= 3) {
                                 String arg = args[2].toLowerCase();
                                 console.sendMessage( """
-                            §2§m                    §r§6§l FoxRank §r§7[§8v2.0-beta1§7] §r§2§m                     \s
+                            §2§m                    §r§6§l FoxRank §r§7[§8v2.0-beta2§7] §r§2§m                     \s
                             §r                                 §r§6By Foxikle
                             
    
@@ -460,7 +460,7 @@ public class RankCommand implements TabExecutor {
                                 console.sendMessage("§2§m                                                                                ");
                             } else {
                                 console.sendMessage( """
-                            §2§m                    §r§6§l FoxRank §r§7[§8v2.0-beta1§7] §r§2§m                     \s
+                            §2§m                    §r§6§l FoxRank §r§7[§8v2.0-beta2§7] §r§2§m                     \s
                             §r                                 §r§6By Foxikle
                             
    
@@ -517,7 +517,7 @@ public class RankCommand implements TabExecutor {
                                 case "perm", "permission", "prmssn" -> {
                                     if (args.length == 4 && input.equalsIgnoreCase("list")) {
                                         console.sendMessage( """
-                            §2§m                    §r§6§l FoxRank §r§7[§8v2.0-beta1§7] §r§2§m                     \s
+                            §2§m                    §r§6§l FoxRank §r§7[§8v2.0-beta2§7] §r§2§m                     \s
                             §r                                 §r§6By Foxikle
                             
    
