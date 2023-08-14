@@ -272,14 +272,18 @@ public class RankCommand implements TabExecutor {
                                                 player.sendMessage(FoxRank.getInstance().getMessage("NoPermissionMessage", player));
                                                 return true;
                                             }
-                                            rank.addPermissionNode(node);
+                                            List<String> perms = section.getStringList("permissions");
+                                            perms.add(node);
+                                            section.set("permissions", perms);
                                             player.sendMessage(ChatColor.GREEN + "Successfully added the permission node '" + node + "' to " + rank.getColor() + rank.getId() + ChatColor.GREEN + ". Run /rank reload to propagate changes");
                                         } else if (input.equalsIgnoreCase("remove")) {
                                             if (!player.hasPermission("foxrank.ranks.modify.remove_permission")) {
                                                 player.sendMessage(FoxRank.getInstance().getMessage("NoPermissionMessage", player));
                                                 return true;
                                             }
-                                            rank.removePermissionNode(node);
+                                            List<String> perms = section.getStringList("permissions");
+                                            perms.remove(node);
+                                            section.set("permissions", perms);
                                             player.sendMessage(ChatColor.GREEN + "Successfully removed the permission node '" + node + "' to " + rank.getColor() + rank.getId() + ChatColor.GREEN + ". Run /rank reload to propagate changes");
                                         }
                                     } else {
@@ -534,10 +538,14 @@ public class RankCommand implements TabExecutor {
                                     } else if (args.length >= 5) {
                                         String node = args[4];
                                         if (input.equalsIgnoreCase("add")) {
-                                            rank.addPermissionNode(node);
+                                            List<String> perms = section.getStringList("permissions");
+                                            perms.add(node);
+                                            section.set("permissions", perms);
                                             console.sendMessage(ChatColor.GREEN + "Successfully added the permission node '" + node + "' to " + rank.getColor() + rank.getId() + ChatColor.GREEN + ". Run /rank reload to propagate changes");
                                         } else if (input.equalsIgnoreCase("remove")) {
-                                            rank.removePermissionNode(node);
+                                            List<String> perms = section.getStringList("permissions");
+                                            perms.remove(node);
+                                            section.set("permissions", perms);
                                             console.sendMessage(ChatColor.GREEN + "Successfully removed the permission node '" + node + "' to " + rank.getColor() + rank.getId() + ChatColor.GREEN + ". Run /rank reload to propagate changes");
                                         }
                                     } else {
