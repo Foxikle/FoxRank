@@ -93,6 +93,7 @@ public class Logs implements CommandExecutor, TabCompleter, Listener {
                                             entries.removeIf(e -> e.type() != EntryType.UNMUTE);
                                             if (entries.isEmpty()) {
                                                 player.sendMessage(plugin.getMessage("LogsNoData", player));
+                                                return;
                                             }
                                             for (Entry e : entries) {
                                                 ItemStack item = new ItemStack(Material.FILLED_MAP);
@@ -115,10 +116,10 @@ public class Logs implements CommandExecutor, TabCompleter, Listener {
                                                 player.sendMessage(plugin.getMessage("NoPermissionMessage", player));
                                                 return;
                                             }
-                                            player.sendMessage("entries size: " + entries.size());
                                             entries.removeIf(e -> e.type() != EntryType.NICKNAME);
                                             if (entries.isEmpty()) {
                                                 player.sendMessage(plugin.getMessage("LogsNoData", player));
+                                                return;
                                             }
                                             for (Entry e : entries) {
                                                 ItemStack item = new ItemStack(Material.NAME_TAG);
@@ -145,6 +146,7 @@ public class Logs implements CommandExecutor, TabCompleter, Listener {
                                             entries.removeIf(e -> e.type() != EntryType.BAN);
                                             if (entries.isEmpty()) {
                                                 player.sendMessage(plugin.getMessage("LogsNoData", player));
+                                                return;
                                             }
                                             for (Entry e : entries) {
                                                 ItemStack item = new ItemStack(Material.FILLED_MAP);
@@ -155,7 +157,7 @@ public class Logs implements CommandExecutor, TabCompleter, Listener {
 
                                                 Rank staffRank = plugin.getPlayerData(e.staff()).getRank();
 
-                                                lore.add(ChatColor.translateAlternateColorCodes('§', "§ePlayer: §b" + plugin.getPlayerData(player.getUniqueId()).getRank().getPrefix() + player.getName()));
+                                                lore.add(ChatColor.translateAlternateColorCodes('§', "§ePlayer: §b" + plugin.getPlayerData(e.involved()).getRank().getPrefix() + Bukkit.getOfflinePlayer(e.involved()).getName()));
                                                 lore.add(ChatColor.translateAlternateColorCodes('§', "§eStaff: " + staffRank.getPrefix() + Bukkit.getOfflinePlayer(e.staff()).getName()));
                                                 lore.add(ChatColor.translateAlternateColorCodes('§', "§eReason: §b" + e.option1()));
                                                 lore.add(ChatColor.translateAlternateColorCodes('§', "§eDuration: §b" + plugin.getFormattedExpiredString(e.duration(), e.time())));
@@ -176,6 +178,7 @@ public class Logs implements CommandExecutor, TabCompleter, Listener {
                                             entries.removeIf(e -> e.type() != EntryType.UNBAN);
                                             if (entries.isEmpty()) {
                                                 player.sendMessage(plugin.getMessage("LogsNoData", player));
+                                                return;
                                             }
                                             for (Entry e : entries) {
                                                 ItemStack item = new ItemStack(Material.WRITTEN_BOOK);
@@ -184,7 +187,7 @@ public class Logs implements CommandExecutor, TabCompleter, Listener {
                                                 meta.setDisplayName(f.format(date));
                                                 List<String> lore = new ArrayList<>();
                                                 Rank staffRank = plugin.getPlayerData(e.staff()).getRank();
-                                                lore.add(ChatColor.translateAlternateColorCodes('§', "§ePlayer: §b" + plugin.getPlayerData(player.getUniqueId()).getRank().getPrefix() + player.getName()));
+                                                lore.add(ChatColor.translateAlternateColorCodes('§', "§ePlayer: §b" + plugin.getPlayerData(e.involved()).getRank().getPrefix() + Bukkit.getOfflinePlayer(e.involved()).getName()));
                                                 lore.add(ChatColor.translateAlternateColorCodes('§', "§eStaff: §b" + staffRank.getPrefix() + Bukkit.getOfflinePlayer(e.staff()).getName()));
                                                 lore.add(ChatColor.translateAlternateColorCodes('§', "§eBan ID: §b" + e.id()));
                                                 meta.setLore(lore);
