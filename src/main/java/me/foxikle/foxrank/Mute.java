@@ -76,7 +76,7 @@ public class Mute implements CommandExecutor, TabCompleter {
                                         return false;
                                     }
                                 } else {
-                                    player.sendMessage(plugin.getMessage("MuteCommandPlayerAlreadyMuted", mutee));
+                                    player.sendMessage(plugin.getMessage("MuteCommandPlayerAlreadyMuted", player));
                                 }
                             }
                         } else if (Bukkit.getOfflinePlayer(DataManager.getUUID(args[0])) != null) {
