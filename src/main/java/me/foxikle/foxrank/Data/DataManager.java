@@ -1,10 +1,9 @@
 package me.foxikle.foxrank.Data;
 
 import com.google.gson.JsonParser;
-import me.foxikle.foxrank.Entry;
-import me.foxikle.foxrank.FoxRank;
-import me.foxikle.foxrank.ModerationAction;
-import me.foxikle.foxrank.Rank;
+import me.foxikle.foxrank.*;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.configuration.ConfigurationSection;
@@ -34,8 +33,8 @@ public class DataManager {
 
     private final FoxRank plugin;
     private FileConfiguration config;
-    private boolean useDatabase;
-    private Database db;
+    public boolean useDatabase;
+    public Database db;
 
     public DataManager(FoxRank plugin) {
         this.plugin = plugin;
@@ -58,7 +57,7 @@ public class DataManager {
         plugin.disableRankVis = config.getBoolean("DisableRankVisiblity");
         plugin.bungeecord = config.getBoolean("bungeecord");
         useDatabase = config.getBoolean("UseSQLStorage");
-
+        FoxRank.USE_DATABASE = useDatabase;
         if (!new File("plugins/FoxRank/ranks.yml").exists()) {
             plugin.saveResource("ranks.yml", false);
         }
@@ -82,6 +81,7 @@ public class DataManager {
             db.createPlayerDataTable();
             db.createBannedPlayersTable();
             db.createAuditLogTable();
+            db.createRanksTable();
 
             // load things into memory
         } else {
@@ -131,28 +131,49 @@ public class DataManager {
     }
 
     public void setupRanks() {
-        File file = new File("plugins/FoxRank/ranks.yml");
-        YamlConfiguration yamlConfiguration = YamlConfiguration.loadConfiguration(file);
-        ConfigurationSection yml = yamlConfiguration.getConfigurationSection("Ranks");
-
-        Set<String> keys = yml.getKeys(false);
-        Map<String, Integer> powerlevelMappy = new HashMap<>();
-        Map<Rank, Integer> rankMappy = new HashMap<>();
-        for (String str : keys) {
-            ConfigurationSection section = yml.getConfigurationSection(str);
-            Rank rank = new Rank(section.getInt("powerLevel"), ChatColor.translateAlternateColorCodes('&', section.getString("prefix")), section.getString("id"), ChatColor.getByChar(section.getString("color").charAt(0)), ChatColor.getByChar(section.getString("ChatTextColor")), section.getBoolean("nicknamable"), section.getStringList("permissions"));
-            if(rank.getId() != null) {
-                powerlevelMappy.put(rank.getId(), rank.getPowerlevel());
-                rankMappy.put(rank, rank.getPowerlevel());
+        if(useDatabase) {
+            List<String> ranks = db.getRanks();
+            Map<String, Integer> powerlevelMappy = new HashMap<>();
+            Map<Rank, Integer> rankMappy = new HashMap<>();
+            for (String str : ranks) {
+                Rank rank = Rank.of(str);
+                if(rank.getId() != null) {
+                    powerlevelMappy.put(rank.getId(), rank.getPowerlevel());
+                    rankMappy.put(rank, rank.getPowerlevel());
+                }
             }
-        }
-        plugin.ranks = getSortedRanks(rankMappy);
-        plugin.powerLevels = sortByValue(powerlevelMappy);
+            plugin.ranks = getSortedRanks(rankMappy);
+            plugin.powerLevels = sortByValue(powerlevelMappy);
 
-        plugin.bannedPlayers.addAll(getBannedPlayers());
-        plugin.players.addAll(getPlayers());
-        for (UUID uuid : getUUIDs()) {
-            cacheUserData(uuid);
+            plugin.bannedPlayers.addAll(getBannedPlayers());
+            plugin.players.addAll(getPlayers());
+            for (UUID uuid : getUUIDs()) {
+                cacheUserData(uuid);
+            }
+        } else {
+            File file = new File("plugins/FoxRank/ranks.yml");
+            YamlConfiguration yamlConfiguration = YamlConfiguration.loadConfiguration(file);
+            ConfigurationSection yml = yamlConfiguration.getConfigurationSection("Ranks");
+
+            Set<String> keys = yml.getKeys(false);
+            Map<String, Integer> powerlevelMappy = new HashMap<>();
+            Map<Rank, Integer> rankMappy = new HashMap<>();
+            for (String str : keys) {
+                ConfigurationSection section = yml.getConfigurationSection(str);
+                Rank rank = new Rank(section.getInt("powerLevel"), ChatColor.translateAlternateColorCodes('&', section.getString("prefix")), section.getString("id"), NamedTextColor.GRAY.value(), NamedTextColor.GRAY.value(), section.getBoolean("nicknamable"), section.getStringList("permissions"));
+                if(rank.getId() != null) {
+                    powerlevelMappy.put(rank.getId(), rank.getPowerlevel());
+                    rankMappy.put(rank, rank.getPowerlevel());
+                }
+            }
+            plugin.ranks = getSortedRanks(rankMappy);
+            plugin.powerLevels = sortByValue(powerlevelMappy);
+
+            plugin.bannedPlayers.addAll(getBannedPlayers());
+            plugin.players.addAll(getPlayers());
+            for (UUID uuid : getUUIDs()) {
+                cacheUserData(uuid);
+            }
         }
     }
 
@@ -531,6 +552,10 @@ public class DataManager {
         String eventMessage = e.getMessage();
         Player player = e.getPlayer();
         UUID uuid = player.getUniqueId();
+        if(plugin.getPlayerData(uuid) == null) {
+            player.sendMessage(Component.text("Failed to send chat message!", NamedTextColor.RED));
+            return;
+        }
         if (plugin.getPlayerData(uuid).isMuted()) {
             Instant date = plugin.getPlayerData(uuid).getMuteDuration();
             if(date == null) {
@@ -551,7 +576,7 @@ public class DataManager {
             if (plugin.disableRankVis) {
                 Bukkit.broadcastMessage(nick + ": " + e.getMessage());
             } else {
-                Bukkit.broadcastMessage(rank.getPrefix() + ChatColor.RESET + rank.getColor() + player.getName() + ChatColor.RESET + ": " + rank.getTextColor() + eventMessage);
+                Bukkit.broadcastMessage(rank.getPrefix() + ChatColor.RESET + ChatColor.valueOf(rank.getColor().toString().toUpperCase(Locale.ROOT)) + player.getName() + ChatColor.RESET + ": " + ChatColor.valueOf(rank.getTextColor().toString().toUpperCase(Locale.ROOT)) + eventMessage);
             }
         } else {
             Rank rank = plugin.getRank(player);
@@ -560,9 +585,9 @@ public class DataManager {
             } else {
                 if (rank == null) return;
                 if (rank != plugin.getDefaultRank()) {
-                    Bukkit.broadcastMessage(rank.getPrefix() + ChatColor.RESET + rank.getColor() + player.getName() + ChatColor.RESET + ": " + rank.getTextColor() + eventMessage);
+                    Bukkit.broadcastMessage(rank.getPrefix() + ChatColor.RESET + ChatColor.valueOf(rank.getColor().toString().toUpperCase(Locale.ROOT)) + player.getName() + ChatColor.RESET + ": " + ChatColor.valueOf(rank.getTextColor().toString().toUpperCase(Locale.ROOT)) + eventMessage);
                 } else if (rank == plugin.getDefaultRank()) {
-                    Bukkit.broadcastMessage(rank.getPrefix() + ChatColor.RESET + rank.getColor() + player.getDisplayName() + ChatColor.RESET + rank.getTextColor() + ": " + eventMessage);
+                    Bukkit.broadcastMessage(rank.getPrefix() + ChatColor.RESET + ChatColor.valueOf(rank.getColor().toString().toUpperCase(Locale.ROOT)) + player.getDisplayName() + ChatColor.RESET + ChatColor.valueOf(rank.getTextColor().toString().toUpperCase(Locale.ROOT)) + ": " + eventMessage);
                 }
             }
         }
@@ -720,6 +745,169 @@ public class DataManager {
             try {
                 yml1.set("CurrentlyBannedPlayers", list);
                 yml1.save(file1);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    // Rank stuff
+
+    public void setRankPrefix(Rank rank, String prefix) {
+        rank.setPrefix(prefix);
+        if(useDatabase) {
+            db.updateRank(rank.getId(), rank.toJson());
+        } else {
+            File file = new File("plugins/FoxRank/ranks.yml");
+            FileConfiguration yml = YamlConfiguration.loadConfiguration(file);
+            ConfigurationSection section = yml.getConfigurationSection("Ranks").getConfigurationSection(rank.getId());
+            section.set("prefix", prefix);
+            try {
+                yml.save(file);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
+    public void setRankPowerLevel(Rank rank, int powerlevel) {
+        rank.setPowerLevel(powerlevel);
+        if(useDatabase) {
+            db.updateRank(rank.getId(), rank.toJson());
+        } else {
+            File file = new File("plugins/FoxRank/ranks.yml");
+            FileConfiguration yml = YamlConfiguration.loadConfiguration(file);
+            ConfigurationSection section = yml.getConfigurationSection("Ranks").getConfigurationSection(rank.getId());
+            section.set("powerLevel", powerlevel);
+            try {
+                yml.save(file);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
+    public void setRankColor(Rank rank, ChatColor color) {
+        rank.setColor(ColorUtils.ofChatColor(color));
+        if(useDatabase) {
+            db.updateRank(rank.getId(), rank.toJson());
+        } else {
+            File file = new File("plugins/FoxRank/ranks.yml");
+            FileConfiguration yml = YamlConfiguration.loadConfiguration(file);
+            ConfigurationSection section = yml.getConfigurationSection("Ranks").getConfigurationSection(rank.getId());
+            section.set("color", color.getChar());
+            try {
+                yml.save(file);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
+    public void setRankTextColor(Rank rank, ChatColor color) {
+        rank.setTextColor(ColorUtils.ofChatColor(color));
+        if(useDatabase) {
+            db.updateRank(rank.getId(), rank.toJson());
+        } else {
+            File file = new File("plugins/FoxRank/ranks.yml");
+            FileConfiguration yml = YamlConfiguration.loadConfiguration(file);
+            ConfigurationSection section = yml.getConfigurationSection("Ranks").getConfigurationSection(rank.getId());
+            section.set("ChatTextColor", color.getChar());
+            try {
+                yml.save(file);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
+    public void setRankNicknamable(Rank rank, boolean canNick) {
+        rank.setNicknameable(canNick);
+        if(useDatabase) {
+            db.updateRank(rank.getId(), rank.toJson());
+        } else {
+            File file = new File("plugins/FoxRank/ranks.yml");
+            FileConfiguration yml = YamlConfiguration.loadConfiguration(file);
+            ConfigurationSection section = yml.getConfigurationSection("Ranks").getConfigurationSection(rank.getId());
+            section.set("nicknamable", canNick);
+            try {
+                yml.save(file);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
+    public void addRankPermissionNode(Rank rank, String node) {
+        rank.addPermissionNode(node);
+        if(useDatabase) {
+            db.updateRank(rank.getId(), rank.toJson());
+        } else {
+            File file = new File("plugins/FoxRank/ranks.yml");
+            FileConfiguration yml = YamlConfiguration.loadConfiguration(file);
+            ConfigurationSection section = yml.getConfigurationSection("Ranks").getConfigurationSection(rank.getId());
+            List<String> perms = section.getStringList("permissions");
+            perms.add(node);
+            section.set("permissions", perms);
+            try {
+                yml.save(file);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
+    public void removeRankPermissionNode(Rank rank, String node) {
+        rank.removePermissionNode(node);
+        if(useDatabase) {
+            db.updateRank(rank.getId(), rank.toJson());
+        } else {
+            File file = new File("plugins/FoxRank/ranks.yml");
+            FileConfiguration yml = YamlConfiguration.loadConfiguration(file);
+            ConfigurationSection section = yml.getConfigurationSection("Ranks").getConfigurationSection(rank.getId());
+            List<String> perms = section.getStringList("permissions");
+            perms.remove(node);
+            section.set("permissions", perms);
+            try {
+                yml.save(file);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
+    public void createRank(Rank rank) {
+        if(useDatabase) {
+            db.addRank(rank.getId(), rank.toJson());
+        } else {
+            File file = new File("plugins/FoxRank/ranks.yml");
+            FileConfiguration yml = YamlConfiguration.loadConfiguration(file);
+            ConfigurationSection section = yml.getConfigurationSection("Ranks").createSection(rank.getId());
+            section.set("prefix", rank.getPrefix());
+            section.set("powerLevel", rank.getPowerlevel());
+            section.set("id", rank.getId());
+            section.set("color", rank.getColor().toString());
+            section.set("ChatTextColor", rank.getTextColor().toString());
+            section.set("nicknamable", rank.isNicknameable());
+            section.set("permissions", rank.getPermissionNodes());
+            try {
+                yml.save(file);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    public void removeRank(Rank rank) {
+        if(useDatabase) {
+            db.removeRank(rank.getId());
+        } else {
+            File file = new File("plugins/FoxRank/ranks.yml");
+            FileConfiguration yml = YamlConfiguration.loadConfiguration(file);
+            yml.getConfigurationSection("Ranks").set(rank.getId(), null);
+
+            try {
+                yml.save(file);
             } catch (IOException e) {
                 e.printStackTrace();
             }

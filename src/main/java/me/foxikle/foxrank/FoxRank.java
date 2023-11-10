@@ -48,6 +48,9 @@ public class FoxRank extends JavaPlugin implements Listener {
     public Map<String, Integer> powerLevels = new HashMap<>();
     public Map<UUID, Set<PermissionAttachment>> permissions = new HashMap<>();
 
+    // static constants
+    public static boolean USE_DATABASE;
+
     // placeholders
     public Map<UUID, String> logTypeMap = new HashMap<>();
     public Map<UUID, String> attemptedBanPresetMap = new HashMap<>();
@@ -61,6 +64,7 @@ public class FoxRank extends JavaPlugin implements Listener {
     public List<String> players = new ArrayList<>();
 
     private DataManager dm;
+    private ActionBar ab;
 
     public static FoxRank getInstance() {
         return instance;
@@ -119,6 +123,8 @@ public class FoxRank extends JavaPlugin implements Listener {
         dm = new DataManager(this);
         dm.init();
         bungeecord = this.getConfig().getBoolean("bungeecord");
+        ab = new ActionBar(this);
+        ab.setupActionBars();
         if (bungeecord) {
             this.getServer().getMessenger().registerOutgoingPluginChannel(this, "BungeeCord");
             this.getServer().getMessenger().registerIncomingPluginChannel(this, "BungeeCord", pcl);
@@ -186,7 +192,6 @@ public class FoxRank extends JavaPlugin implements Listener {
         Bukkit.getScheduler().runTaskAsynchronously(this, () -> dm.setupRanks());
         Bukkit.getScheduler().runTaskLater(this, () -> Bukkit.getOnlinePlayers().forEach(p -> Bukkit.getScheduler().runTaskAsynchronously(this, () -> {
             this.loadRank(p);
-            ActionBar.setupActionBar(p);
             if (getPlayerData(p.getUniqueId()).isMuted()) {
                 if (getPlayerData(p.getUniqueId()).getMuteDuration().isBefore(Instant.now())) {
                     ModerationAction.unmutePlayer(p, p);
@@ -210,13 +215,7 @@ public class FoxRank extends JavaPlugin implements Listener {
     }
 
     private boolean checkVersion(){
-        String sversion;
-        try{
-            sversion = Bukkit.getServer().getClass().getPackage().getName().split("\\.")[3];
-        } catch (ArrayIndexOutOfBoundsException ex){
-            return false;
-        }
-        return (sversion.equals("v1_20_R1") || sversion.equals("v1_20_1_R1"));
+        return Bukkit.getMinecraftVersion().equals("1.20.2");
     }
 
     @Override
@@ -254,7 +253,7 @@ public class FoxRank extends JavaPlugin implements Listener {
                 team.setPrefix("");
                 team.setColor(ChatColor.WHITE);
             } else {
-                team.setColor(rank.getColor());
+                team.color(rank.getColor());
                 team.setPrefix(rank.getPrefix());
             }
             teamMappings.put(rank.getId(), team);

@@ -1,24 +1,26 @@
 package me.foxikle.foxrank;
 
+import net.kyori.adventure.text.format.NamedTextColor;
 import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.api.chat.BaseComponent;
 import net.md_5.bungee.api.chat.ClickEvent;
 import net.md_5.bungee.api.chat.ComponentBuilder;
 import net.md_5.bungee.api.chat.HoverEvent;
+import net.minecraft.server.level.ServerPlayer;
 import org.bukkit.Bukkit;
-import org.bukkit.command.*;
-import org.bukkit.configuration.ConfigurationSection;
-import org.bukkit.configuration.file.FileConfiguration;
-import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.command.Command;
+import org.bukkit.command.CommandSender;
+import org.bukkit.command.ConsoleCommandSender;
+import org.bukkit.command.TabExecutor;
+import org.bukkit.craftbukkit.v1_20_R2.entity.CraftPlayer;
 import org.bukkit.entity.Player;
 import org.bukkit.scoreboard.Team;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 public class RankCommand implements TabExecutor {
 
@@ -84,8 +86,8 @@ public class RankCommand implements TabExecutor {
                             ComponentBuilder core = new ComponentBuilder();
                             plugin.ranks.keySet().forEach(s -> {
                                 Rank rank = plugin.ranks.get(s);
-                                ComponentBuilder builder = new ComponentBuilder(rank.getId()).color(rank.getColor().asBungee()).append(space).append("▸").bold(true).append(space).append(rank.getPrefix()).append(space).append("[INFO]\n").color(ChatColor.YELLOW)
-                                        .event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new ComponentBuilder("§eID: " + rank.getId() + "\nPrefix: " + rank.getPrefix() + "§r§e\nPower Level: " + rank.getPowerlevel() + "\nText Color: " + rank.getTextColor() + "I'm some text!" + "\n§r§eColor: " + rank.getColor() + "I'm more text!" + "\n§r§bClick to view \npermission nodes!").create()))
+                                ComponentBuilder builder = new ComponentBuilder(rank.getId()).color(ChatColor.valueOf(rank.getColor().toString().toUpperCase(Locale.ROOT))).append(space).append("▸").bold(true).append(space).append(rank.getPrefix()).append(space).append("[INFO]\n").color(ChatColor.YELLOW)
+                                        .event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new ComponentBuilder("§eID: " + rank.getId() + "\nPrefix: " + rank.getPrefix() + "§r§e\nPower Level: " + rank.getPowerlevel() + "\nText Color: " + ChatColor.valueOf(rank.getTextColor().toString().toUpperCase(Locale.ROOT)) + "I'm some text!" + "\n§r§eColor: " + ChatColor.valueOf(rank.getColor().toString().toUpperCase(Locale.ROOT)) + "I'm more text!" + "\n§r§bClick to view \npermission nodes!").create()))
                                         .event(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/rank modify " + rank.getId() + " permission list")).append("").reset().event(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "")).event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new ComponentBuilder().create()));
                                 core.append(builder.create());
                             });
@@ -102,6 +104,8 @@ public class RankCommand implements TabExecutor {
                             player.sendMessage(ChatColor.YELLOW + "Reloading FoxRank!");
                             for (Player p : Bukkit.getOnlinePlayers()) {
                                 plugin.clearPermissions(p.getUniqueId());
+                                ServerPlayer sp = ((CraftPlayer) p).getHandle();
+                                sp.getId();
                             }
 
                             plugin.teamMappings.values().forEach(Team::unregister);
@@ -182,19 +186,12 @@ public class RankCommand implements TabExecutor {
                             }
                         }
                     } else if (subCommand.equalsIgnoreCase("modify")) {
-
-                        File file = new File("plugins/FoxRank/ranks.yml");
-                        FileConfiguration yml = YamlConfiguration.loadConfiguration(file);
+                        Rank rank = Rank.fromID(args[1]);
                         if (args.length >= 4) {
-                            Rank rank = Rank.ofStrict(args[1]);
                             if (rank == null) { // todo: syntax
                                 plugin.syntaxMap.put(player.getUniqueId(), "Could not find the rank '" + args[1] + "'!");
                                 player.sendMessage(plugin.getSyntaxMessage(player));
                                 return true;
-                            }
-                            ConfigurationSection section = yml.getConfigurationSection("Ranks").getConfigurationSection(rank.getId());
-                            if (section == null) {
-                                throw new NullPointerException("The configuration secton for rank '" + rank.getId() + "' is null. Please report the following stacktrace to Foxikle.");
                             }
                             String action = args[2].toLowerCase();
                             String input = args[3];
@@ -204,11 +201,16 @@ public class RankCommand implements TabExecutor {
                                         player.sendMessage(FoxRank.getInstance().getMessage("NoPermissionMessage", player));
                                         return true;
                                     }
-                                    section.set("prefix", input + " ");
-                                    player.sendMessage(ChatColor.GREEN + "Successfully set " + rank.getColor() + rank.getId() + ChatColor.GREEN + "'s prefix to '" + ChatColor.translateAlternateColorCodes('&', input) + ChatColor.GREEN + "'. Run /rank reload to propagate changes");
+                                    if (input.equalsIgnoreCase("<empty>") || input.equalsIgnoreCase("%empty%")) {
+                                        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> plugin.getDm().setRankPrefix(rank, ""));
+                                        player.sendMessage(ChatColor.GREEN + "Successfully set " + ColorUtils.ofNamedTextColor(rank.getColor()) + rank.getId() + ChatColor.GREEN + "'s prefix to be empty"  + ChatColor.GREEN + ". Run /rank reload to propagate changes");
+                                    } else {
+                                        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> plugin.getDm().setRankPrefix(rank, input + " "));
+                                        player.sendMessage(ChatColor.GREEN + "Successfully set " + ColorUtils.ofNamedTextColor(rank.getColor()) + rank.getId() + ChatColor.GREEN + "'s prefix to '" + ChatColor.translateAlternateColorCodes('&', input) + ChatColor.GREEN + "'. Run /rank reload to propagate changes");
+                                    }
                                 }
                                 case "powerlevel", "pwrlvl", "pl" -> {
-                                    if (!player.hasPermission("foxrank.ranks.powerlevel")) {
+                                    if (!player.hasPermission("foxrank.ranks.modify.powerlevel")) {
                                         player.sendMessage(FoxRank.getInstance().getMessage("NoPermissionMessage", player));
                                         return true;
                                     }
@@ -217,32 +219,44 @@ public class RankCommand implements TabExecutor {
                                     } catch (NumberFormatException ignored) {
                                         player.sendMessage(ChatColor.RED + "Failed to parse an integer from '" + input + "'");
                                     }
-                                    section.set("powerLevel", Integer.parseInt(input));
-                                    player.sendMessage(ChatColor.GREEN + "Successfully set " + rank.getColor() + rank.getId() + ChatColor.GREEN + "'s powerlevel to " + Integer.parseInt(input) + ChatColor.GREEN + ". Run /rank reload to propagate changes");
+                                    Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> plugin.getDm().setRankPowerLevel(rank, Integer.parseInt(input)));
+                                    player.sendMessage(ChatColor.GREEN + "Successfully set " + ColorUtils.ofNamedTextColor(rank.getColor()) + rank.getId() + ChatColor.GREEN + "'s powerlevel to " + Integer.parseInt(input) + ChatColor.GREEN + ". Run /rank reload to propagate changes");
                                 }
                                 case "color", "clr" -> {
                                     if (!player.hasPermission("foxrank.ranks.modify.color")) {
                                         player.sendMessage(FoxRank.getInstance().getMessage("NoPermissionMessage", player));
                                         return true;
                                     }
-                                    section.set("color", input);
-                                    player.sendMessage(ChatColor.GREEN + "Successfully set " + rank.getColor() + rank.getId() + ChatColor.GREEN + "'s color to be " + ChatColor.getByChar(input.charAt(0)).toString() + ChatColor.GREEN + ". Run /rank reload to propagate changes");
+                                    try{
+                                        org.bukkit.ChatColor.valueOf(input);
+                                    } catch (IllegalArgumentException ignored) {
+                                        player.sendMessage(ChatColor.RED + "'" + input + "' is not a valid color!");
+                                        return true;
+                                    }
+                                    Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> plugin.getDm().setRankColor(rank, org.bukkit.ChatColor.valueOf(input)));
+                                    player.sendMessage(ChatColor.GREEN + "Successfully set " + ColorUtils.ofNamedTextColor(rank.getColor()) + rank.getId() + ChatColor.GREEN + "'s color to be " + ChatColor.of(input).name() + ChatColor.GREEN + ". Run /rank reload to propagate changes");
                                 }
                                 case "textcolor", "txtclr" -> {
                                     if (!player.hasPermission("foxrank.ranks.modify.textcolor")) {
                                         player.sendMessage(FoxRank.getInstance().getMessage("NoPermissionMessage", player));
                                         return true;
                                     }
-                                    section.set("ChatTextColor", input);
-                                    player.sendMessage(ChatColor.GREEN + "Successfully set " + rank.getColor() + rank.getId() + ChatColor.GREEN + "'s text color to be " + ChatColor.getByChar(input.charAt(0)).toString() + ChatColor.GREEN + ". Run /rank reload to propagate changes");
+                                    try{
+                                        org.bukkit.ChatColor.valueOf(input);
+                                    } catch (IllegalArgumentException ignored) {
+                                        player.sendMessage(ChatColor.RED + "'" + input + "' is not a valid color!");
+                                        return true;
+                                    }
+                                    Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> plugin.getDm().setRankTextColor(rank, org.bukkit.ChatColor.valueOf(input)));
+                                    player.sendMessage(ChatColor.GREEN + "Successfully set " + ColorUtils.ofNamedTextColor(rank.getColor()) + rank.getId() + ChatColor.GREEN + "'s text color to be " + ChatColor.of(input).name() + ChatColor.GREEN + ". Run /rank reload to propagate changes");
                                 }
                                 case "nicknamable", "ncknmbl" -> {
                                     if (!player.hasPermission("foxrank.ranks.modify.nicknamable")) {
                                         player.sendMessage(FoxRank.getInstance().getMessage("NoPermissionMessage", player));
                                         return true;
                                     }
-                                    section.set("nicknamable", Boolean.parseBoolean(input));
-                                    player.sendMessage(ChatColor.GREEN + "Successfully set " + rank.getColor() + rank.getId() + ChatColor.GREEN + "'s nicknamability to be " + Boolean.parseBoolean(input) + ChatColor.GREEN + ". Run /rank reload to propagate changes");
+                                    Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> plugin.getDm().setRankNicknamable(rank, Boolean.getBoolean(input )));
+                                    player.sendMessage(ChatColor.GREEN + "Successfully set " + ColorUtils.ofNamedTextColor(rank.getColor()) + rank.getId() + ChatColor.GREEN + "'s nicknamability to be " + Boolean.parseBoolean(input) + ChatColor.GREEN + ". Run /rank reload to propagate changes");
                                 }
                                 case "perm", "permission", "prmssn" -> {
                                     if (args.length == 4 && input.equalsIgnoreCase("list")) {
@@ -256,9 +270,9 @@ public class RankCommand implements TabExecutor {
                             
    
                             """);
-                                        player.sendMessage(rank.getColor() + rank.getId()  + ChatColor.DARK_AQUA + "'s permission nodes");
+                                        player.sendMessage(ColorUtils.ofNamedTextColor(rank.getColor()) + rank.getId()  + ChatColor.DARK_AQUA + "'s permission nodes");
                                         if(rank.getPermissionNodes().isEmpty()) {
-                                            player.sendMessage(ChatColor.RED + "No nodes!");
+                                            player.sendMessage(ChatColor.RED + "No permission nodes!");
                                         } else {
                                             for (String s : rank.getPermissionNodes()) {
                                                 player.sendMessage("▸ " + s);
@@ -272,30 +286,21 @@ public class RankCommand implements TabExecutor {
                                                 player.sendMessage(FoxRank.getInstance().getMessage("NoPermissionMessage", player));
                                                 return true;
                                             }
-                                            List<String> perms = section.getStringList("permissions");
-                                            perms.add(node);
-                                            section.set("permissions", perms);
-                                            player.sendMessage(ChatColor.GREEN + "Successfully added the permission node '" + node + "' to " + rank.getColor() + rank.getId() + ChatColor.GREEN + ". Run /rank reload to propagate changes");
+                                            Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> plugin.getDm().addRankPermissionNode(rank, node));
+                                            player.sendMessage(ChatColor.GREEN + "Successfully added the permission node '" + node + "' to " + ColorUtils.ofNamedTextColor(rank.getColor()) + rank.getId() + ChatColor.GREEN + ". Run /rank reload to propagate changes");
                                         } else if (input.equalsIgnoreCase("remove")) {
                                             if (!player.hasPermission("foxrank.ranks.modify.remove_permission")) {
                                                 player.sendMessage(FoxRank.getInstance().getMessage("NoPermissionMessage", player));
                                                 return true;
                                             }
-                                            List<String> perms = section.getStringList("permissions");
-                                            perms.remove(node);
-                                            section.set("permissions", perms);
-                                            player.sendMessage(ChatColor.GREEN + "Successfully removed the permission node '" + node + "' to " + rank.getColor() + rank.getId() + ChatColor.GREEN + ". Run /rank reload to propagate changes");
+                                            Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> plugin.getDm().removeRankPermissionNode(rank, node));
+                                            player.sendMessage(ChatColor.GREEN + "Successfully removed the permission node '" + node + "' to " + ColorUtils.ofNamedTextColor(rank.getColor()) + rank.getId() + ChatColor.GREEN + ". Run /rank reload to propagate changes");
                                         }
                                     } else {
                                         plugin.syntaxMap.put(player.getUniqueId(), "/rank modify <Rank> permission <add/remove> <permission.node>");
                                         player.sendMessage(plugin.getSyntaxMessage(player));
                                     }
                                 }
-                            }
-                            try {
-                                yml.save(file);
-                            } catch (IOException e) {
-                                e.printStackTrace();
                             }
                         } else {
                             plugin.syntaxMap.put(player.getUniqueId(), "/rank modify <RankID> <prefix/powerlevel/color/textcolor/nicknameable/permission>");
@@ -306,23 +311,9 @@ public class RankCommand implements TabExecutor {
                             player.sendMessage(FoxRank.getInstance().getMessage("NoPermissionMessage", player));
                             return true;
                         }
-                        Rank rank = new Rank(0, "", args[1], org.bukkit.ChatColor.getByChar('f'), org.bukkit.ChatColor.getByChar('f'), true, new ArrayList<>());
+                        Rank rank = new Rank(0, "", args[1], NamedTextColor.WHITE.value(), NamedTextColor.WHITE.value(), true, new ArrayList<>());
                         plugin.ranks.put(args[1], rank);
-                        File file = new File("plugins/FoxRank/ranks.yml");
-                        FileConfiguration yml = YamlConfiguration.loadConfiguration(file);
-                        ConfigurationSection section = yml.getConfigurationSection("Ranks").createSection(args[1]);
-                        section.set("prefix", rank.getPrefix());
-                        section.set("powerLevel", rank.getPowerlevel());
-                        section.set("id", rank.getId());
-                        section.set("color", rank.getColor().getChar());
-                        section.set("ChatTextColor", rank.getTextColor().getChar());
-                        section.set("nicknamable", rank.isNicknameable());
-                        section.set("permissions", rank.getPermissionNodes());
-                        try {
-                            yml.save(file);
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
+                        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> plugin.getDm().createRank(rank));
                         player.sendMessage(ChatColor.GREEN + "Sucessfully created the rank '" + rank.getId() + "'. Run /rank reload to propagate changes.");
 
                     } else if (subCommand.equalsIgnoreCase("remove")) {
@@ -331,18 +322,16 @@ public class RankCommand implements TabExecutor {
                             return true;
                         }
                         Rank rank = plugin.ranks.get(args[1]);
+                        if (rank == null) { // todo: syntax
+                            plugin.syntaxMap.put(player.getUniqueId(), "Could not find the rank '" + args[1] + "'!");
+                            player.sendMessage(plugin.getSyntaxMessage(player));
+                            return true;
+                        }
                         plugin.ranks.remove(args[1]);
                         plugin.teamMappings.get(rank.getId()).unregister();
+                        plugin.teamMappings.remove(rank.getId());
 
-                        File file = new File("plugins/FoxRank/ranks.yml");
-                        FileConfiguration yml = YamlConfiguration.loadConfiguration(file);
-                        yml.getConfigurationSection("Ranks").set(rank.getId(), null);
-
-                        try {
-                            yml.save(file);
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
+                        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> plugin.getDm().removeRank(rank));
 
                         player.sendMessage(ChatColor.GREEN + "Sucessfully deleted the rank '" + rank.getId() + "'. Run /rank reload to propagate changes");
                     }
@@ -387,8 +376,8 @@ public class RankCommand implements TabExecutor {
                             ComponentBuilder core = new ComponentBuilder();
                             plugin.ranks.keySet().forEach(s -> {
                                 Rank rank = plugin.ranks.get(s);
-                                ComponentBuilder builder = new ComponentBuilder(rank.getId()).color(rank.getColor().asBungee()).append(space).append("▸").bold(true).append(space).append(rank.getPrefix()).append(space).append("[INFO]\n").color(ChatColor.YELLOW)
-                                        .event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new ComponentBuilder("§eID: " + rank.getId() + "\nPrefix: " + rank.getPrefix() + "§r§e\nPower Level: " + rank.getPowerlevel() + "\nText Color: " + rank.getTextColor() + "I'm some text!" + "\n§r§eColor: " + rank.getColor() + "I'm more text!" + "\n§r§bClick to view \npermission nodes!").create()))
+                                ComponentBuilder builder = new ComponentBuilder(rank.getId()).color(ColorUtils.ofNamedTextColor(rank.getColor()).asBungee()).append(space).append("▸").bold(true).append(space).append(rank.getPrefix()).append(space).append("[INFO]\n").color(ChatColor.YELLOW)
+                                        .event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new ComponentBuilder("§eID: " + rank.getId() + "\nPrefix: " + rank.getPrefix() + "§r§e\nPower Level: " + rank.getPowerlevel() + "\nText Color: " + ChatColor.valueOf(rank.getTextColor().toString().toUpperCase(Locale.ROOT)) + "I'm some text!" + "\n§r§eColor: " + ChatColor.valueOf(rank.getColor().toString().toUpperCase(Locale.ROOT)) + "I'm more text!" + "\n§r§bClick to view \npermission nodes!").create()))
                                         .event(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/rank modify " + rank.getId() + " permission list")).append("").reset().event(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "")).event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new ComponentBuilder().create()));
                                 core.append(builder.create());
                             });
@@ -478,24 +467,24 @@ public class RankCommand implements TabExecutor {
                         }
                     } else if (subCommand.equalsIgnoreCase("modify")) {
 
-                        File file = new File("plugins/FoxRank/ranks.yml");
-                        FileConfiguration yml = YamlConfiguration.loadConfiguration(file);
                         if (args.length >= 4) {
-                            Rank rank = Rank.ofStrict(args[1]);
+                            Rank rank = Rank.fromID(args[1]);
                             if (rank == null) { // todo: syntax
                                 console.sendMessage("Could not find the rank '" + args[1] + "'!");
                                 return true;
                             }
-                            ConfigurationSection section = yml.getConfigurationSection("Ranks").getConfigurationSection(rank.getId());
-                            if (section == null) {
-                                throw new NullPointerException("The configuration secton for rank '" + rank.getId() + "' is null. Please report the following stacktrace to Foxikle.");
-                            }
+
                             String action = args[2].toLowerCase();
                             String input = args[3];
                             switch (action) {
                                 case "prefix", "prfx" -> {
-                                    section.set("prefix", input + " ");
-                                    console.sendMessage(ChatColor.GREEN + "Successfully set " + rank.getColor() + rank.getId() + ChatColor.GREEN + "'s prefix to '" + ChatColor.translateAlternateColorCodes('&', input) + ChatColor.GREEN + "'. Run /rank reload to propagate changes");
+                                    if (input.equalsIgnoreCase("<empty>") || input.equalsIgnoreCase("%empty%")) {
+                                        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> plugin.getDm().setRankPrefix(rank, ""));
+                                        console.sendMessage(ChatColor.GREEN + "Successfully set " + ColorUtils.ofNamedTextColor(rank.getColor()) + rank.getId() + ChatColor.GREEN + "'s prefix to be empty"  + ChatColor.GREEN + ". Run /rank reload to propagate changes");
+                                    } else {
+                                        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> plugin.getDm().setRankPrefix(rank, input + " "));
+                                        console.sendMessage(ChatColor.GREEN + "Successfully set " + ColorUtils.ofNamedTextColor(rank.getColor()) + rank.getId() + ChatColor.GREEN + "'s prefix to '" + ChatColor.translateAlternateColorCodes('&', input) + ChatColor.GREEN + "'. Run /rank reload to propagate changes");
+                                    }
                                 }
                                 case "powerlevel", "pwrlvl", "pl" -> {
                                     try {
@@ -503,20 +492,32 @@ public class RankCommand implements TabExecutor {
                                     } catch (NumberFormatException ignored) {
                                         console.sendMessage(ChatColor.RED + "Failed to parse an integer from '" + input + "'");
                                     }
-                                    section.set("powerLevel", Integer.parseInt(input));
-                                    console.sendMessage(ChatColor.GREEN + "Successfully set " + rank.getColor() + rank.getId() + ChatColor.GREEN + "'s powerlevel to " + Integer.parseInt(input) + ChatColor.GREEN + ". Run /rank reload to propagate changes");
+                                    Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> plugin.getDm().setRankPowerLevel(rank, Integer.parseInt(input)));
+                                    console.sendMessage(ChatColor.GREEN + "Successfully set " + ChatColor.valueOf(rank.getColor().toString().toUpperCase(Locale.ROOT)) + rank.getId() + ChatColor.GREEN + "'s powerlevel to " + Integer.parseInt(input) + ChatColor.GREEN + ". Run /rank reload to propagate changes");
                                 }
                                 case "color", "clr" -> {
-                                    section.set("color", input);
-                                    console.sendMessage(ChatColor.GREEN + "Successfully set " + rank.getColor() + rank.getId() + ChatColor.GREEN + "'s color to be " + ChatColor.getByChar(input.charAt(0)).toString() + ChatColor.GREEN + ". Run /rank reload to propagate changes");
+                                    try{
+                                        org.bukkit.ChatColor.valueOf(input);
+                                    } catch (IllegalArgumentException ignored) {
+                                        console.sendMessage(ChatColor.RED + "'" + input + "' is not a valid color!");
+                                        return true;
+                                    }
+                                    Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> plugin.getDm().setRankColor(rank, org.bukkit.ChatColor.valueOf(input)));
+                                    console.sendMessage(ChatColor.GREEN + "Successfully set " + ChatColor.valueOf(rank.getColor().toString().toUpperCase(Locale.ROOT)) + rank.getId() + ChatColor.GREEN + "'s color to be " + ChatColor.of(input).name() + ChatColor.GREEN + ". Run /rank reload to propagate changes");
                                 }
                                 case "textcolor", "txtclr" -> {
-                                    section.set("ChatTextColor", input);
-                                    console.sendMessage(ChatColor.GREEN + "Successfully set " + rank.getColor() + rank.getId() + ChatColor.GREEN + "'s text color to be " + ChatColor.getByChar(input.charAt(0)).toString() + ChatColor.GREEN + ". Run /rank reload to propagate changes");
+                                    try{
+                                        org.bukkit.ChatColor.valueOf(input);
+                                    } catch (IllegalArgumentException ignored) {
+                                        console.sendMessage(ChatColor.RED + "'" + input + "' is not a valid color!");
+                                        return true;
+                                    }
+                                    Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> plugin.getDm().setRankTextColor(rank, org.bukkit.ChatColor.valueOf(input)));
+                                    console.sendMessage(ChatColor.GREEN + "Successfully set " + ChatColor.valueOf(rank.getColor().toString().toUpperCase(Locale.ROOT)) + rank.getId() + ChatColor.GREEN + "'s text color to be " + ChatColor.of(input).name() + ChatColor.GREEN + ". Run /rank reload to propagate changes");
                                 }
                                 case "nicknamable", "ncknmbl" -> {
-                                    section.set("nicknamable", Boolean.parseBoolean(input));
-                                    console.sendMessage(ChatColor.GREEN + "Successfully set " + rank.getColor() + rank.getId() + ChatColor.GREEN + "'s nicknamability to be " + Boolean.parseBoolean(input) + ChatColor.GREEN + ". Run /rank reload to propagate changes");
+                                    Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> plugin.getDm().setRankNicknamable(rank, Boolean.parseBoolean(input)));
+                                    console.sendMessage(ChatColor.GREEN + "Successfully set " + ChatColor.valueOf(rank.getColor().toString().toUpperCase(Locale.ROOT)) + rank.getId() + ChatColor.GREEN + "'s nicknamability to be " + Boolean.parseBoolean(input) + ChatColor.GREEN + ". Run /rank reload to propagate changes");
                                 }
                                 case "perm", "permission", "prmssn" -> {
                                     if (args.length == 4 && input.equalsIgnoreCase("list")) {
@@ -526,7 +527,7 @@ public class RankCommand implements TabExecutor {
                             
    
                             """);
-                                        console.sendMessage(rank.getColor() + rank.getId()  + ChatColor.DARK_AQUA + "'s permission nodes");
+                                        console.sendMessage(ChatColor.valueOf(rank.getColor().toString().toUpperCase(Locale.ROOT)) + rank.getId()  + ChatColor.DARK_AQUA + "'s permission nodes");
                                         if(rank.getPermissionNodes().isEmpty()) {
                                             console.sendMessage(ChatColor.RED + "No nodes!");
                                         } else {
@@ -538,47 +539,24 @@ public class RankCommand implements TabExecutor {
                                     } else if (args.length >= 5) {
                                         String node = args[4];
                                         if (input.equalsIgnoreCase("add")) {
-                                            List<String> perms = section.getStringList("permissions");
-                                            perms.add(node);
-                                            section.set("permissions", perms);
-                                            console.sendMessage(ChatColor.GREEN + "Successfully added the permission node '" + node + "' to " + rank.getColor() + rank.getId() + ChatColor.GREEN + ". Run /rank reload to propagate changes");
+                                            Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> plugin.getDm().addRankPermissionNode(rank, node));
+                                            console.sendMessage(ChatColor.GREEN + "Successfully added the permission node '" + node + "' to " + ChatColor.valueOf(rank.getColor().toString().toUpperCase(Locale.ROOT)) + rank.getId() + ChatColor.GREEN + ". Run /rank reload to propagate changes");
                                         } else if (input.equalsIgnoreCase("remove")) {
-                                            List<String> perms = section.getStringList("permissions");
-                                            perms.remove(node);
-                                            section.set("permissions", perms);
-                                            console.sendMessage(ChatColor.GREEN + "Successfully removed the permission node '" + node + "' to " + rank.getColor() + rank.getId() + ChatColor.GREEN + ". Run /rank reload to propagate changes");
+                                            Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> plugin.getDm().removeRankPermissionNode(rank, node));
+                                            console.sendMessage(ChatColor.GREEN + "Successfully removed the permission node '" + node + "' to " + ChatColor.valueOf(rank.getColor().toString().toUpperCase(Locale.ROOT)) + rank.getId() + ChatColor.GREEN + ". Run /rank reload to propagate changes");
                                         }
                                     } else {
                                         console.sendMessage(ChatColor.RED + "rank modify <Rank> permission <add/remove> <permission.node>");
                                     }
                                 }
                             }
-                            try {
-                                yml.save(file);
-                            } catch (IOException e) {
-                                e.printStackTrace();
-                            }
                         } else {
                             console.sendMessage(ChatColor.RED + "rank modify <RankID> <prefix/powerlevel/color/textcolor/nicknameable/permission>");
                         }
                     } else if (subCommand.equalsIgnoreCase("create")) { // `/rank create ADMIN `
-                        Rank rank = new Rank(0, "", args[1], org.bukkit.ChatColor.getByChar('f'), org.bukkit.ChatColor.getByChar('f'), true, new ArrayList<>());
+                        Rank rank = new Rank(0, "", args[1], NamedTextColor.WHITE.value(), NamedTextColor.WHITE.value(), true, new ArrayList<>());
                         plugin.ranks.put(args[1], rank);
-                        File file = new File("plugins/FoxRank/ranks.yml");
-                        FileConfiguration yml = YamlConfiguration.loadConfiguration(file);
-                        ConfigurationSection section = yml.getConfigurationSection("Ranks").createSection(args[1]);
-                        section.set("prefix", rank.getPrefix());
-                        section.set("powerLevel", rank.getPowerlevel());
-                        section.set("id", rank.getId());
-                        section.set("color", rank.getColor().getChar());
-                        section.set("ChatTextColor", rank.getTextColor().getChar());
-                        section.set("nicknamable", rank.isNicknameable());
-                        section.set("permissions", rank.getPermissionNodes());
-                        try {
-                            yml.save(file);
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
+                        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> plugin.getDm().createRank(rank));
                         console.sendMessage(ChatColor.GREEN + "Sucessfully created the rank '" + rank.getId() + "'. Run /rank reload to propagate changes.");
 
                     } else if (subCommand.equalsIgnoreCase("remove")) {
@@ -586,15 +564,7 @@ public class RankCommand implements TabExecutor {
                         plugin.ranks.remove(args[1]);
                         plugin.teamMappings.get(rank.getId()).unregister();
 
-                        File file = new File("plugins/FoxRank/ranks.yml");
-                        FileConfiguration yml = YamlConfiguration.loadConfiguration(file);
-                        yml.getConfigurationSection("Ranks").set(rank.getId(), null);
-
-                        try {
-                            yml.save(file);
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
+                        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> plugin.getDm().removeRank(rank));
 
                         console.sendMessage(ChatColor.GREEN + "Sucessfully deleted the rank '" + rank.getId() + "'. Run /rank reload to propagate changes");
                     }
@@ -648,22 +618,22 @@ public class RankCommand implements TabExecutor {
                     strings.add("remove");
                 }
             } else if (args[2].equalsIgnoreCase("color") || args[2].equalsIgnoreCase("textcolor")) {
-                strings.add(ChatColor.translateAlternateColorCodes('&', "&00"));
-                strings.add(ChatColor.translateAlternateColorCodes('&', "&11"));
-                strings.add(ChatColor.translateAlternateColorCodes('&', "&22"));
-                strings.add(ChatColor.translateAlternateColorCodes('&', "&33"));
-                strings.add(ChatColor.translateAlternateColorCodes('&', "&44"));
-                strings.add(ChatColor.translateAlternateColorCodes('&', "&55"));
-                strings.add(ChatColor.translateAlternateColorCodes('&', "&66"));
-                strings.add(ChatColor.translateAlternateColorCodes('&', "&77"));
-                strings.add(ChatColor.translateAlternateColorCodes('&', "&88"));
-                strings.add(ChatColor.translateAlternateColorCodes('&', "&99"));
-                strings.add(ChatColor.translateAlternateColorCodes('&', "&aa"));
-                strings.add(ChatColor.translateAlternateColorCodes('&', "&bb"));
-                strings.add(ChatColor.translateAlternateColorCodes('&', "&cc"));
-                strings.add(ChatColor.translateAlternateColorCodes('&', "&dd"));
-                strings.add(ChatColor.translateAlternateColorCodes('&', "&ee"));
-                strings.add(ChatColor.translateAlternateColorCodes('&', "&ff"));
+                strings.add(org.bukkit.ChatColor.WHITE.name());
+                strings.add(org.bukkit.ChatColor.BLACK.name());
+                strings.add(org.bukkit.ChatColor.RED.name());
+                strings.add(org.bukkit.ChatColor.GOLD.name());
+                strings.add(org.bukkit.ChatColor.YELLOW.name());
+                strings.add(org.bukkit.ChatColor.GREEN.name());
+                strings.add(org.bukkit.ChatColor.DARK_GREEN.name());
+                strings.add(org.bukkit.ChatColor.BLUE.name());
+                strings.add(org.bukkit.ChatColor.DARK_BLUE.name());
+                strings.add(org.bukkit.ChatColor.AQUA.name());
+                strings.add(org.bukkit.ChatColor.DARK_AQUA.name());
+                strings.add(org.bukkit.ChatColor.LIGHT_PURPLE.name());
+                strings.add(org.bukkit.ChatColor.DARK_PURPLE.name());
+                strings.add(org.bukkit.ChatColor.DARK_RED.name());
+                strings.add(org.bukkit.ChatColor.GRAY.name());
+                strings.add(org.bukkit.ChatColor.DARK_GRAY.name());
             } else if (args[2].equalsIgnoreCase("nicknamable")) {
                 strings.add("true");
                 strings.add("false");
@@ -673,7 +643,7 @@ public class RankCommand implements TabExecutor {
                 strings.add("remove");
             }
         } else if (args.length == 5) {
-            Rank rank = Rank.ofStrict(args[2]);
+            Rank rank = Rank.fromID(args[2]);
             if (args[3].equalsIgnoreCase("remove")) {
                 strings.addAll(rank.getPermissionNodes());
             } else if (args[3].equalsIgnoreCase("add")) {

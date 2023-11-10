@@ -14,14 +14,14 @@ repositories {
 }
 
 dependencies {
-    paperweight.paperDevBundle("1.20-R0.1-SNAPSHOT")
-    api("net.wesjd:anvilgui:1.7.0-SNAPSHOT")
+    paperweight.paperDevBundle("1.20.2-R0.1-SNAPSHOT")
+    api("net.wesjd:anvilgui:1.9.0-SNAPSHOT")
     implementation("org.bstats:bstats-bukkit:3.0.2")
     compileOnly ("me.clip:placeholderapi:2.11.3")
 }
 
 group = "me.foxikle"
-version = "2.0.0-beta2"
+version = "2.0.0-beta4"
 description = "FoxRank"
 java.sourceCompatibility = JavaVersion.VERSION_16
 

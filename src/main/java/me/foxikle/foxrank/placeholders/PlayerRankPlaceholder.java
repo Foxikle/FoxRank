@@ -2,6 +2,7 @@ package me.foxikle.foxrank.placeholders;
 
 import me.clip.placeholderapi.expansion.PlaceholderExpansion;
 import me.foxikle.foxrank.FoxRank;
+import me.foxikle.foxrank.ColorUtils;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
@@ -47,11 +48,11 @@ public class PlayerRankPlaceholder extends PlaceholderExpansion {
         if (params.equalsIgnoreCase("prefix")) {
             return plugin.getRank(player).getPrefix();
         } else if (params.equalsIgnoreCase("color")) {
-            return String.valueOf(plugin.getPlayerData(uuid).getRank().getColor());
+            return ColorUtils.ofNamedTextColor(plugin.getPlayerData(uuid).getRank().getColor()).toString();
         } else if (params.equalsIgnoreCase("id")) {
             return plugin.getRank(player).getId();
         } else if (params.equalsIgnoreCase("textcolor")) {
-            return String.valueOf(plugin.getRank(player).getTextColor());
+            return ColorUtils.ofNamedTextColor(plugin.getRank(player).getTextColor()).toString();
         }
         return null;
     }
@@ -62,11 +63,11 @@ public class PlayerRankPlaceholder extends PlaceholderExpansion {
         if (params.equalsIgnoreCase("prefix")) {
             return plugin.getPlayerData(uuid).getRank().getPrefix();
         } else if (params.equalsIgnoreCase("color")) {
-            return String.valueOf(plugin.getPlayerData(uuid).getRank().getColor());
+            return String.valueOf(ColorUtils.ofNamedTextColor(plugin.getPlayerData(uuid).getRank().getColor()));
         } else if (params.equalsIgnoreCase("id")) {
             return plugin.getPlayerData(uuid).getRank().getId();
         } else if (params.equalsIgnoreCase("textcolor")) {
-            return String.valueOf(plugin.getPlayerData(uuid).getRank().getTextColor());
+            return String.valueOf(ColorUtils.ofNamedTextColor(plugin.getPlayerData(uuid).getRank().getTextColor()));
         }
         return null;
     }

@@ -33,14 +33,14 @@ public class SetRank implements CommandExecutor, TabCompleter {
                         }
                         Rank rank = plugin.getRank(player);
                         if (FoxRank.getInstance().ranks.containsKey(args[0])) {
-                            if (Rank.of(args[0]).getPowerlevel() > rank.getPowerlevel()) {
+                            if (Rank.fromID(args[0]).getPowerlevel() > rank.getPowerlevel()) {
                                 player.sendMessage(plugin.getMessage("PromoteSelfMessage", player));
                                 return true;
-                            } else if (Rank.of(args[0]).getPowerlevel() == rank.getPowerlevel()) {
+                            } else if (Rank.fromID(args[0]).getPowerlevel() == rank.getPowerlevel()) {
                                 player.sendMessage(plugin.getMessage("AlreadyRankMessage", player));
                                 return true;
                             }
-                            plugin.setRank(player, Rank.of(args[0]));
+                            plugin.setRank(player, Rank.fromID(args[0]));
                             player.sendMessage(plugin.getMessage("RankIsNowMessage", player));
                         } else {
                             plugin.syntaxMap.put(player.getUniqueId(), "/setrank <RankID> [Player]");
@@ -51,7 +51,7 @@ public class SetRank implements CommandExecutor, TabCompleter {
                             sender.sendMessage(ChatColor.RED + "The rank '" + args[0] + "' does not exist!");
                         }
                         if (plugin.bungeecord) {
-                            Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> plugin.getDm().setStoredRank(Bukkit.getOfflinePlayer(args[1]).getUniqueId(), Rank.of(args[0])));
+                            Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> plugin.getDm().setStoredRank(Bukkit.getOfflinePlayer(args[1]).getUniqueId(), Rank.fromID(args[0])));
                             plugin.getPluginChannelListener().sendUpdateDataMessage(args[1]);
                             plugin.getPluginChannelListener().sendMessage(player, args[1], plugin.getMessage("RankIsNowMessage", player));
                             return true;
@@ -59,7 +59,7 @@ public class SetRank implements CommandExecutor, TabCompleter {
                         Player p = Bukkit.getServer().getPlayer(args[1]);
                         if (FoxRank.getInstance().getRank(player).getPowerlevel() > FoxRank.getInstance().getRank(p).getPowerlevel()) {
                             if (FoxRank.getInstance().ranks.containsKey(args[0])) {
-                                plugin.setRank(p, Rank.of(args[0]));
+                                plugin.setRank(p, Rank.fromID(args[0]));
                                 p.sendMessage(plugin.getMessage("RankIsNowMessage", p));
                             } else {
                                 plugin.syntaxMap.put(player.getUniqueId(), "/setrank <RankID> [Player]");
@@ -85,8 +85,8 @@ public class SetRank implements CommandExecutor, TabCompleter {
                     }
                     if (plugin.bungeecord) {
                         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
-                            plugin.getPlayerData(Bukkit.getOfflinePlayer(args[1]).getUniqueId()).setRank(Rank.of(args[0]));
-                            plugin.getDm().setStoredRank(Bukkit.getOfflinePlayer(args[1]).getUniqueId(), Rank.of(args[0]));
+                            plugin.getPlayerData(Bukkit.getOfflinePlayer(args[1]).getUniqueId()).setRank(Rank.fromID(args[0]));
+                            plugin.getDm().setStoredRank(Bukkit.getOfflinePlayer(args[1]).getUniqueId(), Rank.fromID(args[0]));
                             Bukkit.getScheduler().runTaskLater(plugin, () -> {
                                 plugin.getPluginChannelListener().sendUpdateDataMessage(args[1]);
                                 //todo: fix this probably VV
@@ -98,7 +98,7 @@ public class SetRank implements CommandExecutor, TabCompleter {
                         Player p = Bukkit.getServer().getPlayer(args[1]);
 
                         if (FoxRank.getInstance().ranks.containsKey(args[0])) {
-                            Rank rank = Rank.of(args[0]);
+                            Rank rank = Rank.fromID(args[0]);
                             plugin.setRank(p, rank);
                             p.sendMessage(plugin.getMessage("RankIsNowMessage", p));
                         } else {

@@ -15,7 +15,7 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabCompleter;
-import org.bukkit.craftbukkit.v1_20_R1.entity.CraftPlayer;
+import org.bukkit.craftbukkit.v1_20_R2.entity.CraftPlayer;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.BookMeta;
@@ -66,9 +66,9 @@ public class Nick implements CommandExecutor, TabCompleter {
 
         for (Rank rank : FoxRank.getInstance().ranks.values()) {
             if (rank.isNicknameable()) {
-                TextComponent component = new TextComponent(ChatColor.BLACK + "\n» " + (rank.getPrefix().isBlank() ? rank.getColor() + rank.getId() : rank.getPrefix()));
+                TextComponent component = new TextComponent(ChatColor.BLACK + "\n» " + (rank.getPrefix().isBlank() ? ColorUtils.ofNamedTextColor(rank.getColor()) + rank.getId() : rank.getPrefix()));
                 component.setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/nick rank " + rank.getId()));
-                component.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new ComponentBuilder("Click to choose " + rank.getId()).color(rank.getColor().asBungee()).create()));
+                component.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new ComponentBuilder("Click to choose " + rank.getId()).color(ColorUtils.ofNamedTextColor(rank.getColor()).asBungee()).create()));
                 textCompnent.addExtra(component);
             }
         }
@@ -204,15 +204,14 @@ public class Nick implements CommandExecutor, TabCompleter {
         FoxRank.getInstance().attemptedNicknameMap.put(player.getUniqueId(), name);
         if(!FoxRank.getInstance().getConfig().getStringList("BlacklistedNicknames").contains(name.toLowerCase())) {
             FoxRank.getInstance().getPlayerData(player.getUniqueId()).setNicked(true);
-            FoxRank.getInstance().getPlayerData(player.getUniqueId()).setNicknameRank(Rank.of(rankID));
+            FoxRank.getInstance().getPlayerData(player.getUniqueId()).setNicknameRank(Rank.fromID(rankID));
             FoxRank.getInstance().getPlayerData(player.getUniqueId()).setNickname(name);
             FoxRank.getInstance().getPlayerData(player.getUniqueId()).setSkin(skinOption);
-            Bukkit.getScheduler().runTaskAsynchronously(FoxRank.getInstance(), () -> FoxRank.getInstance().getDm().setNicknameData(player.getUniqueId(), true, Rank.of(rankID), name, skinOption));
+            Bukkit.getScheduler().runTaskAsynchronously(FoxRank.getInstance(), () -> FoxRank.getInstance().getDm().setNicknameData(player.getUniqueId(), true, Rank.fromID(rankID), name, skinOption));
             changeName(name, player);
             FoxRank.getInstance().setTeam(player, rankID);
-            Logging.addLogEntry(EntryType.NICKNAME, player.getUniqueId(), null, null, Rank.of(rankID).getPrefix() + name, skinOption, null);
-            FoxRank.getInstance().getServer().getPluginManager().callEvent(new PlayerNicknameEvent(player, name, Rank.of(rankID)));
-            ActionBar.setupActionBar(player);
+            Logging.addLogEntry(EntryType.NICKNAME, player.getUniqueId(), null, null, Rank.fromID(rankID).getPrefix() + name, skinOption, null);
+            FoxRank.getInstance().getServer().getPluginManager().callEvent(new PlayerNicknameEvent(player, name, Rank.fromID(rankID)));
             if (FoxRank.getInstance().getPlayerData(player.getUniqueId()).isVanished()) {
                 for (Player p : Bukkit.getOnlinePlayers()) {
                     p.hidePlayer(FoxRank.getInstance(), player);

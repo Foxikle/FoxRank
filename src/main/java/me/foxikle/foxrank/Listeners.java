@@ -49,7 +49,6 @@ public class Listeners implements Listener {
             plugin.getDm().cacheUserData(p.getUniqueId());
             Bukkit.getScheduler().runTaskLaterAsynchronously(plugin, () -> {
                 plugin.loadRank(p);
-                ActionBar.setupActionBar(p);
                 if (plugin.getPlayerData(p.getUniqueId()).isMuted()) {
                     if (plugin.getPlayerData(p.getUniqueId()).getMuteDuration().isBefore(Instant.now())) {
                         ModerationAction.unmutePlayer(p, p);
