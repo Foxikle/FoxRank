@@ -5,8 +5,13 @@ import com.google.gson.JsonParser;
 import com.mojang.authlib.GameProfile;
 import com.mojang.authlib.properties.Property;
 import me.foxikle.foxrank.events.PlayerNicknameEvent;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.TextComponent;
+import net.kyori.adventure.text.event.ClickEvent;
+import net.kyori.adventure.text.event.HoverEvent;
+import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextDecoration;
 import net.md_5.bungee.api.ChatColor;
-import net.md_5.bungee.api.chat.*;
 import net.minecraft.server.level.ServerPlayer;
 import net.wesjd.anvilgui.AnvilGUI;
 import org.bukkit.Bukkit;
@@ -15,7 +20,7 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabCompleter;
-import org.bukkit.craftbukkit.v1_20_R2.entity.CraftPlayer;
+import org.bukkit.craftbukkit.v1_20_R3.entity.CraftPlayer;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.BookMeta;
@@ -61,22 +66,18 @@ public class Nick implements CommandExecutor, TabCompleter {
         ItemStack book = new ItemStack(Material.WRITTEN_BOOK);
         BookMeta meta = (BookMeta) book.getItemMeta();
 
-        TextComponent textCompnent = new TextComponent("Let's get you set up  with your nickname! First, you'll need to choose which RANK you would like to be shown as when nicked.\n");
-        textCompnent.setColor(ChatColor.BLACK);
+        TextComponent textCompnent = Component.text("Let's get you set up  with your nickname! First, you'll need to choose which RANK you would like to be shown as when nicked.\n");
 
         for (Rank rank : FoxRank.getInstance().ranks.values()) {
             if (rank.isNicknameable()) {
-                TextComponent component = new TextComponent(ChatColor.BLACK + "\n» " + (rank.getPrefix().isBlank() ? ColorUtils.ofNamedTextColor(rank.getColor()) + rank.getId() : rank.getPrefix()));
-                component.setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/nick rank " + rank.getId()));
-                component.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new ComponentBuilder("Click to choose " + rank.getId()).color(ColorUtils.ofNamedTextColor(rank.getColor()).asBungee()).create()));
-                textCompnent.addExtra(component);
+                TextComponent component = Component.text("\n» " + (rank.getPrefix().isBlank() ? ColorUtils.ofNamedTextColor(rank.getColor()) + rank.getId() : rank.getPrefix()))
+                        .clickEvent(ClickEvent.clickEvent(ClickEvent.Action.RUN_COMMAND, "/nick rank " + rank.getId()))
+                        .hoverEvent(HoverEvent.hoverEvent(HoverEvent.Action.SHOW_TEXT, Component.text("Click to choose ", NamedTextColor.GREEN).append(Component.text(rank.getId())).color(rank.getColor())));
+                textCompnent = textCompnent.append(component);
             }
         }
 
-        BaseComponent[] pages = new BaseComponent[]{textCompnent};
-
-        meta.spigot().addPage(pages);
-
+        meta.addPages(textCompnent);
         meta.setTitle("Nickname Book");
         meta.setAuthor("FoxRank");
         book.setItemMeta(meta);
@@ -91,20 +92,13 @@ public class Nick implements CommandExecutor, TabCompleter {
         ItemStack book = new ItemStack(Material.WRITTEN_BOOK);
         BookMeta meta = (BookMeta) book.getItemMeta();
 
-        TextComponent textCompnent = new TextComponent("Nicknames allow you to play with a different username to not get recognized. \n\nAll rules still apply. You can still be reported and all name history is stored.");
-        textCompnent.setColor(ChatColor.BLACK);
+        TextComponent textCompnent = Component.text("Nicknames allow you to play with a different username to not get recognized. \n\nAll rules still apply. You can still be reported and all name history is stored.");
 
-        TextComponent continueComponent = new TextComponent(ChatColor.BOLD + "\n\n» " + ChatColor.RESET + ChatColor.BLACK + "I understand, setup my nickname.");
-        continueComponent.setColor(ChatColor.BLACK);
-        continueComponent.setColor(ChatColor.UNDERLINE);
-        continueComponent.setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/nick agree"));
-        continueComponent.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new ComponentBuilder("Click to agree").color(ChatColor.GREEN).create()));
+        TextComponent continueComponent = Component.text("\n\n» I understand, setup my nickname.", NamedTextColor.BLACK, TextDecoration.UNDERLINED)
+                .clickEvent(ClickEvent.clickEvent(ClickEvent.Action.RUN_COMMAND, "/nick agree"))
+                .hoverEvent(HoverEvent.hoverEvent(HoverEvent.Action.SHOW_TEXT, Component.text("Click to agree.", NamedTextColor.GREEN)));
 
-        textCompnent.addExtra(continueComponent);
-        BaseComponent[] pages = new BaseComponent[]{textCompnent};
-
-        meta.spigot().addPage(pages);
-
+        meta.addPages(textCompnent.append(continueComponent));
         meta.setTitle("Nickname Book");
         meta.setAuthor("Foxikle");
         book.setItemMeta(meta);
@@ -117,40 +111,41 @@ public class Nick implements CommandExecutor, TabCompleter {
         ItemStack book = new ItemStack(Material.WRITTEN_BOOK);
         BookMeta meta = (BookMeta) book.getItemMeta();
 
-        TextComponent textCompnent = new TextComponent("Alright, now you'll \nneed to choose the\n" + ChatColor.BOLD + "NAME " + ChatColor.RESET + "to use!\n");
-        textCompnent.setColor(ChatColor.BLACK);
+        TextComponent textCompnent = Component.text("Alright, now you'll \nneed to choose the\n")
+                .append(Component.text("NAME ", NamedTextColor.BLACK, TextDecoration.BOLD))
+                .append(Component.text("to use!\n"));
 
         if(player.hasPermission("foxrank.nicknames.name.custom")) {
-            TextComponent customComponent = new TextComponent(ChatColor.BOLD + "\n» " + ChatColor.RESET + ChatColor.BLACK + "Use a custom name.");
-            customComponent.setColor(ChatColor.BLACK);
-            customComponent.setColor(ChatColor.UNDERLINE);
-            customComponent.setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/nick set"));
-            customComponent.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new ComponentBuilder("Click to choose a custom name.").color(ChatColor.GREEN).create()));
-            textCompnent.addExtra(customComponent);
+            TextComponent customComponent = Component.text("\n\n» Use a custom name.")
+                    .clickEvent(ClickEvent.clickEvent(ClickEvent.Action.RUN_COMMAND, "/nick set"))
+                    .hoverEvent(HoverEvent.hoverEvent(HoverEvent.Action.SHOW_TEXT, Component.text("Click to choose a custom name.", NamedTextColor.GREEN)));
+
+            textCompnent = textCompnent.append(customComponent);
         }
 
         if(player.hasPermission("foxrank.nicknames.name.random")) {
-            TextComponent randomNameComponent = new TextComponent(ChatColor.BOLD + "\n» " + ChatColor.RESET + ChatColor.BLACK + "Use a random name.");
-            randomNameComponent.setColor(ChatColor.BLACK);
-            randomNameComponent.setColor(ChatColor.UNDERLINE);
-            randomNameComponent.setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/nick random"));
-            randomNameComponent.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new ComponentBuilder("Click to choose a random name.").color(ChatColor.GREEN).create()));
-            textCompnent.addExtra(randomNameComponent);
+            TextComponent randomNameComponent = Component.text("\n\n» Use a random name.")
+                    .clickEvent(ClickEvent.clickEvent(ClickEvent.Action.RUN_COMMAND, "/nick random"))
+                    .hoverEvent(HoverEvent.hoverEvent(HoverEvent.Action.SHOW_TEXT, Component.text("Click to choose a random name.", NamedTextColor.GREEN)));
+
+            textCompnent = textCompnent.append(randomNameComponent);
         }
+
         String name = FoxRank.getInstance().getPlayerData(player.getUniqueId()).getNickname();
         if(FoxRank.getInstance().getPlayerData(player.getUniqueId()).getNickname() != null && player.hasPermission("foxrank.nicknames.name.reuse") && !name.equalsIgnoreCase(FoxRank.getInstance().getTrueName(player.getUniqueId()))) {
-            TextComponent reuseComponent = new TextComponent(ChatColor.BOLD + "\n» " + ChatColor.RESET + ChatColor.BLACK + "Reuse '" + name + "'");
-            reuseComponent.setColor(ChatColor.BLACK);
-            reuseComponent.setColor(ChatColor.UNDERLINE);
-            reuseComponent.setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/nick reuse"));
-            reuseComponent.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new ComponentBuilder("Click to reuse '" + name + "'" ).color(ChatColor.GREEN).create()));
-            textCompnent.addExtra(reuseComponent);
-        }
-        TextComponent goBackComponent = new TextComponent("\n\nTo go back to being\nyour usual self, type:\n " + ChatColor.BOLD + "/nick reset");
-        textCompnent.addExtra(goBackComponent);
-        BaseComponent[] pages = new BaseComponent[]{textCompnent};
+            TextComponent reuseComponent = Component.text("\n\n» Reuse '" + name + "'")
+                    .clickEvent(ClickEvent.clickEvent(ClickEvent.Action.RUN_COMMAND, "/nick reuse"))
+                    .hoverEvent(HoverEvent.hoverEvent(HoverEvent.Action.SHOW_TEXT, Component.text("Click to reuse '" + name + "'", NamedTextColor.GREEN)));
 
-        meta.spigot().addPage(pages);
+            textCompnent = textCompnent.append(reuseComponent);
+        }
+
+        TextComponent goBackComponent = Component.text("\n\nTo go back to being\nyour usual self, type:\n ")
+                .append(Component.text("/nick reset", NamedTextColor.BLACK, TextDecoration.BOLD));
+
+        textCompnent = textCompnent.append(goBackComponent);
+
+        meta.addPages(textCompnent);
 
         meta.setTitle("Nickname Book");
         meta.setAuthor("Foxikle");
@@ -164,35 +159,22 @@ public class Nick implements CommandExecutor, TabCompleter {
         ItemStack book = new ItemStack(Material.WRITTEN_BOOK);
         BookMeta meta = (BookMeta) book.getItemMeta();
 
-        TextComponent textCompnent = new TextComponent("Awesome! Now, which SKIN would you like to have while nicked?");
-        textCompnent.setColor(ChatColor.BLACK);
+        Component text = Component.text("Awesome! Now, which SKIN would you like to have while nicked?");
 
-        TextComponent normalSkinComponent = new TextComponent(ChatColor.BOLD + "\n» " + ChatColor.RESET + ChatColor.BLACK + "My normal Skin");
-        normalSkinComponent.setColor(ChatColor.BLACK);
-        normalSkinComponent.setColor(ChatColor.UNDERLINE);
-        normalSkinComponent.setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/nick skin real"));
-        normalSkinComponent.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new ComponentBuilder("Your normal Skin").color(ChatColor.GREEN).create()));
-
-        TextComponent DefaultComponent = new TextComponent(ChatColor.BOLD + "\n» " + ChatColor.RESET + ChatColor.BLACK + "Steve/Alex skin");
-        DefaultComponent.setColor(ChatColor.BLACK);
-        DefaultComponent.setColor(ChatColor.UNDERLINE);
-        DefaultComponent.setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/nick skin default"));
-        DefaultComponent.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new ComponentBuilder("Click to select Steve/Alex").color(ChatColor.GREEN).create()));
-
-        TextComponent randomSkinComponent = new TextComponent(ChatColor.BOLD + "\n» " + ChatColor.RESET + ChatColor.BLACK + "Random Skin");
-        randomSkinComponent.setColor(ChatColor.BLACK);
-        randomSkinComponent.setColor(ChatColor.UNDERLINE);
-        randomSkinComponent.setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/nick skin random"));
-        randomSkinComponent.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new ComponentBuilder("A random Skin").color(ChatColor.GREEN).create()));
+        Component normalSkinComponent = Component.text("\n\n» My normal Skin", NamedTextColor.BLACK, TextDecoration.UNDERLINED)
+                .clickEvent(ClickEvent.clickEvent(ClickEvent.Action.RUN_COMMAND, "/nick skin real"))
+                .hoverEvent(HoverEvent.hoverEvent(HoverEvent.Action.SHOW_TEXT, Component.text("Your normal skin", NamedTextColor.GREEN)));
 
 
-        textCompnent.addExtra(normalSkinComponent);
-        textCompnent.addExtra(DefaultComponent);
-        textCompnent.addExtra(randomSkinComponent);
-        BaseComponent[] pages = new BaseComponent[]{textCompnent};
+        Component defaultComponent = Component.text("\n\n» Steve/Alex skin", NamedTextColor.BLACK, TextDecoration.UNDERLINED)
+                .clickEvent(ClickEvent.clickEvent(ClickEvent.Action.RUN_COMMAND, "/nick skin default"))
+                .hoverEvent(HoverEvent.hoverEvent(HoverEvent.Action.SHOW_TEXT, Component.text("A default Minecraft skin", NamedTextColor.GREEN)));
 
-        meta.spigot().addPage(pages);
+        Component randomSkinComponent = Component.text("\n\n» Random Skin", NamedTextColor.BLACK, TextDecoration.UNDERLINED)
+                .clickEvent(ClickEvent.clickEvent(ClickEvent.Action.RUN_COMMAND, "/nick skin random"))
+                .hoverEvent(HoverEvent.hoverEvent(HoverEvent.Action.SHOW_TEXT, Component.text("A random skin", NamedTextColor.GREEN)));
 
+        meta.addPages(text.append(normalSkinComponent).append(defaultComponent).append(randomSkinComponent));
         meta.setTitle("Nickname Book");
         meta.setAuthor("Foxikle");
         book.setItemMeta(meta);
@@ -321,6 +303,7 @@ public class Nick implements CommandExecutor, TabCompleter {
                             } else if (args[0].equalsIgnoreCase("set")) {
                                 createAnvil(player);
                             } else if (args[0].equalsIgnoreCase("reset")) {
+
                                 String realName = FoxRank.getInstance().getTrueName(player.getUniqueId());
                                 changeSkin(player, realName);
                                 changeName(realName, player);
@@ -328,6 +311,7 @@ public class Nick implements CommandExecutor, TabCompleter {
                                 Bukkit.getScheduler().runTaskAsynchronously(FoxRank.getInstance(), () -> FoxRank.getInstance().getDm().setNicknameState(player.getUniqueId(), false));
                                 if (!FoxRank.getInstance().getPlayerData(player.getUniqueId()).isVanished())
                                     refreshPlayer(player);
+
                             } else if (args[0].equals("agree")) {
                                 openRankBook(player);
                             }
