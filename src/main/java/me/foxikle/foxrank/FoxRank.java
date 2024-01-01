@@ -31,6 +31,8 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.logging.Level;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class FoxRank extends JavaPlugin implements Listener {
 
@@ -38,7 +40,6 @@ public class FoxRank extends JavaPlugin implements Listener {
     private static FoxRank instance;
     public boolean disableRankVis;
     public List<Player> vanishedPlayers = new ArrayList<>();
-    public boolean bungeecord = false;
     public Map<String, Rank> ranks = new HashMap<>();
     public Map<Player, Rank> playerRanks = new HashMap<>();
     public List<Team> rankTeams = new ArrayList<>();
@@ -46,11 +47,13 @@ public class FoxRank extends JavaPlugin implements Listener {
     public Map<String, Integer> powerLevels = new HashMap<>();
     public Map<UUID, Set<PermissionAttachment>> permissions = new HashMap<>();
 
+    // static constants
+    public static boolean USE_DATABASE;
+    public static boolean BUNGEECORD;
+
     // placeholders
     public Map<UUID, String> logTypeMap = new HashMap<>();
     public Map<UUID, String> attemptedBanPresetMap = new HashMap<>();
-    public Map<UUID, UUID> banMap = new HashMap<>();
-    public Map<UUID, UUID> muteMap = new HashMap<>();
     public Map<UUID, String> syntaxMap = new HashMap<>();
     public Map<UUID, UUID> targetMap = new HashMap<>();
     public Map<UUID, String> attemptedNicknameMap = new HashMap<>();
@@ -61,8 +64,7 @@ public class FoxRank extends JavaPlugin implements Listener {
     public List<String> players = new ArrayList<>();
 
     private DataManager dm;
-
-    protected List<String> playerNames = new ArrayList<>();
+    private ActionBar ab;
 
     public static FoxRank getInstance() {
         return instance;
@@ -79,25 +81,35 @@ public class FoxRank extends JavaPlugin implements Listener {
     }
 
     public Rank getRank(Player player) {
-        return playerRanks.get(player) == null ? getDefaultRank() : playerRanks.get(player);
+        return getPlayerData(player.getUniqueId()).getRank() == null ? getDefaultRank() : getPlayerData(player.getUniqueId()).getRank();
     }
 
     public void setRank(Player player, Rank rank) {
         if (getRank(player) != null) {
-            this.getServer().getPluginManager().callEvent(new RankChangeEvent(player, rank, getRank(player)));
+            Bukkit.getScheduler().runTask(this, () -> this.getServer().getPluginManager().callEvent(new RankChangeEvent(player, rank, getRank(player))));
             clearPermissions(player.getUniqueId());
         }
 
         playerRanks.put(player, rank);
+        getPlayerData(player.getUniqueId()).setRank(rank);
+        clearPermissions(player.getUniqueId());
+        rank.getPermissionNodes().forEach(s -> player.addAttachment(this, s, true));
         Bukkit.getScheduler().runTaskAsynchronously(this, () -> dm.setStoredRank(player.getUniqueId(), rank));
         setTeam(player, rank.getId());
     }
 
     public void loadRank(Player player) {
-        Rank rank = getPlayerData(player.getUniqueId()).getRank();
-        rank.getPermissionNodes().forEach(s -> player.addAttachment(this, s, true));
-        playerRanks.put(player, rank);
-        setTeam(player, rank.getId());
+        if(getPlayerData(player.getUniqueId()) == null) {
+            Rank rank = getDefaultRank();
+            rank.getPermissionNodes().forEach(s -> player.addAttachment(this, s, true));
+            playerRanks.put(player, rank);
+            setTeam(player, rank.getId());
+        } else {
+            Rank rank = getPlayerData(player.getUniqueId()).getRank();
+            rank.getPermissionNodes().forEach(s -> player.addAttachment(this, s, true));
+            playerRanks.put(player, rank);
+            setTeam(player, rank.getId());
+        }
     }
 
     protected PluginChannelListener getPluginChannelListener() {
@@ -110,10 +122,14 @@ public class FoxRank extends JavaPlugin implements Listener {
         pcl = new PluginChannelListener();
         dm = new DataManager(this);
         dm.init();
-        bungeecord = this.getConfig().getBoolean("bungeecord");
-        if (bungeecord) {
+        BUNGEECORD = this.getConfig().getBoolean("bungeecord");
+        ab = new ActionBar(this);
+        ab.setupActionBars();
+        if (BUNGEECORD) {
             this.getServer().getMessenger().registerOutgoingPluginChannel(this, "BungeeCord");
             this.getServer().getMessenger().registerIncomingPluginChannel(this, "BungeeCord", pcl);
+            this.getServer().getMessenger().registerOutgoingPluginChannel(this, "foxrank");
+            this.getServer().getMessenger().registerIncomingPluginChannel(this, "foxrank", pcl);
         }
 
         if (Bukkit.getPluginManager().getPlugin("PlaceholderAPI") != null) {
@@ -141,35 +157,50 @@ public class FoxRank extends JavaPlugin implements Listener {
             getServer().getPluginManager().registerEvents(new JoinLeaveMsgs(this), this);
             getServer().getPluginManager().registerEvents(new Logs(this), this);
             getServer().getPluginManager().registerEvents(new Listeners(this), this);
-        }, 20);
+        }, 10);
         reloadConfig();
         Mute m = new Mute(this);
-        getCommand("nick").setExecutor(new Nick());
-        getCommand("vanish").setExecutor(new Vanish());
-        getCommand("setrank").setExecutor(new SetRank(this));
-        getCommand("mute").setExecutor(new Mute(this));
+        Nick n = new Nick();
+        Vanish v = new Vanish();
+        SetRank s = new SetRank(this);
+        Logs l = new Logs(this);
+        Ban b = new Ban(this);
+        Unban u = new Unban(this);
+        RankCommand r = new RankCommand(this);
+        getCommand("nick").setExecutor(n);
+        getCommand("nick").setTabCompleter(n);
+        getCommand("vanish").setExecutor(v);
+        getCommand("setrank").setExecutor(s);
+        getCommand("setrank").setTabCompleter(s);
+        getCommand("mute").setExecutor(m);
+        getCommand("mute").setTabCompleter(m);
         getCommand("me").setExecutor(m);
         getCommand("say").setExecutor(m);
         getCommand("immuted").setExecutor(m);
         getCommand("unmute").setExecutor(m);
-        getCommand("logs").setExecutor(new Logs(this));
-        getCommand("ban").setExecutor(new Ban(this));
-        getCommand("unban").setExecutor(new Unban());
-        getCommand("rank").setExecutor(new RankCommand(this));
+        getCommand("immuted").setTabCompleter(m);
+        getCommand("unmute").setTabCompleter(m);
+        getCommand("logs").setExecutor(l);
+        getCommand("logs").setTabCompleter(l);
+        getCommand("ban").setExecutor(b);
+        getCommand("ban").setTabCompleter(b);
+        getCommand("unban").setExecutor(u);
+        getCommand("unban").setTabCompleter(u);
+        getCommand("rank").setExecutor(r);
+        getCommand("rank").setTabCompleter(r);
 
         Bukkit.getServicesManager().register(FoxRank.class, this, this, ServicePriority.Normal);
         Metrics metrics = new Metrics(this, 19157);
         Bukkit.getScheduler().runTaskAsynchronously(this, () -> dm.setupRanks());
         Bukkit.getScheduler().runTaskLater(this, () -> Bukkit.getOnlinePlayers().forEach(p -> Bukkit.getScheduler().runTaskAsynchronously(this, () -> {
             this.loadRank(p);
-            ActionBar.setupActionBar(p);
-            if (getPlayerData(p.getUniqueId()).isMuted()) { //todo: make it support null durations
+            if (getPlayerData(p.getUniqueId()).isMuted()) {
                 if (getPlayerData(p.getUniqueId()).getMuteDuration().isBefore(Instant.now())) {
-                    ModerationAction.unmutePlayer(new RankedPlayer(p, this), new RankedPlayer(p, this));
+                    ModerationAction.unmutePlayer(p, p);
                 }
             }
             if (Bukkit.getOnlinePlayers().size() == 1) {
-                if (bungeecord) {
+                if (BUNGEECORD) {
                     Bukkit.getScheduler().runTaskLater(this, () -> FoxRank.pcl.getPlayers(Iterables.getFirst(Bukkit.getOnlinePlayers(), null)), 30);
                 }
             }
@@ -186,33 +217,32 @@ public class FoxRank extends JavaPlugin implements Listener {
     }
 
     private boolean checkVersion(){
-        String sversion;
-        try{
-            sversion = Bukkit.getServer().getClass().getPackage().getName().split("\\.")[3];
-        } catch (ArrayIndexOutOfBoundsException ex){
-            return false;
-        }
-        return (sversion.equals("v1_20_R1") || sversion.equals("v1_20_1_R1"));
+        return Bukkit.getMinecraftVersion().equals("1.20.2");
     }
 
     @Override
     public void onDisable() {
+        getLogger().info("Saving Player Ranks");
         for (Player p : this.getServer().getOnlinePlayers()) {
             dm.saveRank(p);
             clearPermissions(p.getUniqueId());
         }
-
+        getLogger().info("Removing Teams");
         for (Team team : rankTeams) {
             try {
                 team.unregister();
             } catch (NullPointerException | IllegalStateException ignored) {
             }
         }
-
+        getLogger().info("Shutting down DataManager");
         dm.shutDown();
+        getLogger().info("Unregistering OUTBOUND plugin channel");
         this.getServer().getMessenger().unregisterOutgoingPluginChannel(this);
+        getLogger().info("Unregistering INBOUND plugin channel");
         this.getServer().getMessenger().unregisterIncomingPluginChannel(this);
+        getLogger().info("Unregistering Service Manager");
         Bukkit.getServicesManager().unregister(this);
+        getLogger().info("Shutdown Complete!");
     }
 
     public void setupTeams() {
@@ -230,7 +260,7 @@ public class FoxRank extends JavaPlugin implements Listener {
                 team.setPrefix("");
                 team.setColor(ChatColor.WHITE);
             } else {
-                team.setColor(rank.getColor());
+                team.color(rank.getColor());
                 team.setPrefix(rank.getPrefix());
             }
             teamMappings.put(rank.getId(), team);
@@ -242,15 +272,23 @@ public class FoxRank extends JavaPlugin implements Listener {
         if (date == null) {
             return "Permanant";
         } else {
-            Instant temp = date;
-            long days = ChronoUnit.DAYS.between(now, temp);
-            temp = temp.minusSeconds(days * 24 * 60 * 60);
-            long hours = ChronoUnit.HOURS.between(now, temp);
-            temp = temp.minusSeconds(hours * 60 * 60);
-            long minutes = ChronoUnit.MINUTES.between(now, temp);
-            temp = temp.minusSeconds(minutes * 60);
-            long seconds = ChronoUnit.SECONDS.between(now, temp);
+            long totalSeconds = ChronoUnit.SECONDS.between(now, date);
+
+            long years = totalSeconds / (365 * 24 * 60 * 60);
+            long remainingSeconds = totalSeconds % (365 * 24 * 60 * 60);
+
+            long days = remainingSeconds / (24 * 60 * 60);
+            remainingSeconds %= (24 * 60 * 60);
+
+            long hours = remainingSeconds / (60 * 60);
+            remainingSeconds %= (60 * 60);
+
+            long minutes = remainingSeconds / 60;
+            long seconds = remainingSeconds % 60;
             String str = "";
+            if (years != 0) {
+                str = str + years + "y ";
+            }
             if (days != 0) {
                 str = str + days + "d ";
             }
@@ -341,5 +379,36 @@ public class FoxRank extends JavaPlugin implements Listener {
     }
     public void addPlayerDataEntry(PlayerData pd, UUID key){
         playerData.put(key, pd);
+    }
+
+    public static long parseDuration(String input) {
+        if (input.contains("-")) {
+            return -1;
+        }
+        Pattern pattern = Pattern.compile("(\\d+y)?(\\d+d)?(\\d+h)?(\\d+m)?(\\d+s)?");
+        Matcher matcher = pattern.matcher(input);
+
+        int years = 0;
+        int days = 0;
+        int hours = 0;
+        int minutes = 0;
+        int seconds = 0;
+
+        while (matcher.find()) {
+            if (matcher.group(1) != null) years = Integer.parseInt(matcher.group(1).replace("y", ""));
+            if (matcher.group(2) != null) days = Integer.parseInt(matcher.group(2).replace("d", ""));
+            if (matcher.group(3) != null) hours = Integer.parseInt(matcher.group(3).replace("h", ""));
+            if (matcher.group(4) != null) minutes = Integer.parseInt(matcher.group(4).replace("m", ""));
+            if (matcher.group(5) != null) seconds = Integer.parseInt(matcher.group(5).replace("s", ""));
+        }
+        if (years > 0 || days > 0 || hours > 0 || minutes > 0 || seconds > 0) { // validate input
+            return (long) years * 365 * 24 * 60 * 60
+                    + (long) days * 24 * 60 * 60
+                    + (long) hours * 60 * 60
+                    + minutes * 60L
+                    + seconds;
+        } else {
+            return -2; // Return -2 for invalid input
+        }
     }
 }

@@ -24,7 +24,8 @@
 # ------------------------------------------------------------------------------------------------------
 # These disable the build in commands.
 
-# Disable Join Messages: -> Disable the default yellow join messages. (Defaults to true)  NOTE: This will cause weird messages when a previously nicked player joins again.
+# Disable Join Messages: -> Disable the default yellow join messages. (Defaults to true)
+# NOTE: This will cause weird messages when a previously nicked player joins again.
 DisableJoinMessages: true
 
 # Disable Leave Messages: -> Disable the default yellow leave messages. (Defaults to true)
@@ -66,12 +67,12 @@ DisableActionbar: false
 # ------------------------------------------------------
 # Configurations for the nickname system
 
-# BlacklistedNicknames: -> A list of disallowed nicknames. MUST BE IN LOWERCASE (Defaults to ["md_5", "foxikle"])
+# BlacklistedNicknames: -> A list of disallowed nicknames. MUST BE IN LOWERCASE
 BlacklistedNicknames:
   - md_5
   - foxikle
 
-# DisableNicknameLogging: -> Disables logging nicknames. (Defaults to false)
+# DisableNicknameLogging: -> Disables logging nicknames.
 DisableNicknameLogging: false
 
 # RandomNicknameList: -> A list of nicknames that are used if a player chooses a random nickname
@@ -110,6 +111,7 @@ RandomNicknameList:
   - TradeTeeth
   - SequoiaSettler
 # RandomSkinValueList: -> A list of skins for players to use while using a random skin.
+# NOTE: This should be the same length as RandomSkinSignatureList.
 RandomSkinValueList:
   - ewogICJ0aW1lc3RhbXAiIDogMTY2NjIyMDAzNDU0OSwKICAicHJvZmlsZUlkIiA6ICJlZjVjZjkzYWFhMTY0ZTMyODQ4NDYxYjIzNGQ1YWJhNiIsCiAgInByb2ZpbGVOYW1lIiA6ICJfXzciLAogICJzaWduYXR1cmVSZXF1aXJlZCIgOiB0cnVlLAogICJ0ZXh0dXJlcyIgOiB7CiAgICAiU0tJTiIgOiB7CiAgICAgICJ1cmwiIDogImh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvMTNhMDBhMWYxYTIzMmUzODExZGU2ZjhmYWI4YzY1M2Q1NzI4MjllMzA0ODM0OTQyNjk2N2M3ZjNmNWVmZDVkNiIKICAgIH0KICB9Cn0==
   - ewogICJ0aW1lc3RhbXAiIDogMTY2NjIxODA2Njg0NCwKICAicHJvZmlsZUlkIiA6ICI4ZjZmYTgxOGU5NmM0OWVlOTRhMTgyNTY0MjE4ODJmZiIsCiAgInByb2ZpbGVOYW1lIiA6ICJSaXZrYXQiLAogICJzaWduYXR1cmVSZXF1aXJlZCIgOiB0cnVlLAogICJ0ZXh0dXJlcyIgOiB7CiAgICAiU0tJTiIgOiB7CiAgICAgICJ1cmwiIDogImh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvM2Y4MmJlMmJmNjU3ZGQ5ODg0NzRhOTBkNzFjMTNiZWM5N2IzYmE4NGNjYzE3MGJhZjVlYTMyOTlkYmIyMGVmMiIKICAgIH0KICB9Cn0=
@@ -119,6 +121,7 @@ RandomSkinValueList:
   - ewogICJ0aW1lc3RhbXAiIDogMTY2NjIxMjI4ODQ2MywKICAicHJvZmlsZUlkIiA6ICJmMjc0YzRkNjI1MDQ0ZTQxOGVmYmYwNmM3NWIyMDIxMyIsCiAgInByb2ZpbGVOYW1lIiA6ICJIeXBpZ3NlbCIsCiAgInNpZ25hdHVyZVJlcXVpcmVkIiA6IHRydWUsCiAgInRleHR1cmVzIiA6IHsKICAgICJTS0lOIiA6IHsKICAgICAgInVybCIgOiAiaHR0cDovL3RleHR1cmVzLm1pbmVjcmFmdC5uZXQvdGV4dHVyZS8yMzg5YmNhOWI3MTlkZjA2ZjBlYzY5YWM0NmNjNmNlYTc5ODVkZjQ4YzlkOTM4NzQ5YzJjMmNjOTc3ZmNhZjk0IgogICAgfQogIH0KfQ==
 
 # RandomSkinSignatureList: -> A list of skins for players to use while using a random skin.
+# NOTE: This should be the same length as RandomSkinValueList.
 RandomSkinSignatureList:
   - W0IahRltmSgGdIRkQgyplL5TZ+MsEm7ZQDLJRFChxch6VJqTgSz/WAL5xS2IK5c1z9CyI03rdTpExx6KHMjCBTtngHeB7d+aqyCwmGsKO+vfo4Gt48zM7ob7kiI7CNLb+vyBSn+UCpIoyqDLvtNVtBjQWvi9QyXGEAZESZXKK3aRBXbnb769V5KsES9TIoFmScbkqqkXV3rdRBZSoZveRdZM74rrhLqYgimB39Dgs5Sh3srT9Ppntw5LRWrhsl504gq7Ao0duaX/2IVZ28rGB8zaioDSrdOBtgMyMvl+6coeSejknE0q8SePczjo+Q2o9XAjA16JwLF6nog8sXcG50ptuhf/DV8KqPnZVcH8OlG6S8DHhYkycIGndCHEWL3u09i8+zQWhHMomeLZfpeBZlSQ4qW/GtGVNmKArAP6VPiydLA/AnfGA1fBSq7/CZ52c19No2kko5UerFaxGfWJWoMWNMzGWt7jQX+VSFHCfQCuBdNDWWpaZ59GKFdDQTFwv7qbutphEFkAmt715lV8gUpPDOLTLoLLS5zxiawhZbolJUzg9guxxI8QY9s9asNL0fMcSZ0jilhyPgzg7VBvo1cGLqcpeOxRvY+Ruv7yZaAVpEulPvPP6lzdDSi/MVJL05XdHRImjtyGR/aRW66xlqTiPJh9quUsv9VD8y5xegg=
   - NK+lW3XKeC1VCUcV6xZ0f4zvKPt78Jx/vf5cBhu1enA9ceiRIndFct4nhj/Ecf8gDKxMdvn8wEGoQLU/JEyhh0YzMEHlTt0FAcMI09fMikkwZqXRUEpHZ1qg0fYc6lcOW8ty55/hFQ3OSrNNXK/yVT597nZ1XA5bJjMEF02OwuzCGyd/voloHxTuEHziBuDxMiTC4b/HfwBMmDVSdWr+GPeTBBcw+pbNSWL4Qib/1BXdxb7QD3p2o9BgpbMaU/zastGIAeZgnEwtt5bnOOvIlQ7rTICUbF1lyRgIv6kRalo7RPTi2OvemYMyXb8rNuauFIS+Gsh69qsEwyhyP+noqTcpIkOSQrIBFXjZBANPoRPCMOq1eNJKHY9oklyS9vGKnTPp0myZlHT5Du3BoqXppb0A9QnqO3jd5uuhTVXcrDkGYCwrujfzf0p8gYIiynWvo+mHmsc6QGxGk5okBYUbjOKZ0hQb3kFJFlyLUofxWsHVK46UPE3PIQItXv+3N/WcTItNJLbvFL1p21LF6D+59MB73FVX9+GMyQVQVWdiIAH+GFtk7zzxfSOPofABlW798YEbTGFt3pwzSkL/7RALivEkrxyOABwS7oJxv1ZT56WDCKj7hNwZJi1S6RgzYax8Vg4TB2vqsuA03pZ25WunvjQMUF2OOYjw/yAEOLXUnwQ=
@@ -167,16 +170,17 @@ BanAppealLink: https://github.com/Foxikle/FoxRank (Not real, I just made the plu
 
 
 # Bungeecord: -> Is this server using bungeecord?
+# NOTE: Required FoxRankBungee on the proxy server
 bungeecord: false
 
-# LogsMenuName: -> The name of the menu of /logs ($NAME (Player's logs you're viewing), $LOGTYPE (Type of logs you're viewing), Supports  Colors)
-LogsMenuName: "%target_name%\'s &r&0%log_type% history"
+# LogsMenuName: -> The name of the menu of /logs
+LogsMenuName: '%target_name%''s &r&0%log_type% history'
 
 # ServerName -> Name of server to put into the ban message
 ServerName: The FoxRank Server
 
 # DisableChatFormatting -> Should FoxRank format chat messages?
-DisableChatFormatting: true
+DisableChatFormatting: false
 
 # -------------------------------------------------------------------------
 #   _____    ____    _          _____        _        _

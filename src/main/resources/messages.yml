@@ -15,6 +15,8 @@
 # 2. A '#' means the line is commented out. The server will ignore the line.
 # 3. If you delete a portion of the config, you can delete the 'messages.yml' and a new one
 #    will be automatically generated on the next server restart.
+# 4. If you would like to include an apostrophe (') inside the text, you must escape it
+#    by including two. `Section: 'Don''t do that!'`
 # -----------------------------------------------------------------------------------------
 
 ############################
@@ -28,7 +30,7 @@ NicknameTooLongMessage: '&cYour nickname "%nickname_attempt%" cannot be greater 
 NickNameChangedMessage: '&aYour nickname is now "%nickname%".'
 
 # BlacklistedNicknameMessage: -> The message displayed to a user when they attempt to use a blacklisted nickname.
-BlacklistedNicknameMessage: "&cThe nickname &l&c'%nickname_attempt%' &r&c is blacklisted."
+BlacklistedNicknameMessage: '&cThe nickname &l&c''%nickname_attempt%'' &r&c is blacklisted.'
 
 
 ############################
@@ -49,11 +51,14 @@ VanishMessage: '&eYou vanished into the shadows.'
 # CannotBanSuperiorPlayerMessage: -> The message displayed whilst attempting to ban a player with a higher or equal rank.
 CannotBanSuperiorPlayerMessage: '&cYou cannot ban a player with a higher or equal power level!'
 
+# CannotBanImmunePlayer: -> The message displayed whilst attempting to ban a player with the 'foxrank.moderation.ban.immune' permission
+CannotBanImmunePlayer: '&cThis player is immune!'
+
 # TempBanMessageFormat: -> The formatting for ban messages.
 TempBanMessageFormat: '&cYou are temporarily banned for &r%ban_duration%&c from %server_name%!\n\n&7Reason -> &f%ban_reason%\n&bAppeal at -> %server_appeal_link%\n\n&7Ban ID -> &r#%ban_id%\n &7 Sharing your Ban ID may affect the processing of your appeal!'
 
 # PermBanMessageFormat: -> The formatting for permban messages.
-PermBanMessageFormat: '&cYou are permanantly banned from %server_name%!\n\n&7Reason -> &f%ban_reason%\n&bAppeal at -> %server_appeal_link%\n\n&7Ban ID -> &r#%ban_id%\n &7 Sharing your Ban ID may affect the processing of your appeal!'
+PermBanMessageFormat: '&cYou are permanently banned from %server_name%!\n\n&7Reason -> &f%ban_reason%\n&bAppeal at -> %server_appeal_link%\n\n&7Ban ID -> &r#%ban_id%\n &7 Sharing your Ban ID may affect the processing of your appeal!'
 
 # SilentBanSenderMessage: -> The message sent to the player who silently banned.
 SilentBanSenderMessage: '&c%target_name% was silently banned for %ban_reason%'
@@ -63,6 +68,9 @@ BanSenderMessage: '&c%target_name% was silently banned for %ban_reason%'
 
 # NoPresetBanReason: -> The message sent when there was no preset ban reason.
 NoPresetBanReason: '&c"%ban_preset%" is not a valid preset!'
+
+# BanCommandAlreadyBanned: -> The message displayed to a user whilst attempting to unban a player that is not banned.
+BanCommandAlreadyBanned: '&c%target_name% is already banned!'
 
 # UnbanCommandNotBanned: -> The message displayed to a user whilst attempting to unban a player that is not banned.
 UnbanCommandNotBanned: '&c%target_name% is not banned!'
@@ -78,7 +86,7 @@ UnbanCommandMessage: '&a%target_name% was unbanned.'
 MuteMessage: '&c%line%\n&cYou are now MUTED for %mute_reason%\n&7Your mute will expire in %mute_duration%.\n&c%line%'
 
 # MuteMessage: -> The text displayed to a user when they get muted.
-PermanentMuteMessage: '&c%line%\n&cYou are now MUTED for %mute_reason%\n&7Your mute will not expire.\n%line%'
+PermanentMuteMessage: '&c%line%\n&cYou are now MUTED for %mute_reason%\n&7Your mute will not expire.\n&c%line%'
 
 # MuteCommandPlayerAlreadyMuted: -> The messaged displayed whilst attempting to mute a player that is already muted.
 MuteCommandPlayerAlreadyMuted: '&c%target_name% is already muted!'
@@ -95,18 +103,21 @@ UnmuteSenderMessage: '&a%target_name% is now unmuted.'
 # muteSenderMessage: -> The message sent to the sender of the /mute command.
 MuteSenderMessage: '&c%target_name% is now muted for %mute_reason%'
 
-# UnmuteRecieverMessage: -> The message send to the player being unmutted.
-UnmuteRecieverMessage: '&a%line%\nYou are now UNMUTED.\n%line%'
+# UnmuteReceiverMessage: -> The message send to the player being unmutted.
+UnmuteReceiverMessage: '&a%line%&a\nYou are now UNMUTED.\n&a%line%'
 
 # MutePlayerWithHigherPowerLevelMessage: -> The message displayed whilst attempting to mute a player with a higher or equal PowerLevel. 
 MutePlayerWithHigherRankMessage: '&cYou cannot mute a player with a higher or equal rank!'
 
 # ChatWhileMutedMessage: -> The text displayed to a user when they try to chat whilst muted.
-ChatWhileMutedMessage: '&c%line%\n&cYou are currently MUTED for %mute_reason%\n&7Your mute will expire in %mute_duration%.\n%line%'
+ChatWhileMutedMessage: '&c%line%\n&cYou are currently MUTED for %mute_reason%\n&7Your mute will expire in %mute_duration%.\n&c%line%'
+
+# ChatWhilePermanentlyMutedMessage: -> The text displayed to a user when they try to chat whilst permanently muted.
+ChatWhilePermanentlyMutedMessage: '&c%line%\n&cYou are currently MUTED for %mute_reason%\n&7Your mute will not expire.\n&c%line%'
 
 # IAmMutedCommandMessage: -> The text displayed to both players who received and sent the /immuted command
-IAmMutedCommandMessageToMuted: '&dTo %target_rank_prefix%%target_rank_color%%receiver_name%&7:&e Hey, I am currently muted and unable to chat right now.'
-IAmMutedCommandMessageFromMuted: '&dFrom %playerrank_prefix%%playerrank_color%%player_name%&7:&e Hey, I am currently muted and unable to chat right now.'
+IAmMutedCommandMessageToMuted: '&dTo %target_rank_prefix%%target_rank_color%%target_name%&7:&e&o Hey, I am currently muted and unable to chat right now.'
+IAmMutedCommandMessageFromMuted: '&dFrom %playerrank_prefix%%playerrank_color%%player_name%&7:&e&o Hey, I am currently muted and unable to chat right now.'
 
 ############################
 #     General Messages     #
@@ -121,7 +132,7 @@ PromoteSelfMessage: '&cYou cannot promote yourself!'
 AlreadyRankMessage: '&cYou are already %playerrank_prefix%!'
 
 # NoPermissionMessage -> The message displayed when a user doesn't have the permissions.
-NoPermissionMessage: "&cYou don't have the required permission to execute this command.\n&cPlease contact a server administrator if you believe this is a mistake."
+NoPermissionMessage: '&cYou don''t have the required permission to execute this command. Please contact a server administrator if you believe this is a mistake.'
 
 # CommandDisabledMessage: -> The message displayed when a command is disabled.
 CommandDisabledMessage: '&cThis command is currently disabled.'

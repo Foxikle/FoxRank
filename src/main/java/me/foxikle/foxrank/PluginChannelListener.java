@@ -32,28 +32,41 @@ public class PluginChannelListener implements PluginMessageListener {
 
     @Override
     public void onPluginMessageReceived(String channel, @Nonnull Player player, @Nonnull byte[] message) {
-        if (!channel.equals("BungeeCord")) return;
-
         ByteArrayDataInput in = ByteStreams.newDataInput(message);
         String subChannel = in.readUTF();
-        if (subChannel.equals("PlayerList")) {
-            String server = in.readUTF();
-            String[] playerList = in.readUTF().split(", ");
-            FoxRank.getInstance().playerNames = Arrays.stream(playerList).toList();
-            Bukkit.getScheduler().runTaskLaterAsynchronously(FoxRank.getInstance(), () -> getPlayers(Iterables.getFirst(Bukkit.getOnlinePlayers(), null)), 20);
+        if (channel.equals("BungeeCord")) {
+            if (subChannel.equals("PlayerList")) {
+                String server = in.readUTF();
+                String[] playerList = in.readUTF().split(", ");
+                FoxRank.getInstance().players = Arrays.stream(playerList).toList();
+                Bukkit.getScheduler().runTaskLaterAsynchronously(FoxRank.getInstance(), () -> getPlayers(Iterables.getFirst(Bukkit.getOnlinePlayers(), null)), 20);
 
-        } else if (subChannel.equalsIgnoreCase("FoxRankUpdateData")) {
-            try {
-                short len = in.readShort();
-                byte[] msgbytes = new byte[len];
-                in.readFully(msgbytes);
-                DataInputStream msgin = new DataInputStream(new ByteArrayInputStream(msgbytes));
-                String somedata = msgin.readUTF();
-                if (somedata.equals("updateData")) {
-                    Bukkit.getScheduler().runTaskAsynchronously(FoxRank.getInstance(), () -> FoxRank.getInstance().setRank(player, FoxRank.getInstance().getDm().getStoredRank(player.getUniqueId())));
+            } else if (subChannel.equalsIgnoreCase("FoxRankUpdateData")) {
+                // recache player's data
+                try {
+                    short len = in.readShort();
+                    byte[] msgbytes = new byte[len];
+                    in.readFully(msgbytes);
+                    DataInputStream msgin = new DataInputStream(new ByteArrayInputStream(msgbytes));
+                    String somedata = msgin.readUTF();
+                    if (somedata.equals("updateData")) {
+                        Bukkit.getScheduler().runTaskAsynchronously(FoxRank.getInstance(), () -> {
+                            FoxRank.getInstance().getDm().cacheUserData(player.getUniqueId());
+                            FoxRank.getInstance().setRank(player, FoxRank.getInstance().getRank(player));
+                        });
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
                 }
-            } catch (IOException e) {
-                e.printStackTrace();
+            }
+        } else if(channel.equals("foxrank")) {
+            if(subChannel.equals("updateranks")){
+                // recache player data
+                Bukkit.getScheduler().runTaskAsynchronously(FoxRank.getInstance(), () -> {
+                    FoxRank.getInstance().getDm().cacheUserData(player.getUniqueId());
+                    FoxRank.getInstance().setRank(player, FoxRank.getInstance().getRank(player));
+                    player.sendMessage(FoxRank.getInstance().getMessage("RankIsNowMessage", player));
+                });
             }
         }
     }

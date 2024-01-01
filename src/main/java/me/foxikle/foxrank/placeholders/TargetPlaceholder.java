@@ -3,9 +3,13 @@ package me.foxikle.foxrank.placeholders;
 import me.clip.placeholderapi.expansion.PlaceholderExpansion;
 import me.foxikle.foxrank.FoxRank;
 import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+
+import java.util.Locale;
 
 public class TargetPlaceholder extends PlaceholderExpansion {
     private final FoxRank plugin;
@@ -41,15 +45,15 @@ public class TargetPlaceholder extends PlaceholderExpansion {
 
     @Override
     public @Nullable String onPlaceholderRequest(Player player, @NotNull String params) {
-        Player target = Bukkit.getPlayer(plugin.targetMap.get(player.getUniqueId()));
+        OfflinePlayer target = Bukkit.getOfflinePlayer(plugin.targetMap.get(player.getUniqueId()));
         if (params.equalsIgnoreCase("name")) {
             return target.getName();
         } else if (params.equalsIgnoreCase("rank_prefix")) {
-            return plugin.getPlayerData(player.getUniqueId()).getRank().getPrefix();
+            return plugin.getPlayerData(target.getUniqueId()).getRank().getPrefix();
         } else if (params.equalsIgnoreCase("rank_id")) {
-            return  plugin.getPlayerData(player.getUniqueId()).getRank().getId();
+            return  plugin.getPlayerData(target.getUniqueId()).getRank().getId();
         } else if (params.equalsIgnoreCase("rank_color")) {
-            return plugin.getPlayerData(player.getUniqueId()).getRank().getColor().toString();
+            return ChatColor.valueOf(plugin.getPlayerData(target.getUniqueId()).getRank().getColor().toString().toUpperCase(Locale.ROOT)).toString();
         }
         return null;
     }

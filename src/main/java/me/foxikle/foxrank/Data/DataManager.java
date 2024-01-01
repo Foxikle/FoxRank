@@ -2,9 +2,10 @@ package me.foxikle.foxrank.Data;
 
 import com.google.gson.JsonParser;
 import me.foxikle.foxrank.*;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
-import org.bukkit.OfflinePlayer;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -31,12 +32,9 @@ import java.util.stream.Stream;
 public class DataManager {
 
     private final FoxRank plugin;
-    private final FileConfiguration config;
-    private boolean useDatabase;
-    private Database db;
-
-    //TODO: Make sure to query database ASYNC!!!
-    //TODO: Look into caching the files in memory
+    private FileConfiguration config;
+    public boolean useDatabase;
+    public Database db;
 
     public DataManager(FoxRank plugin) {
         this.plugin = plugin;
@@ -47,13 +45,24 @@ public class DataManager {
         config = YamlConfiguration.loadConfiguration(configFile);
     }
 
+    public void reloadConfig(){
+        File configFile = new File("plugins/FoxRank/config.yml");
+        if (!configFile.exists()) {
+            plugin.saveResource("config.yml", false);
+        }
+        config = YamlConfiguration.loadConfiguration(configFile);
+    }
+
     public void init() {
         plugin.disableRankVis = config.getBoolean("DisableRankVisiblity");
-        plugin.bungeecord = config.getBoolean("bungeecord");
+        FoxRank.BUNGEECORD = config.getBoolean("bungeecord");
         useDatabase = config.getBoolean("UseSQLStorage");
-
+        FoxRank.USE_DATABASE = useDatabase;
         if (!new File("plugins/FoxRank/ranks.yml").exists()) {
             plugin.saveResource("ranks.yml", false);
+        }
+        if (!new File("plugins/FoxRank/messages.yml").exists()) {
+            plugin.saveResource("messages.yml", false);
         }
 
         if (useDatabase) {
@@ -72,6 +81,7 @@ public class DataManager {
             db.createPlayerDataTable();
             db.createBannedPlayersTable();
             db.createAuditLogTable();
+            db.createRanksTable();
 
             // load things into memory
         } else {
@@ -80,6 +90,8 @@ public class DataManager {
             } else if (!new File("plugins/FoxRank/bannedPlayers.yml").exists()) {
                 plugin.saveResource("bannedPlayers.yml", false);
             }
+            File dir = new File("plugins/FoxRank/PlayerData");
+            dir.mkdirs();
         }
         setupRanks();
     }
@@ -99,7 +111,8 @@ public class DataManager {
     }
 
     public void shutDown() {
-        db.disconnect();
+        if(useDatabase)
+            db.disconnect();
     }
 
     public void setStoredRank(UUID uuid, Rank rank) {
@@ -118,27 +131,50 @@ public class DataManager {
     }
 
     public void setupRanks() {
-        File file = new File("plugins/FoxRank/ranks.yml");
-        YamlConfiguration yamlConfiguration = YamlConfiguration.loadConfiguration(file);
-        ConfigurationSection yml = yamlConfiguration.getConfigurationSection("Ranks");
+        if(useDatabase) {
+            List<String> ranks = db.getRanks();
+            Map<String, Integer> powerlevelMappy = new HashMap<>();
+            Map<Rank, Integer> rankMappy = new HashMap<>();
+            for (String str : ranks) {
+                Rank rank = Rank.of(str);
+                if(rank.getId() != null) {
+                    powerlevelMappy.put(rank.getId(), rank.getPowerlevel());
+                    rankMappy.put(rank, rank.getPowerlevel());
+                }
+            }
+            plugin.ranks = getSortedRanks(rankMappy);
+            plugin.powerLevels = sortByValue(powerlevelMappy);
 
-        Set<String> keys = yml.getKeys(false);
-        Map<String, Integer> powerlevelMappy = new HashMap<>();
-        Map<Rank, Integer> rankMappy = new HashMap<>();
-        for (String str : keys) {
-            ConfigurationSection section = yml.getConfigurationSection(str);
-            Rank rank = new Rank(section.getInt("powerLevel"), ChatColor.translateAlternateColorCodes('&', section.getString("prefix")), section.getString("id"), ChatColor.getByChar(section.getString("color").charAt(0)), ChatColor.getByChar(section.getString("ChatTextColor")), section.getBoolean("nicknamable"), section.getStringList("permissions"));
-            powerlevelMappy.put(rank.getId(), rank.getPowerlevel());
-            rankMappy.put(rank, rank.getPowerlevel());
-        }
-        plugin.ranks = getSortedRanks(rankMappy);
-        plugin.powerLevels = sortByValue(powerlevelMappy);
+            plugin.bannedPlayers.addAll(getBannedPlayers());
+            plugin.players.addAll(getPlayers());
+            for (UUID uuid : getUUIDs()) {
+                cacheUserData(uuid);
+            }
+        } else {
+            File file = new File("plugins/FoxRank/ranks.yml");
+            YamlConfiguration yamlConfiguration = YamlConfiguration.loadConfiguration(file);
+            ConfigurationSection yml = yamlConfiguration.getConfigurationSection("Ranks");
 
-        for (UUID uuid : getUUIDs()) {
-            cacheUserData(uuid);
+            Set<String> keys = yml.getKeys(false);
+            Map<String, Integer> powerlevelMappy = new HashMap<>();
+            Map<Rank, Integer> rankMappy = new HashMap<>();
+            for (String str : keys) {
+                ConfigurationSection section = yml.getConfigurationSection(str);
+                Rank rank = new Rank(section.getInt("powerLevel"), ChatColor.translateAlternateColorCodes('&', section.getString("prefix")), section.getString("id"), NamedTextColor.GRAY.value(), NamedTextColor.GRAY.value(), section.getBoolean("nicknamable"), section.getStringList("permissions"));
+                if(rank.getId() != null) {
+                    powerlevelMappy.put(rank.getId(), rank.getPowerlevel());
+                    rankMappy.put(rank, rank.getPowerlevel());
+                }
+            }
+            plugin.ranks = getSortedRanks(rankMappy);
+            plugin.powerLevels = sortByValue(powerlevelMappy);
+
+            plugin.bannedPlayers.addAll(getBannedPlayers());
+            plugin.players.addAll(getPlayers());
+            for (UUID uuid : getUUIDs()) {
+                cacheUserData(uuid);
+            }
         }
-        plugin.bannedPlayers.addAll(getBannedPlayers());
-        plugin.players.addAll(getPlayers());
     }
 
     public void cacheUserData(UUID uuid) {
@@ -162,7 +198,6 @@ public class DataManager {
 
     private Map<String, Rank> getSortedRanks(Map<Rank, Integer> unsortMap) {
         List<Map.Entry<Rank, Integer>> list = new LinkedList<>(unsortMap.entrySet());
-        //TODO: write your own comparator that counts from high -> low
         list.sort(Map.Entry.comparingByValue());
         Collections.reverse(list);
         Map<String, Rank> sortedMap = new LinkedHashMap<>();
@@ -174,7 +209,6 @@ public class DataManager {
 
     private Map<String, Integer> sortByValue(Map<String, Integer> unsortMap) {
         List<Map.Entry<String, Integer>> list = new LinkedList<>(unsortMap.entrySet());
-        //TODO: write your own comparator that counts from high -> low
         list.sort(Map.Entry.comparingByValue());
         Collections.reverse(list);
         Map<String, Integer> sortedMap = new LinkedHashMap<>();
@@ -258,7 +292,7 @@ public class DataManager {
             YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
             data = yml.getString("MuteDuration");
         }
-        if(data == null)
+        if(data == null || data.isEmpty() || data.equalsIgnoreCase("null"))
             return null;
         return Instant.parse(data);
     }
@@ -287,7 +321,7 @@ public class DataManager {
         }
     }
 
-    public UUID getUUID(String name) {
+    public static UUID getUUID(String name) {
         URL url;
         InputStreamReader reader = null;
         try {
@@ -301,23 +335,24 @@ public class DataManager {
     }
 
 
-    public List<UUID> getBannedPlayers() {
+    public Set<UUID> getBannedPlayers() {
         if (useDatabase) {
             return db.getStoredBannedPlayers();
         }
         File file = new File("plugins/FoxRank/bannedPlayers.yml");
         YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
-        List<UUID> players = new ArrayList<>();
+        Set<UUID> players = new HashSet<>();
         if (yml.getStringList("CurrentlyBannedPlayers").isEmpty()) {
-            return new ArrayList<>();
+            return new HashSet<>();
         }
         for (String str : yml.getStringList("CurrentlyBannedPlayers")) {
-            players.add(UUID.fromString(str));
+            if(!players.contains(UUID.fromString(str)))
+                players.add(UUID.fromString(str));
         }
         return players;
     }
 
-    public void setBannedPlayers(List<UUID> uuids) {
+    public void setBannedPlayers(Set<UUID> uuids) {
         if (useDatabase) {
             db.setStoredBannedPlayers(uuids);
         } else {
@@ -325,14 +360,15 @@ public class DataManager {
             YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
             List<String> uuidStrings = new ArrayList<>();
             for (UUID u : uuids) {
-                uuidStrings.add(u.toString());
+                if(!uuidStrings.contains(u.toString()))
+                    uuidStrings.add(u.toString());
             }
             yml.set("CurrentlyBannedPlayers", uuidStrings);
         }
     }
 
     public List<String> getPlayerNames(Player player) {
-        if (plugin.bungeecord) {
+        if (FoxRank.BUNGEECORD) {
             // BAD!
             //TODo: Re-work this please. (And require a proxy plugin!)
             return getPlayerNames(player);
@@ -359,14 +395,14 @@ public class DataManager {
                 try {
                     yml.save(file);
                 } catch (IOException error) {
-                    Bukkit.getLogger().log(Level.SEVERE, "ERROR could not save " + uuid + "'s Vanished state.");
+                    Bukkit.getLogger().log(Level.SEVERE, "ERROR: could not save " + uuid + "'s Vanished state.");
                 }
             } else if (!yml.getBoolean("isVanished")) {
                 yml.set("isVanished", true);
                 try {
                     yml.save(file);
                 } catch (IOException error) {
-                    Bukkit.getLogger().log(Level.SEVERE, "ERROR could not save " + uuid + "'s Vanished state.");
+                    Bukkit.getLogger().log(Level.SEVERE, "ERROR: could not save " + uuid + "'s Vanished state.");
                 }
             }
         }
@@ -424,9 +460,8 @@ public class DataManager {
             return db.getUUIDs();
         } else {
             List<UUID> returnme = new ArrayList<>();
-            for (OfflinePlayer op : Bukkit.getOfflinePlayers()) {
-                File file = new File("/plugins/FoxRank/PlayerData/" + op.getUniqueId() + ".yml");
-                if (file.exists()) returnme.add(op.getUniqueId());
+            for (String s : getPlayers()) {
+                returnme.add(Bukkit.getOfflinePlayer(s).getUniqueId());
             }
             return returnme;
         }
@@ -438,7 +473,9 @@ public class DataManager {
         } else {
             File file = new File("plugins/FoxRank/auditlog.yml");
             YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
-            yml.getStringList(involved.toString()).add(entry.serialize());
+            List<String> entries = yml.getStringList(involved.toString());
+            entries.add(entry.serialize());
+            yml.set(involved.toString(), entries);
             try {
                 yml.save(file);
             } catch (IOException e) {
@@ -466,7 +503,6 @@ public class DataManager {
         if (useDatabase) {
             db.addPlayerData(player.getUniqueId());
         } else {
-
             File file = new File("plugins/FoxRank/PlayerData/" + player.getUniqueId() + ".yml");
             if (!file.exists()) {
                 try {
@@ -482,12 +518,12 @@ public class DataManager {
             yml.addDefault("isVanished", false);
             yml.addDefault("isNicked", false);
             yml.addDefault("isMuted", false);
-            yml.addDefault("MuteDuration", "");
+            yml.addDefault("MuteDuration", Instant.now().toString());
             yml.addDefault("MuteReason", "");
             yml.addDefault("Nickname", player.getName());
             yml.addDefault("Nickname-Rank", plugin.getDefaultRank().getId());
             yml.addDefault("Nickname-Skin", "");
-            yml.addDefault("BanDuration", "");
+            yml.addDefault("BanDuration", Instant.now().toString());
             yml.addDefault("BanReason", "");
             yml.addDefault("BanID", "");
             yml.addDefault("isBanned", false);
@@ -497,6 +533,17 @@ public class DataManager {
             } catch (IOException error) {
                 error.printStackTrace();
             }
+
+            File f = new File("plugins/FoxRank/auditlog.yml");
+            YamlConfiguration y = YamlConfiguration.loadConfiguration(f);
+            if(!y.contains(player.getUniqueId().toString())) {
+                y.set(player.getUniqueId().toString(), new ArrayList<>());
+            }
+            try {
+                y.save(f);
+            } catch (IOException e) {
+                plugin.getLogger().severe("An error occoured whilst saving " + player.getUniqueId() + "'s audit log section\n" + Arrays.toString(e.getStackTrace()));
+            }
         }
     }
 
@@ -505,85 +552,42 @@ public class DataManager {
         String eventMessage = e.getMessage();
         Player player = e.getPlayer();
         UUID uuid = player.getUniqueId();
-
-        if (useDatabase) {
-            if (isMuted(uuid)) {
-                Instant date = Instant.parse(db.getStoredMuteDuration(uuid));
-                Instant now = Instant.now();
-                if (date.isBefore(now)) {
-                    ModerationAction.unmutePlayer(new RankedPlayer(player, plugin), new RankedPlayer(player, plugin));
-                } else {
-                    String reason = db.getStoredMuteReason(uuid);
-                    String border = ChatColor.RED + String.valueOf(ChatColor.STRIKETHROUGH) + "                                                                   ";
-                    String muteMessage = plugin.getConfig().getString("ChatWhileMutedMessage").replace("$LINE", border);
-                    muteMessage = muteMessage.replace("\\n", "\n");
-                    muteMessage = muteMessage.replace("$DURATION", plugin.getFormattedExpiredString(date, Instant.now()));
-                    muteMessage = muteMessage.replace("$REASON", reason);
-                    muteMessage = ChatColor.translateAlternateColorCodes('§', muteMessage);
-                    player.sendMessage(muteMessage);
-                    return;
-                }
-            }
-            if (db.getStoredNicknameStatus(uuid)) {
-                Rank rank = db.getStoredNicknameRank(uuid);
-                String nick = db.getStoredNickname(uuid);
-                if (plugin.disableRankVis) {
-                    Bukkit.broadcastMessage(nick + ": " + e.getMessage());
-                } else {
-                    Bukkit.broadcastMessage(rank.getPrefix() + ChatColor.RESET + rank.getColor() + player.getName() + ChatColor.RESET + ": " + rank.getTextColor() + eventMessage);
-                }
+        if(plugin.getPlayerData(uuid) == null) {
+            player.sendMessage(Component.text("Failed to send chat message!", NamedTextColor.RED));
+            return;
+        }
+        if (plugin.getPlayerData(uuid).isMuted()) {
+            Instant date = plugin.getPlayerData(uuid).getMuteDuration();
+            if(date == null) {
+                player.sendMessage(plugin.getMessage("ChatWhilePermanentlyMutedMessage", player));
+                return;
+            } else if (date.isBefore(Instant.now())) {
+                ModerationAction.unmutePlayer(player, player);
             } else {
-                Rank rank = plugin.getRank(player);
-                if (!plugin.disableRankVis) {
-                    if (rank == null) return;
-                    if (plugin.getRank(player) != plugin.getDefaultRank()) {
-                        Bukkit.broadcastMessage(rank.getPrefix() + ChatColor.RESET + rank.getColor() + player.getName() + ChatColor.RESET + ": " + rank.getTextColor() + eventMessage);
-                    } else if (plugin.getRank(player) == plugin.getDefaultRank()) {
-                        Bukkit.broadcastMessage(plugin.getRank(player).getPrefix() + ChatColor.RESET + rank.getColor() + player.getDisplayName() + ChatColor.RESET + plugin.getDefaultRank().getTextColor() + ": " + eventMessage);
-                    }
-                } else {
-                    Bukkit.broadcastMessage(player.getName() + ": " + e.getMessage());
-                }
+                player.sendMessage(plugin.getMessage("ChatWhileMutedMessage", player));
+                return;
+            }
+        }
+
+        PlayerData pd = plugin.getPlayerData(uuid);
+        if(pd.isNicked()) {
+            Rank rank = pd.getNicknameRank();
+            String nick = pd.getNickname();
+            if (plugin.disableRankVis) {
+                Bukkit.broadcastMessage(nick + ": " + e.getMessage());
+            } else {
+                Bukkit.broadcastMessage(rank.getPrefix() + ChatColor.RESET + ChatColor.valueOf(rank.getColor().toString().toUpperCase(Locale.ROOT)) + player.getName() + ChatColor.RESET + ": " + ChatColor.valueOf(rank.getTextColor().toString().toUpperCase(Locale.ROOT)) + eventMessage);
             }
         } else {
-            File file = new File("plugins/FoxRank/PlayerData/" + player.getUniqueId() + ".yml");
-            YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
-
-            if (isMuted(player.getUniqueId())) {
-                Instant date = Instant.parse(yml.getString("MuteDuration"));
-                Instant now = Instant.now();
-                if (date.isBefore(now)) {
-                    ModerationAction.unmutePlayer(new RankedPlayer(player, plugin), new RankedPlayer(player, plugin));
-                } else {
-                    String reason = yml.getString("MuteReason");
-                    String border = ChatColor.RED + String.valueOf(ChatColor.STRIKETHROUGH) + "                                                                   ";
-                    String muteMessage = plugin.getConfig().getString("ChatWhileMutedMessage").replace("$LINE", border);
-                    muteMessage = muteMessage.replace("\\n", "\n");
-                    muteMessage = muteMessage.replace("$DURATION", plugin.getFormattedExpiredString(date, Instant.now()));
-                    muteMessage = muteMessage.replace("$REASON", reason);
-                    muteMessage = ChatColor.translateAlternateColorCodes('§', muteMessage);
-                    player.sendMessage(muteMessage);
-                    return;
-                }
-            }
-            if (yml.getBoolean("isNicked")) {
-                Rank rank = Rank.of(yml.getString("Nickname-Rank"));
-                String nick = yml.getString("Nickname");
-                if (!plugin.disableRankVis) {
-                    Bukkit.broadcastMessage(rank.getPrefix() + ChatColor.RESET + rank.getColor() + e.getPlayer().getName() + ChatColor.RESET + ": " + rank.getTextColor() + eventMessage);
-                } else {
-                    Bukkit.broadcastMessage(nick + ": " + e.getMessage());
-                }
+            Rank rank = plugin.getRank(player);
+            if (plugin.disableRankVis) {
+                Bukkit.broadcastMessage(player.getName() + ": " + e.getMessage());
             } else {
-                Rank rank = Rank.of(yml.getString("Nickname-Rank"));
-                if (!plugin.disableRankVis) {
-                    if (plugin.getRank(player) != plugin.getDefaultRank()) {
-                        Bukkit.broadcastMessage(rank.getPrefix() + ChatColor.RESET + rank.getColor() + player.getName() + ChatColor.RESET + ": " + e.getMessage());
-                    } else if (plugin.getRank(player) == plugin.getDefaultRank()) {
-                        Bukkit.broadcastMessage(rank.getPrefix() + ChatColor.RESET + rank.getColor() + player.getName() + ChatColor.RESET + ": " + plugin.getDefaultRank().getTextColor() + e.getMessage());
-                    }
-                } else {
-                    Bukkit.broadcastMessage(player.getName() + ": " + e.getMessage());
+                if (rank == null) return;
+                if (rank != plugin.getDefaultRank()) {
+                    Bukkit.broadcastMessage(rank.getPrefix() + ChatColor.RESET + ChatColor.valueOf(rank.getColor().toString().toUpperCase(Locale.ROOT)) + player.getName() + ChatColor.RESET + ": " + ChatColor.valueOf(rank.getTextColor().toString().toUpperCase(Locale.ROOT)) + eventMessage);
+                } else if (rank == plugin.getDefaultRank()) {
+                    Bukkit.broadcastMessage(rank.getPrefix() + ChatColor.RESET + ChatColor.valueOf(rank.getColor().toString().toUpperCase(Locale.ROOT)) + player.getDisplayName() + ChatColor.RESET + ChatColor.valueOf(rank.getTextColor().toString().toUpperCase(Locale.ROOT)) + ": " + eventMessage);
                 }
             }
         }
@@ -608,7 +612,7 @@ public class DataManager {
             YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
             data = yml.getString("BanDuration");
         }
-        if(data == null)
+        if(data == null || data.isEmpty())
             return null;
         return Instant.parse(data);
     }
@@ -632,10 +636,10 @@ public class DataManager {
                 for (String s : listFiles()) {
                     File file = new File("plugins/FoxRank/PlayerData/" + s);
                     YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
-                    strings.add(yml.getString("name"));
+                    strings.add(yml.getString("Name"));
                 }
             } catch (IOException e) {
-                throw new RuntimeException(e);
+                return new ArrayList<>();
             }
             return strings;
         }
@@ -661,12 +665,12 @@ public class DataManager {
 
     public void mutePlayer(UUID uuid, Instant duration, String reason) {
         if (useDatabase) {
-            db.setStoredMuteData(uuid, true, reason, duration);
+            db.setStoredMuteData(uuid, reason, duration);
         } else {
             File file = new File("plugins/FoxRank/PlayerData/" + uuid + ".yml");
             YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
             yml.set("isMuted", true);
-            yml.set("MuteDuration", duration.toString());
+            yml.set("MuteDuration", duration == null? "null" : duration.toString());
             yml.set("MuteReason", reason);
             try {
                 yml.save(file);
@@ -679,7 +683,7 @@ public class DataManager {
 
     public void unmutePlayer(UUID uuid) {
         if (useDatabase) {
-            db.setStoredMuteState(uuid, false);
+            db.setStoredMuteState(uuid);
         } else {
             File file = new File("plugins/FoxRank/PlayerData/" + uuid + ".yml");
             YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
@@ -695,11 +699,11 @@ public class DataManager {
     }
 
     public void unbanPlayer(UUID uuid) {
+        Set<UUID> bannedPlayers = getBannedPlayers();
+        bannedPlayers.remove(uuid);
+        setBannedPlayers(bannedPlayers);
         if (useDatabase) {
-            List<UUID> bannedPlayers = db.getStoredBannedPlayers();
-            bannedPlayers.remove(uuid);
-            db.setStoredBannedPlayers(bannedPlayers);
-            db.setStoredBanState(uuid, false);
+            db.setStoredBanState(uuid);
         } else {
             File file = new File("plugins/FoxRank/PlayerData/" + uuid + ".yml");
             YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
@@ -715,10 +719,10 @@ public class DataManager {
 
     public void banPlayer(UUID uuid, String reason, String id, Instant duration) {
         if (useDatabase) {
-            List<UUID> bannedPlayers = db.getStoredBannedPlayers();
+            Set<UUID> bannedPlayers = db.getStoredBannedPlayers();
             bannedPlayers.add(uuid);
             db.setStoredBannedPlayers(bannedPlayers);
-            db.setStoredBanData(uuid, true, reason, duration, id);
+            db.setStoredBanData(uuid, reason, duration, id);
         } else {
             File file = new File("plugins/FoxRank/PlayerData/" + uuid + ".yml");
             YamlConfiguration yml = YamlConfiguration.loadConfiguration(file);
@@ -741,6 +745,169 @@ public class DataManager {
             try {
                 yml1.set("CurrentlyBannedPlayers", list);
                 yml1.save(file1);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    // Rank stuff
+
+    public void setRankPrefix(Rank rank, String prefix) {
+        rank.setPrefix(prefix);
+        if(useDatabase) {
+            db.updateRank(rank.getId(), rank.toJson());
+        } else {
+            File file = new File("plugins/FoxRank/ranks.yml");
+            FileConfiguration yml = YamlConfiguration.loadConfiguration(file);
+            ConfigurationSection section = yml.getConfigurationSection("Ranks").getConfigurationSection(rank.getId());
+            section.set("prefix", prefix);
+            try {
+                yml.save(file);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
+    public void setRankPowerLevel(Rank rank, int powerlevel) {
+        rank.setPowerLevel(powerlevel);
+        if(useDatabase) {
+            db.updateRank(rank.getId(), rank.toJson());
+        } else {
+            File file = new File("plugins/FoxRank/ranks.yml");
+            FileConfiguration yml = YamlConfiguration.loadConfiguration(file);
+            ConfigurationSection section = yml.getConfigurationSection("Ranks").getConfigurationSection(rank.getId());
+            section.set("powerLevel", powerlevel);
+            try {
+                yml.save(file);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
+    public void setRankColor(Rank rank, ChatColor color) {
+        rank.setColor(ColorUtils.ofChatColor(color));
+        if(useDatabase) {
+            db.updateRank(rank.getId(), rank.toJson());
+        } else {
+            File file = new File("plugins/FoxRank/ranks.yml");
+            FileConfiguration yml = YamlConfiguration.loadConfiguration(file);
+            ConfigurationSection section = yml.getConfigurationSection("Ranks").getConfigurationSection(rank.getId());
+            section.set("color", color.getChar());
+            try {
+                yml.save(file);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
+    public void setRankTextColor(Rank rank, ChatColor color) {
+        rank.setTextColor(ColorUtils.ofChatColor(color));
+        if(useDatabase) {
+            db.updateRank(rank.getId(), rank.toJson());
+        } else {
+            File file = new File("plugins/FoxRank/ranks.yml");
+            FileConfiguration yml = YamlConfiguration.loadConfiguration(file);
+            ConfigurationSection section = yml.getConfigurationSection("Ranks").getConfigurationSection(rank.getId());
+            section.set("ChatTextColor", color.getChar());
+            try {
+                yml.save(file);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
+    public void setRankNicknamable(Rank rank, boolean canNick) {
+        rank.setNicknameable(canNick);
+        if(useDatabase) {
+            db.updateRank(rank.getId(), rank.toJson());
+        } else {
+            File file = new File("plugins/FoxRank/ranks.yml");
+            FileConfiguration yml = YamlConfiguration.loadConfiguration(file);
+            ConfigurationSection section = yml.getConfigurationSection("Ranks").getConfigurationSection(rank.getId());
+            section.set("nicknamable", canNick);
+            try {
+                yml.save(file);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
+    public void addRankPermissionNode(Rank rank, String node) {
+        rank.addPermissionNode(node);
+        if(useDatabase) {
+            db.updateRank(rank.getId(), rank.toJson());
+        } else {
+            File file = new File("plugins/FoxRank/ranks.yml");
+            FileConfiguration yml = YamlConfiguration.loadConfiguration(file);
+            ConfigurationSection section = yml.getConfigurationSection("Ranks").getConfigurationSection(rank.getId());
+            List<String> perms = section.getStringList("permissions");
+            perms.add(node);
+            section.set("permissions", perms);
+            try {
+                yml.save(file);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
+    public void removeRankPermissionNode(Rank rank, String node) {
+        rank.removePermissionNode(node);
+        if(useDatabase) {
+            db.updateRank(rank.getId(), rank.toJson());
+        } else {
+            File file = new File("plugins/FoxRank/ranks.yml");
+            FileConfiguration yml = YamlConfiguration.loadConfiguration(file);
+            ConfigurationSection section = yml.getConfigurationSection("Ranks").getConfigurationSection(rank.getId());
+            List<String> perms = section.getStringList("permissions");
+            perms.remove(node);
+            section.set("permissions", perms);
+            try {
+                yml.save(file);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
+    public void createRank(Rank rank) {
+        if(useDatabase) {
+            db.addRank(rank.getId(), rank.toJson());
+        } else {
+            File file = new File("plugins/FoxRank/ranks.yml");
+            FileConfiguration yml = YamlConfiguration.loadConfiguration(file);
+            ConfigurationSection section = yml.getConfigurationSection("Ranks").createSection(rank.getId());
+            section.set("prefix", rank.getPrefix());
+            section.set("powerLevel", rank.getPowerlevel());
+            section.set("id", rank.getId());
+            section.set("color", rank.getColor().toString());
+            section.set("ChatTextColor", rank.getTextColor().toString());
+            section.set("nicknamable", rank.isNicknameable());
+            section.set("permissions", rank.getPermissionNodes());
+            try {
+                yml.save(file);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    public void removeRank(Rank rank) {
+        if(useDatabase) {
+            db.removeRank(rank.getId());
+        } else {
+            File file = new File("plugins/FoxRank/ranks.yml");
+            FileConfiguration yml = YamlConfiguration.loadConfiguration(file);
+            yml.getConfigurationSection("Ranks").set(rank.getId(), null);
+
+            try {
+                yml.save(file);
             } catch (IOException e) {
                 e.printStackTrace();
             }

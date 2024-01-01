@@ -44,7 +44,9 @@ public class MutePlaceholder extends PlaceholderExpansion {
 
     @Override
     public @Nullable String onPlaceholderRequest(Player player, @NotNull String params) {
-        UUID muted = plugin.muteMap.get(player.getUniqueId());
+        UUID muted = plugin.targetMap.get(player.getUniqueId());
+        if(muted == null)
+            muted = player.getUniqueId();
         if (params.equalsIgnoreCase("duration")) {
             return plugin.getFormattedExpiredString(plugin.getPlayerData(muted).getMuteDuration(), Instant.now());
         } else if (params.equalsIgnoreCase("reason")) {
@@ -55,7 +57,9 @@ public class MutePlaceholder extends PlaceholderExpansion {
 
     @Override
     public @Nullable String onRequest(OfflinePlayer player, @NotNull String params) {
-        UUID muted = plugin.muteMap.get(player.getUniqueId());
+        UUID muted = plugin.targetMap.get(player.getUniqueId());
+        if(muted == null)
+            muted = player.getUniqueId();
         if (params.equalsIgnoreCase("duration")) {
             return plugin.getFormattedExpiredString(plugin.getPlayerData(muted).getMuteDuration(), Instant.now());
         } else if (params.equalsIgnoreCase("reason")) {

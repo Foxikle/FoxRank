@@ -44,6 +44,12 @@ public class NicknamePlaceholder extends PlaceholderExpansion {
             return plugin.getPlayerData(player.getUniqueId()).getNickname();
         } else if (params.equalsIgnoreCase("attempt")) {
             return plugin.attemptedNicknameMap.get(player.getUniqueId());
+        } else if (params.equalsIgnoreCase("rank_prefix")) {
+            return plugin.getPlayerData(player.getUniqueId()).getNicknameRank().getPrefix();
+        } else if (params.equalsIgnoreCase("rank_id")) {
+            return plugin.getPlayerData(player.getUniqueId()).getNicknameRank().getId();
+        } else if (params.equalsIgnoreCase("skin")) {
+            return plugin.getPlayerData(player.getUniqueId()).getSkin();
         }
         return null;
     }

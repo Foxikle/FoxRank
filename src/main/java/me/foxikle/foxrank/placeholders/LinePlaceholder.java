@@ -6,6 +6,7 @@ import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import static org.bukkit.ChatColor.RESET;
 import static org.bukkit.ChatColor.STRIKETHROUGH;
 
 public class LinePlaceholder extends PlaceholderExpansion {
@@ -42,6 +43,6 @@ public class LinePlaceholder extends PlaceholderExpansion {
 
     @Override
     public @Nullable String onPlaceholderRequest(Player player, @NotNull String params) {
-        return STRIKETHROUGH + "                                                                   ";
+        return STRIKETHROUGH + "                                                                   " + RESET;
     }
 }
