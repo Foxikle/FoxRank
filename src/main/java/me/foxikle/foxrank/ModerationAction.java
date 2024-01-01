@@ -36,7 +36,7 @@ public class ModerationAction {
             muteMessage = plugin.getMessage("MuteMessage", admin);
         }
 
-        if (plugin.bungeecord) {
+        if (FoxRank.BUNGEECORD) {
             plugin.getPluginChannelListener().sendMessage(admin, mutee.getName(), muteMessage);
         } else {
             mutee.sendMessage(muteMessage);
@@ -49,7 +49,7 @@ public class ModerationAction {
         String id = Integer.toString(hash("FoxRank:" + unmutee.getName() + ":" + Instant.now()), 16).toUpperCase(Locale.ROOT).replace("-", "");
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> plugin.getDm().unmutePlayer(unmutee.getUniqueId()));
         Logging.addLogEntry(EntryType.UNMUTE, unmutee.getUniqueId(), staff.getUniqueId(), null, null, null, id);
-        if (plugin.bungeecord) {
+        if (FoxRank.BUNGEECORD) {
             plugin.getPluginChannelListener().sendMessage(staff, unmutee.getName(), plugin.getMessage("UnmuteReceiverMessage", staff));
         } else {
             unmutee.sendMessage(plugin.getMessage("UnmuteReceiverMessage", staff));
@@ -72,7 +72,7 @@ public class ModerationAction {
         pd.setMuteReason(reason);
         String id = Integer.toString(hash("FoxRank:" + mutee.getName() + ":" + Instant.now()), 16).toUpperCase(Locale.ROOT).replace("-", "");
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> plugin.getDm().mutePlayer(mutee.getUniqueId(), duration, reason));
-        if (plugin.bungeecord) {
+        if (FoxRank.BUNGEECORD) {
             String muteMessage;
             if(duration == null) {
                 muteMessage = plugin.getMessage("PermanentMuteMessage", admin);
@@ -108,7 +108,7 @@ public class ModerationAction {
             plugin.getServer().getPluginManager().callEvent(new ModerationActionEvent(banee, banner, plugin.getPlayerData(banee.getUniqueId()).getRank(), (banner == null ? null : plugin.getRank(banner)), me.foxikle.foxrank.events.ModerationAction.BAN, reasonStr, duration, banID));
 
             Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> plugin.getDm().banPlayer(banee.getUniqueId(), reasonStr, banID, duration));
-            if (plugin.bungeecord) {
+            if (FoxRank.BUNGEECORD) {
                 plugin.getPluginChannelListener().kickPlayer(Iterables.getLast(Bukkit.getOnlinePlayers()), banee.getName(), plugin.getMessage(duration == null ? "PermBanMessageFormat" : "TempBanMessageFormat", banee));
             } else {
                 banee.kickPlayer(plugin.getMessage(duration == null ? "PermBanMessageFormat" : "TempBanMessageFormat", banner));
@@ -146,7 +146,7 @@ public class ModerationAction {
         if (!plugin.bannedPlayers.contains(banee.getUniqueId())) {
                 plugin.bannedPlayers.add(banee.getUniqueId());
             plugin.getServer().getPluginManager().callEvent(new ModerationActionEvent(banee.getPlayer(), banner.getPlayer(), plugin.getPlayerData(banee.getUniqueId()).getRank(), plugin.getPlayerData(banner.getUniqueId()).getRank(), me.foxikle.foxrank.events.ModerationAction.BAN, reasonStr, duration, banID));
-            if (plugin.bungeecord) {
+            if (FoxRank.BUNGEECORD) {
                 plugin.getPluginChannelListener().kickPlayer(Iterables.getLast(Bukkit.getOnlinePlayers()), banee.getName(), plugin.getMessage(duration == null ? "PermBanMessageFormat" : "TempBanMessageFormat", banee));
             }
             if (broadcastReason.equalsIgnoreCase("SECURITY")) {

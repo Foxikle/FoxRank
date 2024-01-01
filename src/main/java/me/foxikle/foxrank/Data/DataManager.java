@@ -55,7 +55,7 @@ public class DataManager {
 
     public void init() {
         plugin.disableRankVis = config.getBoolean("DisableRankVisiblity");
-        plugin.bungeecord = config.getBoolean("bungeecord");
+        FoxRank.BUNGEECORD = config.getBoolean("bungeecord");
         useDatabase = config.getBoolean("UseSQLStorage");
         FoxRank.USE_DATABASE = useDatabase;
         if (!new File("plugins/FoxRank/ranks.yml").exists()) {
@@ -368,7 +368,7 @@ public class DataManager {
     }
 
     public List<String> getPlayerNames(Player player) {
-        if (plugin.bungeecord) {
+        if (FoxRank.BUNGEECORD) {
             // BAD!
             //TODo: Re-work this please. (And require a proxy plugin!)
             return getPlayerNames(player);

@@ -40,7 +40,6 @@ public class FoxRank extends JavaPlugin implements Listener {
     private static FoxRank instance;
     public boolean disableRankVis;
     public List<Player> vanishedPlayers = new ArrayList<>();
-    public boolean bungeecord = false;
     public Map<String, Rank> ranks = new HashMap<>();
     public Map<Player, Rank> playerRanks = new HashMap<>();
     public List<Team> rankTeams = new ArrayList<>();
@@ -50,6 +49,7 @@ public class FoxRank extends JavaPlugin implements Listener {
 
     // static constants
     public static boolean USE_DATABASE;
+    public static boolean BUNGEECORD;
 
     // placeholders
     public Map<UUID, String> logTypeMap = new HashMap<>();
@@ -122,12 +122,14 @@ public class FoxRank extends JavaPlugin implements Listener {
         pcl = new PluginChannelListener();
         dm = new DataManager(this);
         dm.init();
-        bungeecord = this.getConfig().getBoolean("bungeecord");
+        BUNGEECORD = this.getConfig().getBoolean("bungeecord");
         ab = new ActionBar(this);
         ab.setupActionBars();
-        if (bungeecord) {
+        if (BUNGEECORD) {
             this.getServer().getMessenger().registerOutgoingPluginChannel(this, "BungeeCord");
             this.getServer().getMessenger().registerIncomingPluginChannel(this, "BungeeCord", pcl);
+            this.getServer().getMessenger().registerOutgoingPluginChannel(this, "foxrank");
+            this.getServer().getMessenger().registerIncomingPluginChannel(this, "foxrank", pcl);
         }
 
         if (Bukkit.getPluginManager().getPlugin("PlaceholderAPI") != null) {
@@ -198,7 +200,7 @@ public class FoxRank extends JavaPlugin implements Listener {
                 }
             }
             if (Bukkit.getOnlinePlayers().size() == 1) {
-                if (bungeecord) {
+                if (BUNGEECORD) {
                     Bukkit.getScheduler().runTaskLater(this, () -> FoxRank.pcl.getPlayers(Iterables.getFirst(Bukkit.getOnlinePlayers(), null)), 30);
                 }
             }
@@ -220,22 +222,27 @@ public class FoxRank extends JavaPlugin implements Listener {
 
     @Override
     public void onDisable() {
+        getLogger().info("Saving Player Ranks");
         for (Player p : this.getServer().getOnlinePlayers()) {
             dm.saveRank(p);
             clearPermissions(p.getUniqueId());
         }
-
+        getLogger().info("Removing Teams");
         for (Team team : rankTeams) {
             try {
                 team.unregister();
             } catch (NullPointerException | IllegalStateException ignored) {
             }
         }
-
+        getLogger().info("Shutting down DataManager");
         dm.shutDown();
+        getLogger().info("Unregistering OUTBOUND plugin channel");
         this.getServer().getMessenger().unregisterOutgoingPluginChannel(this);
+        getLogger().info("Unregistering INBOUND plugin channel");
         this.getServer().getMessenger().unregisterIncomingPluginChannel(this);
+        getLogger().info("Unregistering Service Manager");
         Bukkit.getServicesManager().unregister(this);
+        getLogger().info("Shutdown Complete!");
     }
 
     public void setupTeams() {

@@ -55,7 +55,7 @@ public class Listeners implements Listener {
                     }
                 }
                 if (Bukkit.getOnlinePlayers().size() == 1) {
-                    if (plugin.bungeecord) {
+                    if (FoxRank.BUNGEECORD) {
                         Bukkit.getScheduler().runTaskLater(plugin, () -> FoxRank.pcl.getPlayers(Iterables.getFirst(Bukkit.getOnlinePlayers(), null)), 30);
                     }
                 }

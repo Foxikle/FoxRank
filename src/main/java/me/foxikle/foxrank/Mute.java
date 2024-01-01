@@ -182,7 +182,7 @@ public class Mute implements CommandExecutor, TabCompleter {
                             String to = plugin.getMessage("IAmMutedCommandMessageToMuted", player);
                             String from = plugin.getMessage("IAmMutedCommandMessageFromMuted", player);
 
-                            if (plugin.bungeecord) {
+                            if (FoxRank.BUNGEECORD) {
                                 plugin.getPluginChannelListener().sendMessage(player, args[0], from);
                             } else {
                                 receiver.sendMessage(from);

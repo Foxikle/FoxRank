@@ -50,7 +50,7 @@ public class SetRank implements CommandExecutor, TabCompleter {
                         if(!Rank.exists(args[0])) {
                             sender.sendMessage(ChatColor.RED + "The rank '" + args[0] + "' does not exist!");
                         }
-                        if (plugin.bungeecord) {
+                        if (FoxRank.BUNGEECORD) {
                             Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> plugin.getDm().setStoredRank(Bukkit.getOfflinePlayer(args[1]).getUniqueId(), Rank.fromID(args[0])));
                             plugin.getPluginChannelListener().sendUpdateDataMessage(args[1]);
                             plugin.getPluginChannelListener().sendMessage(player, args[1], plugin.getMessage("RankIsNowMessage", player));
@@ -83,7 +83,11 @@ public class SetRank implements CommandExecutor, TabCompleter {
                     if(!Rank.exists(args[0])) {
                         sender.sendMessage(ChatColor.RED + "The rank '" + args[0] + "' does not exist!");
                     }
-                    if (plugin.bungeecord) {
+                    if(Bukkit.getOfflinePlayer(args[1]).getUniqueId() == null){
+                        sender.sendMessage(ChatColor.RED + "Couldn't find player '" + args[1] + "'");
+                        return true;
+                    }
+                    if (FoxRank.BUNGEECORD) {
                         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
                             plugin.getPlayerData(Bukkit.getOfflinePlayer(args[1]).getUniqueId()).setRank(Rank.fromID(args[0]));
                             plugin.getDm().setStoredRank(Bukkit.getOfflinePlayer(args[1]).getUniqueId(), Rank.fromID(args[0]));

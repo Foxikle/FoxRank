@@ -45,20 +45,35 @@ public class Database {
                     throw new RuntimeException(e);
                 }
             }
-        }, 0, 3600);
+        }, 0, 1800);
     }
 
     protected void disconnect() {
         if (isConnected()) {
             try {
                 connection.close();
+                connection = null;
+                plugin.getLogger().info("Database disconnected!");
+                return;
             } catch (SQLException e) {
                 plugin.getLogger().severe("An error occoured whilst disconnecting from the database. Please report the following stacktrace to Foxikle: \n" + Arrays.toString(e.getStackTrace()));
+                e.printStackTrace();
+                return;
             }
         }
+        throw new IllegalStateException("Attempted to disconnect from the database whilst not having an open connection!");
     }
 
     protected Connection getConnection() {
+        try {
+            if (connection.isClosed()){
+                connection = DriverManager.getConnection("jdbc:mysql://" + host + ":" + port + "/" + database + "?useSSL=false", username, password);
+                plugin.getLogger().info("Reestablished database connection!");
+                return connection;
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
         return connection;
     }
 
