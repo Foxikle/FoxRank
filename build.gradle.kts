@@ -1,7 +1,7 @@
 plugins {
     `java-library`
     `maven-publish`
-    id("io.papermc.paperweight.userdev") version "1.5.5"
+    id("io.papermc.paperweight.userdev") version "1.5.10"
     id("com.github.johnrengelman.shadow") version "8.1.1"
 }
 
@@ -14,14 +14,14 @@ repositories {
 }
 
 dependencies {
-    paperweight.paperDevBundle("1.20.2-R0.1-SNAPSHOT")
+    paperweight.paperDevBundle("1.20.4-R0.1-SNAPSHOT")
     api("net.wesjd:anvilgui:1.9.0-SNAPSHOT")
     implementation("org.bstats:bstats-bukkit:3.0.2")
     compileOnly ("me.clip:placeholderapi:2.11.3")
 }
 
 group = "me.foxikle"
-version = "2.0.0-beta4"
+version = "2.0.0-beta6"
 description = "FoxRank"
 java.sourceCompatibility = JavaVersion.VERSION_16
 
